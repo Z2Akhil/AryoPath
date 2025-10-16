@@ -1,14 +1,16 @@
-import React from 'react'
-import Footer from '../footer'
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import HealthPackagesPage from './pages/HealthPackagesPage';
+// You can create and import other pages here later
+// import HomePage from './pages/HomePage'; 
 
 function App() {
-
   return (
-    <>
-      Client side application
-      <Footer />
-    </>
-  )
+    <div>
+    <HealthPackagesPage />
+    <p>some text</p>
+    </div>
+  );
 }
 
-export default App
+export default App;
