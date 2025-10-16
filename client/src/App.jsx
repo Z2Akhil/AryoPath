@@ -1,11 +1,9 @@
-import HomePage from "./pages/Homepage"
+import HomePage from '@/pages/HomePage'
 
 function App() {
   return (
     <>
       <HomePage/>
-      
-      Client side application
     </>
   )
 }
