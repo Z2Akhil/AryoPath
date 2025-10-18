@@ -10,35 +10,19 @@ const HealthPackageCard = ({ pkg }) => {
     category,
     specimenType,
     fasting,
-    imageLocation,
-    imageMaster,
+  
   } = pkg;
-
-  const imgSrc =
-    imageLocation ||
-    (imageMaster?.[0]?.imgLocations ??
-      "https://via.placeholder.com/400x200?text=Health+Package");
 
   return (
     <div className="w-full sm:max-w-sm bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200">
-        {/* Image Section */}
-        <div className="relative">
-          <img
-            src={imgSrc}
-            alt={name}
-            className="w-full h-48 sm:h-52 md:h-56 object-cover"
-          />
-          {category && (
-            <span className="absolute top-2 right-2 bg-gray-700 text-white text-xs sm:text-sm px-2 py-1 rounded">
-              {category}
-            </span>
-          )}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white px-3 py-2 text-sm sm:text-base font-semibold">
-            {name}
-          </div>
+      {/* Category Badge */}
+      {category && (
+        <div className="px-4 pt-4">
+          <span className="inline-block bg-gray-700 text-white text-xs sm:text-sm px-2 py-1 rounded">
+            {category}
+          </span>
         </div>
-
-        {/* Content Section */}
+      )}        {/* Content Section */}
         <div className="p-3 sm:p-4">
           {/* Title */}
           <h2 className="text-base sm:text-lg font-bold text-gray-800 mb-1 truncate">
