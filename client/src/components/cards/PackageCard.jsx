@@ -1,7 +1,4 @@
-import React from "react";
-
 const HealthPackageCard = ({ pkg }) => {
-  // Extract required fields safely
   const {
     name,
     rate,

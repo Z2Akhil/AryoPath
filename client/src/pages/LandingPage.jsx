@@ -1,56 +1,56 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import HealthPackageCard from "../components/cards/HealthPackageCard";
+import HealthPackageCard from "@/components/cards/PackageCard";
 import Header from "@/components/Header";
 
-const HomePage = () => {
+const LandingPage = () => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  const fetchPackages = async () => {
-    try {
-      const response = await axios.post(
-        "/api/productsmaster/Products",
-        {
-          ApiKey: "0L75qPMP5vuCdSLQ@Gs2hlYPyX7af7Ru.eRAxbxWKc63ma2fq4CD@oQ==",
-          ProductType: "Profile",
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
+    const fetchPackages = async () => {
+      try {
+        const response = await axios.post(
+          "/api/productsmaster/Products",
+          {
+            ApiKey: import.meta.VITE_API_KEY,
+            ProductType: "Profile",
           },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        console.log("✅ Full API Response:", response.data);
+
+        // Handle the correct API data structure
+        const data = response.data;
+
+        if (data.response === "Success" && data.master) {
+          // Check multiple possible data locations
+          const packagesData =
+            data.master.profile ||
+            data.master.offer ||
+            data.master.tests ||
+            [];
+
+          console.log("📦 Total packages found:", packagesData.length);
+          setPackages(packagesData);
+        } else {
+          console.warn("⚠️ Unexpected API response:", data);
+          setPackages([]);
         }
-      );
-      console.log("✅ Full API Response:", response.data);
-
-      // Handle the correct API data structure
-      const data = response.data;
-      
-      if (data.response === "Success" && data.master) {
-        // Check multiple possible data locations
-        const packagesData = 
-          data.master.profile || 
-          data.master.offer || 
-          data.master.tests || 
-          [];
-        
-        console.log("📦 Total packages found:", packagesData.length);
-        setPackages(packagesData);
-      } else {
-        console.warn("⚠️ Unexpected API response:", data);
+      } catch (error) {
+        console.error("❌ Error fetching packages:", error);
         setPackages([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("❌ Error fetching packages:", error);
-      setPackages([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  fetchPackages();
-}, []);
+    fetchPackages();
+  }, []);
 
   return (
     <>
@@ -66,7 +66,7 @@ const HomePage = () => {
           <p className="text-red-500">No packages found or invalid API key.</p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {packages.map((pkg,index) => (
+            {packages.map((pkg, index) => (
               <HealthPackageCard key={pkg.rate?.id || `${pkg.code}-${index}`} pkg={pkg} />
             ))}
           </div>
@@ -76,4 +76,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+export default LandingPage;
