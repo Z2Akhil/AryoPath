@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import HealthPackageCard from "../components/Cards/HealthPackageCard";
+import HealthPackageCard from "../components/cards/HealthPackageCard";
 import Header from "@/components/Header";
 
 const HomePage = () => {
@@ -14,7 +14,7 @@ const HomePage = () => {
         "/api/productsmaster/Products",
         {
           ApiKey: "0L75qPMP5vuCdSLQ@Gs2hlYPyX7af7Ru.eRAxbxWKc63ma2fq4CD@oQ==",
-          ProductType: "Test",
+          ProductType: "Profile",
         },
         {
           headers: {
