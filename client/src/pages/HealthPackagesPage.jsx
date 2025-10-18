@@ -1,132 +1,84 @@
-import React, { useState } from 'react';
-import BookingForm from '../components/BookingForm';
-import ProductCard from '../components/ProductCard';
+import React from "react";
 
-// --- DUMMY DATA ---
-// This is our single source of truth for now.
-// In src/pages/HealthPackagesPage.jsx
+const HealthPackageCard = ({ pkg }) => {
+  const {
+    name,
+    rate,
+    testCount,
+    bookedCount,
+    category,
+    specimenType,
+    fasting,
+    imageLocation,
+    imageMaster,
+  } = pkg;
 
-// --- NEW DUMMY DATA ---
-const dummyProducts = [
-    { 
-      id: 'PROJ456', 
-      type: 'offer', 
-      name: 'Executive Full Body Health Checkup', 
-      price: 1579, 
-      originalPrice: 3200,
-      discount: '50% off',
-      description: 'Thyrocare Executive Full Body Health Checkup includes Diagnostics lab tests Like complete urine analysis, electrolytes, renal, liver, lipid etc.',
-      testCount: 127,
-      image: 'https://via.placeholder.com/400x200/5B9BD5/FFFFFF?text=Doctor+and+Family', // Placeholder image
-      overlayText: 'EXECUTIVE FULL BODY HEALTH CHECKUP',
-      sampleType: 'Blood & Urine',
-      offerText: 'Rs. 1479 per person for 2 or more'
-    },
-    { 
-      id: 'PROJ789', 
-      type: 'profile', 
-      name: 'Extensive Checkup with All Vitamins', 
-      price: 2679, 
-      originalPrice: 5500,
-      discount: '51% off',
-      description: 'Thyrocare Extensive Full Body Health Checkup includes Diagnostics lab tests Like All 14 Vitamins, cancer markers, elements, renal, liver, lipid etc.',
-      testCount: 127,
-      image: 'https://via.placeholder.com/400x200/ED7D31/FFFFFF?text=Vitamins+and+Doctor', // Placeholder image
-      overlayText: 'EXTENSIVE HEALTH CHECKUP WITH 14 VITAMINS',
-      sampleType: 'Blood & Urine',
-      offerText: 'Rs. 2479 per person for 2 or more'
-    },
-    { 
-      id: 'AAROGYAM_B', 
-      type: 'test', 
-      name: 'Aarogyam Basic', 
-      price: 979, 
-      originalPrice: 1600,
-      discount: '38% off',
-      description: 'Tests for screening of the health status Like Lipid, Liver, Thyroid, Diabetic, CBC, Iron, Kidney, Vitamins.',
-      testCount: 66,
-      image: 'https://via.placeholder.com/400x200/FFC000/FFFFFF?text=Happy+Couple', // Placeholder image
-      overlayText: 'AAROGYAM BASIC',
-      sampleType: 'Blood',
-      offerText: 'Rs. 899 per person for 2 or more'
-    },
-  ];
-  // --- END OF NEW DUMMY DATA ---
+  const imgSrc =
+    imageLocation ||
+    (imageMaster?.[0]?.imgLocations ??
+      "https://via.placeholder.com/400x200?text=Health+Package");
 
-// --- Component Setup ---
-const NavButton = ({ children, onClick, isActive }) => (
-  <button
-    onClick={onClick}
-    className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
-      isActive
-        ? 'bg-blue-600 text-white'
-        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-    }`}
-  >
-    {children}
-  </button>
-);
-
-const HealthPackagesPage = () => {
-  // Initialize state directly from our dummy data
-  const [products] = useState(dummyProducts);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [currentView, setCurrentView] = useState('all');
-
-  // Filter products based on the current navigation view
-  const filteredProducts = products.filter(product => {
-    if (currentView === 'all') return true;
-    return product.type === currentView;
-  });
-
-  // --- Main Render Logic ---
-
-  // If a product has been selected, show the booking form
-  if (selectedProduct) {
-    return (
-      <div className="bg-gray-900 min-h-screen py-10 px-4">
-        <BookingForm
-          packageName={selectedProduct.name}
-          packagePrice={selectedProduct.price}
+  return (
+    <div className="w-full sm:max-w-sm bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200">
+      {/* Image Section */}
+      <div className="relative">
+        <img
+          src={imgSrc}
+          alt={name}
+          className="w-full h-48 sm:h-52 md:h-56 object-cover"
         />
-        <div className="text-center mt-6">
-          <button
-            onClick={() => setSelectedProduct(null)}
-            className="text-blue-400 underline hover:text-blue-300"
-          >
-            &larr; Back to all products
-          </button>
+        {category && (
+          <span className="absolute top-2 right-2 bg-gray-700 text-white text-xs sm:text-sm px-2 py-1 rounded">
+            {category}
+          </span>
+        )}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white px-3 py-2 text-sm sm:text-base font-semibold truncate">
+          {name}
         </div>
       </div>
-    );
-  }
 
-  // Otherwise, show the main page with product cards
-  return (
-    <div className="p-6 sm:p-10 bg-gray-900 min-h-screen">
-      <div className="text-center mb-10">
-        <h1 className="text-4xl font-bold text-white mb-4">Our Health Services</h1>
-        <p className="text-gray-400 max-w-2xl mx-auto">Choose from a wide range of tests, profiles, and health packages to suit your needs.</p>
-      </div>
-
-      <div className="flex justify-center items-center gap-2 sm:gap-4 mb-10">
-        <NavButton onClick={() => setCurrentView('all')} isActive={currentView === 'all'}>All</NavButton>
-        <NavButton onClick={() => setCurrentView('offer')} isActive={currentView === 'offer'}>Offers</NavButton>
-        <NavButton onClick={() => setCurrentView('profile')} isActive={currentView === 'profile'}>Profiles</NavButton>
-        <NavButton onClick={() => setCurrentView('test')} isActive={currentView === 'test'}>Tests</NavButton>
-      </div>
-      
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {filteredProducts.map(product => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onSelect={setSelectedProduct}
-          />
-        ))}
+      {/* Content Section */}
+      <div className="p-3 sm:p-4">
+        <h2 className="text-base sm:text-lg font-bold text-gray-800 mb-1 truncate">
+          {name}
+        </h2>
+        <div className="flex items-center justify-between bg-gray-100 rounded-full py-1 sm:py-2 px-3 sm:px-4 mb-3 text-xs sm:text-sm">
+          <span className="font-medium text-gray-700">{testCount} Tests</span>
+          <span className="text-gray-500">
+            Booked: <strong>{bookedCount}</strong>
+          </span>
+        </div>
+        <div className="flex justify-between text-xs sm:text-sm text-gray-600 mb-3">
+          <p>
+            Specimen: <span className="font-medium">{specimenType || "N/A"}</span>
+          </p>
+          <p>
+            Fasting: <span className="font-medium">{fasting || "N/A"}</span>
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+          <div>
+            <p className="text-gray-400 line-through text-xs sm:text-sm">
+              ₹{rate?.b2C && rate.b2C !== rate.offerRate ? rate.b2C : ""}
+            </p>
+            <p className="text-blue-700 font-semibold text-sm sm:text-lg">
+              ₹{rate?.offerRate || rate?.payAmt}
+            </p>
+          </div>
+          <button className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 transition text-sm sm:text-base w-full sm:w-auto">
+            Book Now
+          </button>
+        </div>
+        <div className="border-t pt-3 mt-3 text-xs sm:text-sm text-gray-600">
+          <ul className="space-y-1 text-[11px] sm:text-xs">
+            <li>🏅 NABL, CAP, ISO 9001 Certified</li>
+            <li>🏠 Free Home Sample Pickup</li>
+            <li>💻 Online Report Delivery</li>
+          </ul>
+        </div>
       </div>
     </div>
   );
 };
 
-export default HealthPackagesPage;
+export default HealthPackageCard;
