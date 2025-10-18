@@ -1,0 +1,1 @@
+this is the offer card, slightly changed with the Package card  
