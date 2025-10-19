@@ -1,1 +1,1 @@
-this is the user detailed page account section 
+// this is the user detailed page account section 

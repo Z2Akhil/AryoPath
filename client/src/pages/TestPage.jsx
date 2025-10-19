@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import TestCard from "../components/cards/TestCard";
 
 const TestPage = () => {

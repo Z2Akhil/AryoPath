@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import PackageCard from "../components/cards/PackageCard";
 
 const LandingPage = () => {
