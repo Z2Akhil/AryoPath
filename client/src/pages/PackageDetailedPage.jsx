@@ -1,1 +1,0 @@
-this is the package detailed page... same for the offer and package page

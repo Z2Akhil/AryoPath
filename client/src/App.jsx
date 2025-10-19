@@ -1,9 +1,14 @@
-import HomePage from '@/pages/HomePage'
-
+import PackagePage from '@/pages/PackagePage'
+import OfferPage from  '@/pages/OfferPage'
+import TestPage from  '@/pages/TestPage'
+import Header from '@/components/Header'
 function App() {
   return (
     <>
-      <HomePage/>
+      <Header />
+      <PackagePage/>
+      <OfferPage/>
+      <TestPage/>
     </>
   )
 }
