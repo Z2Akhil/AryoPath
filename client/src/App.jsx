@@ -1,9 +1,14 @@
-import LandingPage from '@/pages/LandingPage';
-
+import PackagePage from '@/pages/PackagePage'
+import OfferPage from  '@/pages/OfferPage'
+import TestPage from  '@/pages/TestPage'
+import Header from '@/components/Header'
 function App() {
   return (
     <>
-    <LandingPage/>
+      <Header />
+      <PackagePage/>
+      <OfferPage/>
+      <TestPage/>
     </>
   )
 }
