@@ -1,1 +1,1 @@
-footer component 
+// footer component 

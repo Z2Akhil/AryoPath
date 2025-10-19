@@ -1,5 +1,3 @@
-import React from "react";
-
 const PackageCard = () => {
     // ✅ Hardcoded dummy data (for now)
     const pkg = {

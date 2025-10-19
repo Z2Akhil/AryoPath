@@ -1,5 +1,3 @@
-import React from "react";
-
 const OfferCard = () => {
     const pkg = {
         name: "AAROGYAM MALE",
@@ -16,7 +14,6 @@ const OfferCard = () => {
             { name: "LYMPHOCYTES - ABSOLUTE COUNT" },
             { name: "MONOCYTES - ABSOLUTE COUNT" },
             { name: "NEUTROPHILS - ABSOLUTE COUNT" },
-            // ... you can keep adding more if needed
         ],
         rate: {
             b2C: 2400,
