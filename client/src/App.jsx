@@ -9,6 +9,8 @@ import Footer from './components/Footer';
 
 // Import Pages
 import LandingPage from './pages/LandingPage';
+import TestPage from './pages/TestPage';
+import OfferPage from './pages/OfferPage';
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
         <Header />
         <main className="flex-grow">
           <LandingPage />
+          <TestPage />
+          <OfferPage />
         </main>
         <Footer />
       </div>
