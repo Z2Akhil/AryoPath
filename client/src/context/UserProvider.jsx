@@ -1,9 +1,5 @@
-// src/context/UserProvider.jsx
-
-import React, { useState } from 'react';
-import { UserContext } from './userContext'; // Import the context
-
-// Dummy registered user for login simulation
+import { useState } from 'react';
+import { UserContext } from './userContext';
 const dummyUser = {
   phone: "9999999999",
   password: "password123",

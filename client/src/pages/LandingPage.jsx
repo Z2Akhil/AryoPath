@@ -1,7 +1,5 @@
 import PackageCard from "../components/cards/PackageCard";
 
-// --- FIX 1: 'packageData' is now defined ---
-// This is the array your component was missing.
 const packageData = [
   {
     name: "HEMOGRAM - 6 PART (DIFF)",
@@ -35,7 +33,7 @@ const packageData = [
     bookedCount: "720",
     category: "ADVANCED",
     specimenType: "SERUM, EDTA",
-    fasting: "CF", // Compulsory Fasting
+    fasting: "CF",
     rate: {
       b2B: "1500",
       b2C: "3000",
@@ -48,7 +46,6 @@ const packageData = [
     imageMaster: [],
   },
 ];
-// -------------------------------------------
 
 const LandingPage = () => {
   return (
@@ -59,11 +56,10 @@ const LandingPage = () => {
         </h1>
 
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {/* This .map() now works correctly */}
           {packageData.map((pkg, index) => (
             <PackageCard
               key={pkg.rate?.id || `${pkg.code}-${index}`}
-              pkg={pkg} // This prop will now be received by PackageCard
+              pkg={pkg}
             />
           ))}
         </div>
