@@ -2,6 +2,8 @@ import PackagePage from '@/pages/PackagePage'
 import OfferPage from  '@/pages/OfferPage'
 import TestPage from  '@/pages/TestPage'
 import Header from '@/components/Header'
+import PackageDetailedPage from '@/pages/PackageDetailedPage'
+import Form from '@/components/Form'
 function App() {
   return (
     <>
@@ -9,6 +11,7 @@ function App() {
       <PackagePage/>
       <OfferPage/>
       <TestPage/>
+      <PackageDetailedPage/>
     </>
   )
 }
