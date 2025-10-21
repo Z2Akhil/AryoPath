@@ -1,7 +1,7 @@
+// src/components/sections/HomeCarousel.jsx
 import React from 'react';
 import Slider from 'react-slick'; // Import Slider
 
-// Dummy data for the carousel
 const carouselItems = [
   { id: 1, title: 'Free Home Pickup', img: 'https://images.unsplash.com/photo-1581091221104-8022b350a4b4?q=80&w=1470&auto=format=fit=crop' },
   { id: 2, title: 'Online Reports', img: 'https://images.unsplash.com/photo-1551884170-09fb70a31ed3?q=80&w=1374&auto=format=fit=crop' },
@@ -11,12 +11,11 @@ const carouselItems = [
 ];
 
 const HomeCarousel = () => {
-  // Settings for the react-slick carousel
   const settings = {
     dots: true,
     infinite: true,
     speed: 500,
-    slidesToShow: 4, // Show 4 on desktop
+    slidesToShow: 4,
     slidesToScroll: 1,
     autoplay: true,
     autoplaySpeed: 3000,
@@ -24,13 +23,13 @@ const HomeCarousel = () => {
       {
         breakpoint: 1024,
         settings: {
-          slidesToShow: 3, // 3 on tablets
+          slidesToShow: 3,
         }
       },
       {
         breakpoint: 640,
         settings: {
-          slidesToShow: 1, // 1 on mobile
+          slidesToShow: 1,
         }
       }
     ]
@@ -39,10 +38,9 @@ const HomeCarousel = () => {
   return (
     <div className="my-12">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Why Choose Us?</h2>
-      {/* Use the Slider component */}
       <Slider {...settings}>
         {carouselItems.map(item => (
-          <div key={item.id} className="px-2"> {/* Add padding between slides */}
+          <div key={item.id} className="px-2"> 
             <div className="rounded-lg shadow-lg overflow-hidden">
               <img src={item.img} alt={item.title} className="w-full h-40 object-cover" />
               <div className="p-4 bg-white">

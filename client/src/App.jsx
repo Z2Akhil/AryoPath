@@ -1,32 +1,24 @@
 import React from 'react';
-// 1. Import Routes and Route from react-router-dom
-import { Routes, Route } from "react-router-dom";
+import { UserProvider } from './context/UserProvider'; 
 
-// 2. Import your pages and components using relative paths
-import PackagePage from './pages/PackagePage';
-import OfferPage from './pages/OfferPage';
-import TestPage from './pages/TestPage';
+// Import Components
 import Header from './components/Header';
-import { UserProvider } from './context/UserProvider';
 import Footer from './components/Footer';
+
+// Import Pages
 import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
     <UserProvider>
-      <Header />
-      
-      {/* 3. Set up your routes */}
-      <main className="flex-grow">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/packages" element={<PackagePage />} />
-          <Route path="/offers" element={<OfferPage />} />
-          <Route path="/tests" element={<TestPage />} />
-        </Routes>
-      </main>
-
-      <Footer />
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="grow">
+          {/* LandingPage is rendered directly */}
+          <LandingPage />
+        </main>
+        <Footer />
+      </div>
     </UserProvider>
   );
 }
