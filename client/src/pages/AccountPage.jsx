@@ -1,1 +1,9 @@
-// this is the user detailed page account section 
+const AccountPage = () => {
+    return (
+        <>
+            Account Page
+        </>
+    );
+}
+
+export default AccountPage;

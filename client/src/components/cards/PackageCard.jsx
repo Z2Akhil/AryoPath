@@ -1,5 +1,4 @@
 const PackageCard = () => {
-    // ✅ Hardcoded dummy data (for now)
     const pkg = {
         name: "HEMOGRAM - 6 PART (DIFF)",
         code: "P187",
@@ -63,7 +62,7 @@ const PackageCard = () => {
                         {category}
                     </span>
                 )}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white px-3 py-2 text-sm sm:text-base font-semibold">
+                <div className="absolute bottom-0 left-0 right-0 bg-linears-to-t from-black/70 to-transparent text-white px-3 py-2 text-sm sm:text-base font-semibold">
                     {name}
                 </div>
             </div>

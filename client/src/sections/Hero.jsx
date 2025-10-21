@@ -1,6 +1,3 @@
-// src/components/sections/Hero.jsx
-import React from 'react';
-
 const Hero = () => {
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden md:flex mb-12">

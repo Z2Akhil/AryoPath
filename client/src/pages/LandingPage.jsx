@@ -1,8 +1,5 @@
-// src/pages/LandingPage.jsx
-import React from 'react';
-import { dummyCatalogData } from '../data/dummyData'; // Import the dummy data
+import { dummyCatalogData } from '../data/dummyData';
 
-// Import sections
 import Hero from '../sections/Hero';
 import HomeCarousel from '../sections/HomeCarousel';
 import ProductGrid from '../sections/ProductGrid';
@@ -14,27 +11,23 @@ const LandingPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-      
+
       <Hero />
-      
       <HomeCarousel />
-      
-      <ProductGrid 
-        title="Top Offers" 
-        products={offers} 
-        seeAllLink="#" 
+      <ProductGrid
+        title="Top Offers"
+        products={offers}
+        seeAllLink="#"
       />
-      
-      <ProductGrid 
-        title="Popular Packages" 
-        products={packages} 
-        seeAllLink="#" 
+      <ProductGrid
+        title="Popular Packages"
+        products={packages}
+        seeAllLink="#"
       />
-      
-      <ProductGrid 
-        title="Featured Tests" 
-        products={tests} 
-        seeAllLink="#" 
+      <ProductGrid
+        title="Featured Tests"
+        products={tests}
+        seeAllLink="#"
       />
 
     </div>

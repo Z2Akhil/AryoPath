@@ -1,7 +1,4 @@
-// src/components/sections/HomeCarousel.jsx
-import React from 'react';
-import Slider from 'react-slick'; // Import Slider
-
+import Slider from 'react-slick';
 const carouselItems = [
   { id: 1, title: 'Free Home Pickup', img: 'https://images.unsplash.com/photo-1581091221104-8022b350a4b4?q=80&w=1470&auto=format=fit=crop' },
   { id: 2, title: 'Online Reports', img: 'https://images.unsplash.com/photo-1551884170-09fb70a31ed3?q=80&w=1374&auto=format=fit=crop' },

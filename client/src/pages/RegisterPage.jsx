@@ -1,1 +1,9 @@
-// this is the user registration page 
+const RegisterPage = () => {
+    return (
+        <>
+        Register Page
+        </>
+    );
+}
+
+export default RegisterPage;

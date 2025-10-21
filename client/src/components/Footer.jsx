@@ -1,75 +1,150 @@
-import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import { Facebook, Twitter, Instagram, Linkedin, Phone, Mail, Clock, MapPin } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="border-t bg-gray-100 text-gray-700">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+    <footer className="bg-gray-900 text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Main Footer Content */}
+        <div className="py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
 
-          {/* Company Info */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
-                <span className="text-lg font-bold text-white">D</span>
+          {/* Brand Section */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <img
+                  src="./lo.jpg"
+                  alt="Company Logo"
+                  className="w-10 h-10 object-contain rounded-full"
+                />
               </div>
-              <span className="text-lg font-semibold">Diagnostic Centres</span>
+              <div>
+                <h3 className="text-xl font-bold">AryoPath</h3>
+                <p className="text-xs text-gray-400">In association with ThyroCare</p>
+              </div>
             </div>
-            <p className="text-sm text-gray-600">
-              Empowering people to improve their lives through quality healthcare services.
+            <p className="text-gray-300 text-sm leading-relaxed">
+              Your trusted partner for comprehensive health diagnostics and lab services.
             </p>
-            <div className="flex gap-3">
-              <a href="#" className="hover:bg-gray-200 rounded-full p-2">
-                <Facebook className="h-5 w-5 text-gray-600" />
+            <div className="flex space-x-3">
+              <a href="#" className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors">
+                <Facebook className="w-4 h-4" />
               </a>
-              <a href="#" className="hover:bg-gray-200 rounded-full p-2">
-                <Twitter className="h-5 w-5 text-gray-600" />
+              <a href="#" className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors">
+                <Twitter className="w-4 h-4" />
               </a>
-              <a href="#" className="hover:bg-gray-200 rounded-full p-2">
-                <Instagram className="h-5 w-5 text-gray-600" />
+              <a href="#" className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors">
+                <Instagram className="w-4 h-4" />
               </a>
-              <a href="#" className="hover:bg-gray-200 rounded-full p-2">
-                <Linkedin className="h-5 w-5 text-gray-600" />
+              <a href="#" className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors">
+                <Linkedin className="w-4 h-4" />
               </a>
             </div>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Quick Links</h3>
-            <ul className="space-y-2 text-sm">
-              <li><a href="/tests" className="text-gray-600 hover:text-gray-900">All Tests</a></li>
-              <li><a href="/profiles" className="text-gray-600 hover:text-gray-900">Health Profiles</a></li>
-              <li><a href="/offers" className="text-gray-600 hover:text-gray-900">Special Offers</a></li>
-              <li><a href="/about" className="text-gray-600 hover:text-gray-900">About Us</a></li>
+            <h4 className="text-lg font-semibold text-white">Quick Links</h4>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                  <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
+                  Home
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                  <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
+                  Popular Packages
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                  <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
+                  All Tests
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                  <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
+                  Special Offers
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                  <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
+                  About Us
+                </a>
+              </li>
             </ul>
           </div>
 
           {/* Services */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Our Services</h3>
-            <ul className="space-y-2 text-sm text-gray-600">
-              <li>Home Sample Collection</li>
-              <li>Online Reports</li>
-              <li>Doctor Consultation</li>
-              <li>Health Packages</li>
+            <h4 className="text-lg font-semibold text-white">Our Services</h4>
+            <ul className="space-y-3 text-sm text-gray-300">
+              <li className="flex items-center gap-2">
+                <span className="w-1 h-1 bg-green-400 rounded-full"></span>
+                Home Sample Collection
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1 h-1 bg-green-400 rounded-full"></span>
+                Online Reports
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1 h-1 bg-green-400 rounded-full"></span>
+                Doctor Consultation
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1 h-1 bg-green-400 rounded-full"></span>
+                Health Packages
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1 h-1 bg-green-400 rounded-full"></span>
+                24/7 Support
+              </li>
             </ul>
           </div>
 
-          {/* Contact */}
+          {/* Contact Info */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Contact Us</h3>
-            <ul className="space-y-2 text-sm text-gray-600">
-              <li>Email: support@diagnosticcentres.com</li>
-              <li>Phone: 1800-123-4567</li>
-              <li>Timing: 24/7 Available</li>
-            </ul>
+            <h4 className="text-lg font-semibold text-white">Contact Us</h4>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center gap-3 text-gray-300">
+                <Mail className="w-4 h-4 text-blue-400" />
+                <a href="mailto:support@aryopath.com" className="hover:text-blue-400 transition-colors">
+                  support@aryopath.com
+                </a>
+              </div>
+              <div className="flex items-center gap-3 text-gray-300">
+                <Phone className="w-4 h-4 text-blue-400" />
+                <a href="tel:+911234567890" className="hover:text-blue-400 transition-colors">
+                  +91 12345 67890
+                </a>
+              </div>
+              <div className="flex items-center gap-3 text-gray-300">
+                <Clock className="w-4 h-4 text-blue-400" />
+                <span>24/7 Available</span>
+              </div>
+              <div className="flex items-center gap-3 text-gray-300">
+                <MapPin className="w-4 h-4 text-blue-400" />
+                <span>Pan India Service</span>
+              </div>
+            </div>
           </div>
-
         </div>
 
-        {/* Copyright */}
-        <div className="mt-8 pt-4 text-center text-sm text-gray-400">
-          <p>&copy; 2025 Diagnostic Centres. All rights reserved.</p>
+        {/* Bottom Bar */}
+        <div className="border-t border-gray-800 py-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="text-sm text-gray-400">
+              <p>&copy; 2024 AryoPath. All rights reserved. | In association with ThyroCare</p>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-gray-400">
+              <a href="#" className="hover:text-blue-400 transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-blue-400 transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-blue-400 transition-colors">Refund Policy</a>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

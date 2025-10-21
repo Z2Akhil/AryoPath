@@ -1,162 +1,297 @@
-// src/components/Header.jsx
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Menu, X, Search, User, LogOut, ChevronDown } from 'lucide-react';
+import { useUser } from '../context/userContext';
+import AuthModal from './AuthModal';
 
-import { useState } from "react";
-import { ShoppingCart, Menu, X } from "lucide-react";
-import { useUser } from "../context/userContext";
-import AuthModal from "./AuthModal"; // Import the AuthModal
+/* ---------- config ---------- */
+const NAV_LINKS = [
+  { label: 'Home', href: '/' },
+  { label: 'Popular Packages', href: '/packages' },
+  { label: 'All Tests', href: '/tests' },
+  { label: 'Offers', href: '/offers' },
+  { label: 'About Us', href: '/about' },
+];
 
-const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const { user, logout } = useUser();
+const Logo = () => (
+  <Link to="/" className="flex items-center gap-3 group cursor-pointer">
+    <div className="flex items-center gap-2">
+      <img
+        src="./lo.jpg"
+        alt="Company Logo"
+        className="w-10 h-10 object-contain"
+      />
+    </div>
+    <div className="leading-tight">
+      <p className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">AryoPath</p>
+      <p className="text-xs text-gray-500 font-medium">In association with ThyroCare</p>
+    </div>
+  </Link>
+);
 
-  const handleLogout = () => {
-    logout();
-    setIsMenuOpen(false); // Close mobile menu on logout
-  };
+const SearchBar = () => (
+  <div className="relative w-full max-w-xl group">
+    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+      <Search className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+    </div>
+    <input
+      type="text"
+      placeholder="Search health packages, tests, and more..."
+      className="block w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-full text-sm bg-white/80 backdrop-blur-sm
+                 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 
+                 transition-all duration-300 hover:border-gray-300 shadow-sm hover:shadow-md"
+    />
+  </div>
+);
+
+const CartIcon = ({ count = 2 }) => (
+  <Link to="/cart" className="relative group cursor-pointer">
+    <div className="p-2 rounded-full bg-gray-100 group-hover:bg-blue-100 transition-colors duration-300">
+      <ShoppingCart className="w-6 h-6 text-gray-700 group-hover:text-blue-600 transition-colors duration-300" />
+    </div>
+    {count > 0 && (
+      <span className="absolute -top-1 -right-1 bg-linear-to-r from-red-500 to-red-600 text-white text-xs font-bold 
+                       rounded-full w-5 h-5 flex items-center justify-center shadow-lg animate-pulse">
+        {count}
+      </span>
+    )}
+  </Link>
+);
+
+/* ---------- desktop nav ---------- */
+const DesktopNav = ({ user, onLogin, onLogout }) => (
+  <div className="hidden lg:flex items-center gap-4">
+    {user ? (
+      <div className="flex items-center gap-3">
+        <Link to="/account" className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer group">
+          <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+            <User className="w-4 h-4 text-white" />
+          </div>
+          <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">Hi, {user.name}</span>
+          <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
+        </Link>
+        <button
+          onClick={onLogout}
+          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 
+                     rounded-lg transition-all duration-300"
+        >
+          <LogOut size={16} />
+          <span>Logout</span>
+        </button>
+      </div>
+    ) : (
+      <button
+        onClick={onLogin}
+        className="px-6 py-2.5 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-full hover:from-blue-700 
+                   hover:to-blue-800 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+      >
+        Login
+      </button>
+    )}
+  </div>
+);
+
+/* ---------- mobile drawer ---------- */
+const MobileDrawer = ({ open, user, onLogin, onLogout, onClose }) => {
+  if (!open) return null;
 
   return (
     <>
-      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
-        {/* Top Header */}
-        <div className="max-w-8xl mx-auto flex items-center justify-between px-4 sm:px-6 py-4">
-          {/* Left: Logo and Company Name */}
-          <div className="flex items-center gap-2">
-            <img
-              src="./lo.jpg"
-              alt="Company Logo"
-              className="w-10 h-10 object-contain"
-            />
-            <div className=" sm:block leading-tight">
-              <span className="text-lg font-semibold text-gray-800">
-                YourCompany
-              </span>
-              <p className="text-xs text-gray-500">
-                In association with ThyroCare
-              </p>
-            </div>
-          </div>
+      {/* overlay */}
+      <div
+        onClick={onClose}
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-fade-in"
+      />
 
-          {/* Center: Search Bar */}
-          <div className="flex-1 max-w-md mx-4 hidden sm:block">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search products..."
-                className="w-full border border-gray-300 rounded-full px-4 py-2 pl-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-              />
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-400 absolute left-3 top-2.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-4.35-4.35M9.5 17A7.5 7.5 0 109.5 2a7.5 7.5 0 000 15z"
+      {/* panel */}
+      <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-out-cubic
+                      animate-slide-in-right">
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <img
+                  src="./lo.jpg"
+                  alt="Company Logo"
+                  className="w-10 h-10 object-contain"
                 />
-              </svg>
+              </div>
+              <div>
+                <p className="font-bold text-gray-900">AryoPath</p>
+                <p className="text-xs text-gray-500">ThyroCare Partner</p>
+              </div>
             </div>
-          </div>
-
-          {/* Right: Auth & Icons */}
-          <div className="flex items-center gap-4">
-            {/* Cart Icon */}
-            <div className="relative">
-              <ShoppingCart className="w-6 h-6 text-gray-700 cursor-pointer hover:text-blue-600 transition" />
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                2
-              </span>
-            </div>
-
-            {/* Auth Buttons / User Info (Desktop) */}
-            <div className="hidden sm:flex items-center gap-4">
-              {user ? (
-                <>
-                  <span className="text-sm text-gray-700">Hi, {user.name}</span>
-                  <button className="text-sm font-medium text-gray-700 hover:text-blue-600">
-                    My Account
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="text-sm font-medium text-gray-700 hover:text-blue-600"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  {/* ONLY Login button */}
-                  <button
-                    onClick={() => setIsAuthModalOpen(true)}
-                    className="text-sm font-medium px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                  >
-                    Login
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Mobile Menu Toggle */}
             <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="sm:hidden text-gray-700 hover:text-blue-600 focus:outline-none"
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
             >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              <X size={20} className="text-gray-600" />
             </button>
           </div>
-        </div>
 
-        {/* Secondary Navigation (visible on desktop) */}
-        <nav className="hidden sm:flex max-w-8xl mx-auto px-6 py-2 border-t border-gray-100 bg-gray-50">
-          <ul className="flex space-x-8 text-gray-700 font-medium text-sm">
-            <li><a href="#" className="hover:text-blue-600">Home</a></li>
-            <li><a href="#" className="hover:text-blue-600">Popular Packages</a></li>
-            <li><a href="#" className="hover:text-blue-600">All Tests</a></li>
-            <li><a href="#" className="hover:text-blue-600">Offers</a></li>
-            <li><a href="#" className="hover:text-blue-600">About Us</a></li>
-          </ul>
-        </nav>
-
-        {/* Mobile Dropdown Menu */}
-        {isMenuOpen && (
-          <div className="sm:hidden border-t border-gray-200 bg-gray-50 px-4 py-3 flex flex-col gap-3 text-gray-700 font-medium">
-            <div className="flex flex-col gap-3 pb-3 border-b border-gray-200">
-              {user ? (
-                <>
-                  <span className="text-gray-800 font-semibold">Welcome, {user.name}</span>
-                  <a href="#" className="hover:text-blue-600">My Account</a>
-                  <button onClick={handleLogout} className="text-left w-full text-red-600 hover:text-red-700">
-                    Logout
-                  </button>
-                </>
-              ) : (
+          {/* User Section */}
+          <div className="p-6 border-b border-gray-100">
+            {user ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                    <User className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Welcome, {user.name}</p>
+                    <p className="text-sm text-gray-500">Manage your account</p>
+                  </div>
+                </div>
                 <button
-                  onClick={() => { setIsAuthModalOpen(true); setIsMenuOpen(false); }}
-                  className="px-4 py-2 text-center bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  onClick={() => { onLogout(); onClose(); }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-lg 
+                             hover:bg-red-100 transition-colors font-medium"
                 >
-                  Login
+                  <LogOut size={18} />
+                  <span>Logout</span>
                 </button>
-              )}
-            </div>
-            <a href="#" className="hover:text-blue-600">Home</a>
-            <a href="#" className="hover:text-blue-600">Popular Packages</a>
-            <a href="#" className="hover:text-blue-600">All Tests</a>
-            <a href="#" className="hover:text-blue-600">Offers</a>
-            <a href="#" className="hover:text-blue-600">About Us</a>
+              </div>
+            ) : (
+              <button
+                onClick={() => { onLogin(); onClose(); }}
+                className="w-full px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg 
+                           hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg"
+              >
+                Login to Your Account
+              </button>
+            )}
           </div>
-        )}
-      </header>
 
-      {/* Render the modal component */}
-      {isAuthModalOpen && (
-        <AuthModal onClose={() => setIsAuthModalOpen(false)} />
-      )}
+          {/* Navigation */}
+          <nav className="flex-1 p-6 overflow-y-auto">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Navigation</p>
+            <div className="space-y-2">
+              {NAV_LINKS.map(({ label, href }) => (
+                <Link
+                  key={label}
+                  to={href}
+                  onClick={onClose}
+                  className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg 
+                             transition-all duration-200 font-medium"
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </nav>
+
+          {/* Footer */}
+          <div className="p-6 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs text-gray-500 text-center">© 2024 AryoPath. All rights reserved.</p>
+          </div>
+        </div>
+      </div>
     </>
   );
 };
 
-export default Header;
+/* ---------- main component ---------- */
+export default function Header() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const { user, logout } = useUser();
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <style jsx>{`
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slide-in-right {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+        .animate-slide-in-right {
+          animation: slide-in-right 0.3s ease-out;
+        }
+        .ease-out-cubic {
+          transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+      `}</style>
+
+      <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-white/90 border-b border-gray-200/80 shadow-sm">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Top Bar */}
+          <div className="flex items-center justify-between h-20">
+            <Logo />
+
+            {/* Desktop Search */}
+            <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
+              <SearchBar />
+            </div>
+
+            {/* Right Section */}
+            <div className="flex items-center gap-4">
+              <CartIcon />
+              <DesktopNav user={user} onLogin={() => setAuthOpen(true)} onLogout={logout} />
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setMenuOpen(true)}
+                className="lg:hidden p-2 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <Menu size={24} className="text-gray-700" />
+              </button>
+            </div>
+          </div>
+
+          {/* Bottom Navigation Bar */}
+          <nav className="hidden lg:block border-t border-gray-100/80">
+            <div className="flex items-center justify-between py-4">
+              <ul className="flex items-center gap-8">
+                {NAV_LINKS.map(({ label, href }) => (
+                  <li key={label}>
+                    <Link
+                      to={href}
+                      className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors duration-200 
+                                 relative group"
+                    >
+                      {label}
+                      <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full 
+                                       transition-all duration-300"></span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Quick Actions */}
+              <div className="flex items-center gap-4 text-sm">
+                <Link to="#" className="text-gray-600 hover:text-blue-600 transition-colors">Help Center</Link>
+                <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                <a href="tel:+911234567890" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
+                  📞 +91 12345 67890
+                </a>
+              </div>
+            </div>
+          </nav>
+        </div>
+      </header>
+
+      {/* Mobile Search Bar - shown on mobile below header */}
+      <div className="lg:hidden bg-white/90 backdrop-blur-xl border-b border-gray-200/80 px-4 py-3">
+        <SearchBar />
+      </div>
+
+      <MobileDrawer
+        open={menuOpen}
+        user={user}
+        onLogin={() => setAuthOpen(true)}
+        onLogout={logout}
+        onClose={() => setMenuOpen(false)}
+      />
+
+      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
+    </>
+  );
+}
