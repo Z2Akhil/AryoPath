@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink,Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Menu, X, Search, User, LogOut, ChevronDown } from 'lucide-react';
 import { useUser } from '../context/userContext';
 import AuthModal from './AuthModal';
@@ -8,8 +8,8 @@ import AuthModal from './AuthModal';
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
   { label: 'Popular Packages', href: '/packages' },
-  { label: 'All Tests', href: '/tests' },
   { label: 'Offers', href: '/offers' },
+  { label: 'All Tests', href: '/tests' },
   { label: 'About Us', href: '/about' },
 ];
 
@@ -17,7 +17,7 @@ const Logo = () => (
   <Link to="/" className="flex items-center gap-3 group cursor-pointer">
     <div className="flex items-center gap-2">
       <img
-        src="./lo.jpg"
+        src="./logo.jpg"
         alt="Company Logo"
         className="w-10 h-10 object-contain"
       />
@@ -112,7 +112,7 @@ const MobileDrawer = ({ open, user, onLogin, onLogout, onClose }) => {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <img
-                  src="./lo.jpg"
+                  src="./logo.jpg"
                   alt="Company Logo"
                   className="w-10 h-10 object-contain"
                 />

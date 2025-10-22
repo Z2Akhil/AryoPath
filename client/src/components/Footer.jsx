@@ -12,7 +12,7 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <img
-                  src="./lo.jpg"
+                  src="./logo.jpg"
                   alt="Company Logo"
                   className="w-10 h-10 object-contain rounded-full"
                 />

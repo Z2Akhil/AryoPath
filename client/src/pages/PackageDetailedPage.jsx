@@ -73,7 +73,6 @@ const PackageDetailedPage = () => {
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">
             Included Tests ({pkg.childs.length})
           </h2>
-
           <div className="space-y-6">
             {Object.keys(groupedTests).map((category) => (
               <div key={category}>

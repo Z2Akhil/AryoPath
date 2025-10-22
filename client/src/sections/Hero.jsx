@@ -10,13 +10,13 @@ const Hero = () => {
         </p>
         <div className="flex flex-wrap gap-4">
           <a 
-            href="#" 
+            href="/tests" 
             className="bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-800 transition"
           >
             Book a Test
           </a>
           <a 
-            href="#" 
+            href="/offers" 
             className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition"
           >
             View Offers
@@ -25,7 +25,7 @@ const Hero = () => {
       </div>
       <div className="md:w-1/2 h-64 md:h-auto min-h-[300px]">
         <img 
-          src="https://plus.unsplash.com/premium_photo-1661281397737-9b5d75b52c66?q=80&w=1470&auto=format=fit=crop" 
+          src="./public/hero.png" 
           alt="Lab technician" 
           className="w-full h-full object-cover" 
         />
