@@ -1,76 +1,114 @@
 // src/components/LoginForm.jsx
-
 import React, { useState } from 'react';
+import { Mail, Lock } from 'lucide-react';
 import { useUser } from '../context/userContext';
+import ForgotPasswordModal from './ForgotPasswordModal'; // Import the modal
 
 const LoginForm = ({ onClose, onSwitchToRegister }) => {
   const { login } = useUser();
-  const [phone, setPhone] = useState('9999999999');
-  const [password, setPassword] = useState('password123');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false); // State for modal
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
     try {
       await login(phone, password);
-      onClose(); // Close modal on successful login
+      onClose();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Login failed.");
+    } finally {
+       setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Text is dark red for errors */}
-      {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-      
-      <div>
-        {/* Text is dark gray */}
-        <label className="block mb-2 text-sm font-medium text-gray-700">Phone Number:</label>
-        <input
-          type="text"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          /* MODIFIED: Slightly transparent inputs
-            - bg-white/50: Makes the input field blend with the blur
-            - text-gray-900: Dark text
-          */
-          className="w-full px-3 py-2 bg-white/50 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-          required
-        />
-      </div>
-      
-      <div>
-        {/* Text is dark gray */}
-        <label className="block mb-2 text-sm font-medium text-gray-700">Password:</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          // MODIFIED: Same styles as the input above
-          className="w-full px-3 py-2 bg-white/50 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-          required
-        />
-      </div>
-      
-      {/* Button is blue */}
-      <button type="submit" className="w-full bg-blue-500 text-white py-2.5 rounded-md hover:bg-blue-600 font-medium">
-        Login
-      </button>
-      
-      {/* Link is blue */}
-      <p className="text-sm text-center text-gray-600">
-        Don't have an account?{' '}
+    <>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+
+        {/* Phone Input */}
+        <div className="relative">
+          <label className="sr-only">Phone Number</label>
+          <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+            <Mail className="h-5 w-5 text-gray-400" />
+          </span>
+          <input
+            type="text"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Enter your phone number"
+            className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+
+        {/* Password Input */}
+        <div className="relative">
+          <label className="sr-only">Password</label>
+           <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+            <Lock className="h-5 w-5 text-gray-400" />
+          </span>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+             placeholder="Enter your password"
+            className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+
+        {/* Forgot Password Button */}
+         <div className="text-right text-sm">
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)} // Open Forgot Password Modal
+              className="font-medium text-blue-600 hover:text-blue-500"
+              disabled={isSubmitting}
+            >
+              Forgot password?
+            </button>
+         </div>
+
+        {/* Login Button (Blue) */}
         <button
-          type="button"
-          onClick={onSwitchToRegister}
-          className="text-blue-600 hover:underline font-medium"
+          type="submit"
+          className={`w-full text-white py-3 rounded-md font-semibold text-lg transition duration-200 ${
+              isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+          disabled={isSubmitting}
         >
-          Register
+          {isSubmitting ? 'Logging in...' : 'Login Now'}
         </button>
-      </p>
-    </form>
+
+        {/* Switch to Register Link */}
+        <p className="text-sm text-center text-gray-600">
+          Not a member?{' '}
+          <button
+            type="button"
+            onClick={onSwitchToRegister}
+            className="text-blue-600 hover:underline font-semibold"
+            disabled={isSubmitting}
+          >
+            Signup Now
+          </button>
+        </p>
+      </form>
+
+       {/* Conditionally render Forgot Password Modal */}
+       {showForgotPassword && (
+         <ForgotPasswordModal
+           onClose={() => setShowForgotPassword(false)}
+         />
+       )}
+    </>
   );
 };
 
