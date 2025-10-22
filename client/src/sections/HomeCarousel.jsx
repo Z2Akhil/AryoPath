@@ -1,10 +1,10 @@
 import Slider from 'react-slick';
 const carouselItems = [
-  { id: 1, title: 'Free Home Pickup', img: './public/carousel/homePickup.png' },
-  { id: 2, title: 'Online Reports', img: './public/carousel/onlineReport.png' },
-  { id: 3, title: 'NABL Certified Labs', img: './public/carousel/nablCertified.png' },
-  { id: 4, title: 'Full Body Checkups', img: './public/carousel/fullBodyCheckup.png' },
-  { id: 5, title: 'Special Offers', img: './public/carousel/specialOffer.png' },
+  { id: 1, title: 'Free Home Pickup', img: '/carousel/homePickup.png' },
+  { id: 2, title: 'Online Reports', img: '/carousel/onlineReport.png' },
+  { id: 3, title: 'NABL Certified Labs', img: '/carousel/nablCertified.png' },
+  { id: 4, title: 'Full Body Checkups', img: '/carousel/fullBodyCheckup.png' },
+  { id: 5, title: 'Special Offers', img: '/carousel/specialOffer.png' },
 ];
 
 const HomeCarousel = () => {
