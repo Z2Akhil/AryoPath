@@ -25,7 +25,7 @@ const Hero = () => {
       </div>
       <div className="md:w-1/2 h-64 md:h-auto min-h-[300px]">
         <img 
-          src="./public/hero.png" 
+          src="/hero.png" 
           alt="Lab technician" 
           className="w-full h-full object-cover" 
         />
