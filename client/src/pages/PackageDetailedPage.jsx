@@ -1,7 +1,44 @@
 import { AlertCircle, Home, Percent, Calendar, CreditCard, CheckCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import Form from "../components/Form.jsx";
+import { getProducts } from "../api/productApi"; // your getProducts function
 
-const PackageDetailedPage = ({ pkg }) => {
+
+const PackageDetailedPage = () => {
+  const { code } = useParams();
+  const [openCategory, setOpenCategory] = useState(null);
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        setLoading(true);
+        const data = await getProducts("ALL"); // fetch ALL products
+        setPackages(data || []);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to fetch packages");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPackages();
+  }, []);
+
+  if (loading) {
+    return <div className="text-center py-20 text-gray-500">Loading packages...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-20 text-red-500">{error}</div>;
+  }
+
+  const pkg = packages.find((p) => p.code === code);
+
   if (!pkg) {
     return (
       <div className="text-center py-20 text-gray-500">
@@ -61,22 +98,40 @@ const PackageDetailedPage = ({ pkg }) => {
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">
             Included Tests ({pkg.childs?.length || 0})
           </h2>
-          <div className="space-y-6">
+          <div className="space-y-4">
             {Object.keys(groupedTests).map((category) => (
-              <div key={category}>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{category}</h3>
-                <ul className="list-disc list-inside text-gray-700 space-y-1">
-                  {groupedTests[category].map((test, idx) => (
-                    <li key={idx}>{test}</li>
-                  ))}
-                </ul>
+              <div key={category} className="border rounded-lg overflow-hidden">
+                {/* Accordion Header */}
+                <button
+                  onClick={() =>
+                    setOpenCategory(openCategory === category ? null : category)
+                  }
+                  className="w-full flex justify-between items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 focus:outline-none"
+                >
+                  <span className="text-m font-medium text-gray-900">{category}</span>
+                  <span
+                    className={`transform transition-transform duration-300 ${openCategory === category ? "rotate-180" : ""
+                      }`}
+                  >
+                    ▼
+                  </span>
+                </button>
+
+                {/* Accordion Content */}
+                {openCategory === category && (
+                  <ul className="list-disc list-inside text-gray-700 px-6 py-3 bg-white space-y-1">
+                    {groupedTests[category].map((test, idx) => (
+                      <li key={idx}>{test}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             ))}
           </div>
         </div>
 
         {/* RIGHT: Booking Form */}
-        <div className="bg-white rounded-2xl shadow p-8 border border-gray-200 h-fit">
+        <div className="bg-white rounded-2xl shadow  border border-gray-200 h-fit">
           <Form pkgName={pkg.name} pkgRate={pkg.rate?.offerRate} />
         </div>
       </div>

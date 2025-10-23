@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import PackageCard from "../components/cards/PackageCard";
 import { getProducts } from "../api/productApi"; // your getProducts function
 
-const PackagePage = () => {
+const PackagePage = ({limit}) => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,6 +32,8 @@ const PackagePage = () => {
     return <div className="text-center py-20 text-red-500">{error}</div>;
   }
 
+   const displayedPackages = limit ? packages.slice(0, limit) : packages;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
       <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
@@ -39,8 +41,8 @@ const PackagePage = () => {
       </h1>
 
       <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {packages.length > 0 ? (
-          packages.map((pkg, index) => <PackageCard key={index} pkg={pkg} />)
+        {displayedPackages.length > 0 ? (
+          displayedPackages.map((pkg, index) => <PackageCard key={index} pkg={pkg} />)
         ) : (
           <p className="text-gray-500 col-span-full text-center">
             No packages available.

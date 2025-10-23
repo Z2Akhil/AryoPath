@@ -25,7 +25,7 @@ function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/packages" element={<PackagePage />} />
-              <Route path="/packages/:id" element={<PackageDetailedPage />} />
+              <Route path="/packages/:code" element={<PackageDetailedPage />} />
               <Route path="/tests" element={<TestPage />} />
               <Route path="/offers" element={<OfferPage />} />
               <Route path="/account" element={<AccountPage />} />

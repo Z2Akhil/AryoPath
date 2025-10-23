@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const PackageCard = ({ pkg }) => {
   // ✅ Destructure props safely with defaults
@@ -14,8 +15,8 @@ const PackageCard = ({ pkg }) => {
     imageMaster = [],
   } = pkg;
 
- const imgSrc = imageLocation || imageMaster?.[0]?.imgLocations || "/packagePic.png";
- 
+  const imgSrc = imageLocation || imageMaster?.[0]?.imgLocations || "/packagePic.png";
+
   return (
     <div className="w-full sm:max-w-sm bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition">
       {/* Image Section */}
@@ -76,9 +77,12 @@ const PackageCard = ({ pkg }) => {
               ₹{rate?.offerRate || rate?.payAmt}
             </p>
           </div>
-          <button className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 transition text-sm sm:text-base w-full sm:w-auto">
+          <Link
+            to={`/packages/${pkg.code}`}
+            className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 transition text-sm sm:text-base w-full sm:w-auto inline-block text-center"
+          >
             Book Now
-          </button>
+          </Link>
         </div>
 
         {/* Footer */}
