@@ -12,7 +12,12 @@ const PackagePage = ({limit}) => {
       try {
         setLoading(true);
         const data = await getProducts("PROFILE"); // fetch PROFILE products
-        setPackages(data || []);
+
+        const uniquePackages=Array.from(
+          new Map(data.map((pkg)=>[pkg.code,pkg])).values()
+        )
+        setPackages(uniquePackages || []);
+        
       } catch (err) {
         console.error(err);
         setError("Failed to fetch packages");

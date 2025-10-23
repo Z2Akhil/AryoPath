@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useCart } from "../../context/CartContext";
 
 const TestCard = ({ test }) => {
-  // Destructure test props with default values
   const {
     name = "Unknown Test",
     code = "",
@@ -13,7 +12,6 @@ const TestCard = ({ test }) => {
     fasting = "N/A",
   } = test;
 
-  // Calculate discount if any
   const discount =
     rate.b2C && parseFloat(rate.b2C) > parseFloat(rate.offerRate)
       ? Math.round(
@@ -23,15 +21,18 @@ const TestCard = ({ test }) => {
         )
       : 0;
 
-  // Cart state
-  const [inCart, setInCart] = useState(false);
+  const { cart, addToCart, removeFromCart } = useCart();
+
+  const inCart = cart.some((item) => item.code === code);
 
   return (
     <div className="bg-white shadow-lg rounded-xl p-5 max-w-sm w-full flex flex-col justify-between hover:shadow-xl transition">
       {/* Header: Test Name & Category */}
       <div className="mb-3">
         <h2 className="text-lg font-bold text-gray-900">{name}</h2>
-        <p className="text-sm text-gray-500">{code} • {category}</p>
+        <p className="text-sm text-gray-500">
+          {code} • {category}
+        </p>
       </div>
 
       {/* Specimen / Units / Fasting Info */}
@@ -71,7 +72,7 @@ const TestCard = ({ test }) => {
 
         {/* Add to Cart / Remove Button */}
         <button
-          onClick={() => setInCart(!inCart)}
+          onClick={() => (inCart ? removeFromCart(code) : addToCart(test))}
           className={`font-medium px-5 py-2 rounded text-sm transition ${
             inCart
               ? "bg-red-500 text-white hover:bg-red-600"
@@ -83,7 +84,9 @@ const TestCard = ({ test }) => {
       </div>
 
       {/* Footer: Booked Count */}
-      <p className="text-xs text-gray-500">Booked by {bookedCount} patients</p>
+      <p className="text-xs text-gray-500">
+        Booked by {bookedCount} patients
+      </p>
     </div>
   );
 };
