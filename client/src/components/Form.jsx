@@ -1,9 +1,16 @@
 import React, { useState } from "react";
+import { checkPincode } from "../api/pinCodeAvailabilityApi"; // adjust the path if needed
 
 const Form = ({ pkgName, pkgRate }) => {
   const [numPersons, setNumPersons] = useState(1);
-  const [beneficiaries, setBeneficiaries] = useState([{ name: "", age: "", gender: "" }]);
+  const [beneficiaries, setBeneficiaries] = useState([
+    { name: "", age: "", gender: "" },
+  ]);
+  const [pincode, setPincode] = useState("");
+  const [pincodeStatus, setPincodeStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
 
+  
   const handlePersonsChange = (e) => {
     const count = parseInt(e.target.value);
     setNumPersons(count);
@@ -18,6 +25,59 @@ const Form = ({ pkgName, pkgRate }) => {
     setBeneficiaries(updated);
   };
 
+
+  const handlePincodeCheck = async () => {
+  if (!pincode || pincode.length !== 6) {
+    setPincodeStatus("⚠️ Please enter a valid 6-digit pincode.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setPincodeStatus(null);
+
+    const response = await checkPincode(pincode);
+    console.log("Pincode API Response:", response);
+
+    // Check for known success cases
+    if (response?.status === "Y" && response?.respId === "RES00001") {
+      setPincodeStatus("✅ Service is available in your area!");
+    }
+    // Invalid API key
+    else if (response?.respId === "RES01004") {
+      setPincodeStatus("❌ Invalid API Key. Please check your configuration.");
+    }
+    // Area not served
+    else if (response?.respId === "RES02001") {
+      setPincodeStatus("❌ Sorry! Currently we are not serving this pincode.");
+    }
+    // Invalid product type or others
+    else if (response?.respId === "RES02005") {
+      setPincodeStatus("⚠️ Invalid product type. Please contact support.");
+    }
+    // Unknown but valid 200 response
+    else if (response?.respId) {
+      setPincodeStatus(`⚠️ ${response?.response || "Unexpected response received."}`);
+    } 
+    // Server or validation errors
+    else {
+      setPincodeStatus("❌ Unexpected response from server. Please try again.");
+    }
+  } catch (error) {
+    console.error("Pincode check failed:", error);
+    if (error.response?.status === 400) {
+      setPincodeStatus("❌ Invalid request. Please check the pincode format.");
+    } else if (error.response?.status === 500) {
+      setPincodeStatus("❌ Server error. Please try again later.");
+    } else {
+      setPincodeStatus("❌ Network error. Please check your connection.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
+
   return (
     <div className="w-full bg-white border border-gray-300 rounded-2xl p-6 shadow-sm">
       {/* Heading */}
@@ -25,8 +85,12 @@ const Form = ({ pkgName, pkgRate }) => {
         {pkgName}
       </h3>
 
-      <h2 className="text-2xl font-bold text-gray-800 mt-2">Book Now, Pay Later</h2>
-      <p className="text-green-700 font-medium mb-2">Simple Process, No Spam Calls</p>
+      <h2 className="text-2xl font-bold text-gray-800 mt-2">
+        Book Now, Pay Later
+      </h2>
+      <p className="text-green-700 font-medium mb-2">
+        Simple Process, No Spam Calls
+      </p>
 
       {/* Number of Persons */}
       <select
@@ -39,7 +103,7 @@ const Form = ({ pkgName, pkgRate }) => {
             {i + 1}{" "}
             {i + 1 === 1
               ? `(₹${pkgRate})`
-              : `(₹${Math.round(pkgRate - 100)} per person)`}
+              : `(₹${Math.round(pkgRate)} per person)`}
           </option>
         ))}
       </select>
@@ -52,12 +116,34 @@ const Form = ({ pkgName, pkgRate }) => {
         <input
           type="text"
           placeholder="Pincode"
+          value={pincode}
+          onChange={(e) => setPincode(e.target.value)}
           className="w-1/2 border border-gray-400 rounded px-3 py-2 text-sm"
         />
-        <button className="w-1/2 border border-gray-400 rounded bg-gray-100 hover:bg-gray-200 text-sm font-medium">
-          Check Availability
+        <button
+          type="button"
+          onClick={handlePincodeCheck}
+          disabled={loading}
+          className={`w-1/2 border border-gray-400 rounded bg-gray-100 hover:bg-gray-200 text-sm font-medium ${
+            loading ? "opacity-60 cursor-not-allowed" : ""
+          }`}
+        >
+          {loading ? "Checking..." : "Check Availability"}
         </button>
       </div>
+
+      {/* Pincode Status Message */}
+      {pincodeStatus && (
+        <p
+          className={`text-sm mb-3 ${
+            pincodeStatus.includes("✅")
+              ? "text-green-600"
+              : "text-red-600"
+          }`}
+        >
+          {pincodeStatus}
+        </p>
+      )}
 
       {/* Appointment Date & Time */}
       <select className="w-full border border-gray-400 rounded px-3 py-2 text-sm mb-2">

@@ -1,5 +1,5 @@
 import React from "react";
-
+import { Link } from "react-router-dom";
 const OfferCard = ({ pkg }) => {
   const { name, childs = [], rate = {}, testCount = 0 } = pkg;
 
@@ -49,9 +49,12 @@ const OfferCard = ({ pkg }) => {
         </div>
 
         {/* Right side: Book button */}
-        <button className="bg-green-600 text-white font-medium px-5 py-2 rounded hover:bg-green-700 transition text-sm">
-          Book
-        </button>
+        <Link
+  to={`/packages/${pkg.code}`}
+  className="bg-green-600 text-white font-medium px-5 py-2 rounded hover:bg-green-700 transition text-sm"
+>
+  Book
+</Link>
       </div>
     </div>
   );

@@ -2,7 +2,10 @@ import { dummyCatalogData } from '../data/dummyData';
 
 import Hero from '../sections/Hero';
 import HomeCarousel from '../sections/HomeCarousel';
-import ProductGrid from '../sections/ProductGrid';
+import PackagePage from './PackagePage';
+import OfferPage from './OfferPage';
+import TestPage from './TestPage';
+import { Link } from 'react-router-dom';
 
 const LandingPage = () => {
   const offers = dummyCatalogData.master.offer;
@@ -11,25 +14,38 @@ const LandingPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-
       <Hero />
       <HomeCarousel />
-      <ProductGrid
-        title="Top Offers"
-        products={offers}
-        seeAllLink="#"
-      />
-      <ProductGrid
-        title="Popular Packages"
-        products={packages}
-        seeAllLink="#"
-      />
-      <ProductGrid
-        title="Featured Tests"
-        products={tests}
-        seeAllLink="#"
-      />
 
+      {/* Packages Section */}
+      <div className="mb-8">
+        <PackagePage limit={4} packages={packages} />
+        <div className="text-right ">
+          <Link to="/packages" className="text-blue-600 hover:underline font-medium">
+            See More
+          </Link>
+        </div>
+      </div>
+
+      {/* Offers Section */}
+      <div className="mb-8">
+        <OfferPage limit={8} offers={offers} />
+        <div className="text-right">
+          <Link to="/offers" className="text-blue-600 hover:underline font-medium">
+            See More
+          </Link>
+        </div>
+      </div>
+
+      {/* Tests Section */}
+      <div className="mb-8">
+        <TestPage limit={8} tests={tests} />
+        <div className="text-right">
+          <Link to="/tests" className="text-blue-600 hover:underline font-medium">
+            See More
+          </Link>
+        </div>
+      </div>
     </div>
   );
 };
