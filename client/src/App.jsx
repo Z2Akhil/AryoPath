@@ -14,10 +14,12 @@ import CartPage from '@/pages/CartPage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import OrderPage from '@/pages/OrderPage';
+import { CartProvider } from './context/CartContext';
 
 function App() {
   return (
     <UserProvider>
+      <CartProvider>
       <Router>
         <div className="min-h-screen flex flex-col">
           <Header />
@@ -42,6 +44,7 @@ function App() {
           <Footer />
         </div>
       </Router>
+      </CartProvider>
     </UserProvider>
   );
 }

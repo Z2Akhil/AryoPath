@@ -12,7 +12,12 @@ const OfferPage = ({limit}) => {
       try {
         setLoading(true);
         const data = await getProducts("OFFER"); // fetch OFFER products
-        setOffers(data || []);
+
+        const uniqueOffers = Array.from(
+          new Map(data.map((offer) => [offer.code, offer])).values()
+        );
+        setOffers(uniqueOffers || []);
+
       } catch (err) {
         console.error(err);
         setError("Failed to fetch offers");

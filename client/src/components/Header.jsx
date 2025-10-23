@@ -3,6 +3,8 @@ import { NavLink,Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Menu, X, Search, User, LogOut, ChevronDown } from 'lucide-react';
 import { useUser } from '../context/userContext';
 import AuthModal from './AuthModal';
+import { useCart } from "../context/CartContext";
+
 
 /* ---------- config ---------- */
 const NAV_LINKS = [
@@ -44,7 +46,7 @@ const SearchBar = () => (
   </div>
 );
 
-const CartIcon = ({ count = 2 }) => (
+const CartIcon = ({count}) => (
   <Link to="/cart" className="relative group cursor-pointer">
     <div className="p-2 rounded-full bg-gray-100 group-hover:bg-blue-100 transition-colors duration-300">
       <ShoppingCart className="w-6 h-6 text-gray-700 group-hover:text-blue-600 transition-colors duration-300" />
@@ -197,6 +199,8 @@ export default function Header() {
   const [authOpen, setAuthOpen] = useState(false);
   const { user, logout } = useUser();
   const navigate = useNavigate();
+  const { cart } = useCart();
+
 
   return (
     <>
@@ -233,7 +237,7 @@ export default function Header() {
 
             {/* Right Section */}
             <div className="flex items-center gap-4">
-              <CartIcon />
+              <CartIcon count={cart.length} />
               <DesktopNav user={user} onLogin={() => setAuthOpen(true)} onLogout={logout} />
 
               {/* Mobile Menu Button */}
