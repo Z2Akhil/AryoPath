@@ -1,5 +1,6 @@
 import { useCart } from "../context/CartContext";
 import { Trash2, ShoppingCart } from "lucide-react";
+import Form from "../components/Form"; // import your form component
 
 const CartPage = () => {
   const { cart, removeFromCart, clearCart } = useCart();
@@ -32,20 +33,12 @@ const CartPage = () => {
                 className="flex justify-between items-center bg-white px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition"
               >
                 <div className="flex-1 pr-3">
-                  <h3 className="font-medium text-gray-900 text-base">
-                    {item.name}
-                  </h3>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Code: {item.code || "N/A"}
-                  </p>
+                  <h3 className="font-medium text-gray-900 text-base">{item.name}</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">Code: {item.code || "N/A"}</p>
                   <p className="text-sm text-gray-700 mt-1">
-                    <span className="font-semibold text-blue-700">
-                      ₹{item.rate.offerRate}
-                    </span>{" "}
+                    <span className="font-semibold text-blue-700">₹{item.rate.offerRate}</span>{" "}
                     {item.rate.b2C && item.rate.b2C !== item.rate.offerRate && (
-                      <span className="text-gray-400 line-through text-xs ml-1">
-                        ₹{item.rate.b2C}
-                      </span>
+                      <span className="text-gray-400 line-through text-xs ml-1">₹{item.rate.b2C}</span>
                     )}
                   </p>
                 </div>
@@ -59,44 +52,39 @@ const CartPage = () => {
                 </button>
               </div>
             ))}
+
+            {/* Order Summary Below Items */}
+            <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">Order Summary</h2>
+
+              <div className="space-y-1 border-b pb-3">
+                {cart.map((item) => (
+                  <div key={item.code} className="flex justify-between text-sm text-gray-700">
+                    <span className="truncate w-44">{item.name}</span>
+                    <span>₹{item.rate.offerRate}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-between items-center mt-4">
+                <p className="text-base font-medium text-gray-800">Total</p>
+                <p className="text-base font-semibold text-blue-700">₹{total.toFixed(2)}</p>
+              </div>
+
+              <div className="mt-5">
+                <button
+                  onClick={clearCart}
+                  className="w-full bg-gray-300 text-gray-800 font-medium px-4 py-2 rounded-md hover:bg-gray-200 transition text-sm"
+                >
+                  Clear Cart
+                </button>
+              </div>
+            </div>
           </div>
 
-          {/* Right: Summary Section */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 h-fit sticky top-24">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">
-              Order Summary
-            </h2>
-
-            <div className="space-y-1 border-b pb-3">
-              {cart.map((item) => (
-                <div
-                  key={item.code}
-                  className="flex justify-between text-sm text-gray-700"
-                >
-                  <span className="truncate w-44">{item.name}</span>
-                  <span>₹{item.rate.offerRate}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-between items-center mt-4">
-              <p className="text-base font-medium text-gray-800">Total</p>
-              <p className="text-base font-semibold text-blue-700">
-                ₹{total.toFixed(2)}
-              </p>
-            </div>
-
-            <div className="mt-5 flex flex-col gap-2.5">
-              <button
-                onClick={clearCart}
-                className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition text-sm"
-              >
-                Clear Cart
-              </button>
-              <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm">
-                Proceed to Checkout
-              </button>
-            </div>
+          {/* Right: Form Section */}
+          <div className="lg:col-span-1">
+            <Form pkgName="YOUR TEST PACKAGE" pkgRate={total} />
           </div>
         </div>
       )}
