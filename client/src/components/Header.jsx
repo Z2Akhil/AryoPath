@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Menu, X, Search, User, LogOut, ChevronDown } from 'lucide-react';
 import { useUser } from '../context/userContext';
+import { useToast } from '../context/ToastContext';
 import AuthModal from './AuthModal';
+import ConfirmationDialog from './ConfirmationDialog';
 
 /* ---------- config ---------- */
 const NAV_LINKS = [
@@ -59,7 +61,7 @@ const CartIcon = ({ count = 2 }) => (
 );
 
 /* ---------- desktop nav ---------- */
-const DesktopNav = ({ user, onLogin, onLogout }) => (
+const DesktopNav = ({ user, onLogin, onLogoutConfirm }) => (
   <div className="hidden lg:flex items-center gap-4">
     {user ? (
       <div className="flex items-center gap-3">
@@ -71,7 +73,7 @@ const DesktopNav = ({ user, onLogin, onLogout }) => (
           <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
         </Link>
         <button
-          onClick={onLogout}
+          onClick={onLogoutConfirm}
           className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 
                      rounded-lg transition-all duration-300"
         >
@@ -92,7 +94,7 @@ const DesktopNav = ({ user, onLogin, onLogout }) => (
 );
 
 /* ---------- mobile drawer ---------- */
-const MobileDrawer = ({ open, user, onLogin, onLogout, onClose }) => {
+const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose }) => {
   if (!open) return null;
 
   return (
@@ -144,7 +146,7 @@ const MobileDrawer = ({ open, user, onLogin, onLogout, onClose }) => {
                   </div>
                 </div>
                 <button
-                  onClick={() => { onLogout(); onClose(); }}
+                  onClick={() => { onLogoutConfirm(); onClose(); }}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-lg 
                              hover:bg-red-100 transition-colors font-medium"
                 >
@@ -195,8 +197,16 @@ const MobileDrawer = ({ open, user, onLogin, onLogout, onClose }) => {
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const { user, logout } = useUser();
+  const { success } = useToast();
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    setLogoutConfirmOpen(false);
+    success('You have been logged out successfully');
+  };
 
   return (
     <>
@@ -234,7 +244,11 @@ export default function Header() {
             {/* Right Section */}
             <div className="flex items-center gap-4">
               <CartIcon />
-              <DesktopNav user={user} onLogin={() => setAuthOpen(true)} onLogout={logout} />
+              <DesktopNav 
+                user={user} 
+                onLogin={() => setAuthOpen(true)} 
+                onLogoutConfirm={() => setLogoutConfirmOpen(true)} 
+              />
 
               {/* Mobile Menu Button */}
               <button
@@ -287,11 +301,22 @@ export default function Header() {
         open={menuOpen}
         user={user}
         onLogin={() => setAuthOpen(true)}
-        onLogout={logout}
+        onLogoutConfirm={() => setLogoutConfirmOpen(true)}
         onClose={() => setMenuOpen(false)}
       />
 
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
+
+      <ConfirmationDialog
+        isOpen={logoutConfirmOpen}
+        onClose={() => setLogoutConfirmOpen(false)}
+        onConfirm={handleLogout}
+        title="Confirm Logout"
+        message="Are you sure you want to logout from your account?"
+        confirmText="Logout"
+        cancelText="Cancel"
+        type="warning"
+      />
     </>
   );
 }
