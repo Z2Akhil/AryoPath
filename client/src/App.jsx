@@ -16,9 +16,11 @@ import CartPage from '@/pages/CartPage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import OrderPage from '@/pages/OrderPage';
+import { CartProvider } from './context/CartContext';
 
 function App() {
   return (
+<<<<<<< HEAD
     <ToastProvider>
       <UserProvider>
         <Router>
@@ -48,6 +50,36 @@ function App() {
         </Router>
       </UserProvider>
     </ToastProvider>
+=======
+    <UserProvider>
+      <CartProvider>
+      <Router>
+        <div className="min-h-screen flex flex-col">
+          <Header />
+          <main className="grow">
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/packages" element={<PackagePage />} />
+              <Route path="/packages/:code" element={<PackageDetailedPage />} />
+              <Route path="/tests" element={<TestPage />} />
+              <Route path="/offers" element={<OfferPage />} />
+              <Route path="/account" element={<AccountPage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/orders" element={<OrderPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/popular-packages" element={<Navigate to="/packages" replace />} />
+              <Route path="/all-tests" element={<Navigate to="/tests" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </Router>
+      </CartProvider>
+    </UserProvider>
+>>>>>>> 3a9f27299d736537589b4dff24385f0683926db4
   );
 }
 

@@ -1,17 +1,19 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink,Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Menu, X, Search, User, LogOut, ChevronDown } from 'lucide-react';
 import { useUser } from '../context/userContext';
 import { useToast } from '../context/ToastContext';
 import AuthModal from './AuthModal';
 import ConfirmationDialog from './ConfirmationDialog';
+import { useCart } from "../context/CartContext";
+
 
 /* ---------- config ---------- */
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
   { label: 'Popular Packages', href: '/packages' },
-  { label: 'All Tests', href: '/tests' },
   { label: 'Offers', href: '/offers' },
+  { label: 'All Tests', href: '/tests' },
   { label: 'About Us', href: '/about' },
 ];
 
@@ -19,7 +21,7 @@ const Logo = () => (
   <Link to="/" className="flex items-center gap-3 group cursor-pointer">
     <div className="flex items-center gap-2">
       <img
-        src="./lo.jpg"
+        src="./logo.jpg"
         alt="Company Logo"
         className="w-10 h-10 object-contain"
       />
@@ -46,7 +48,7 @@ const SearchBar = () => (
   </div>
 );
 
-const CartIcon = ({ count = 2 }) => (
+const CartIcon = ({count}) => (
   <Link to="/cart" className="relative group cursor-pointer">
     <div className="p-2 rounded-full bg-gray-100 group-hover:bg-blue-100 transition-colors duration-300">
       <ShoppingCart className="w-6 h-6 text-gray-700 group-hover:text-blue-600 transition-colors duration-300" />
@@ -114,7 +116,7 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose }) => {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <img
-                  src="./lo.jpg"
+                  src="./logo.jpg"
                   alt="Company Logo"
                   className="w-10 h-10 object-contain"
                 />
@@ -201,6 +203,8 @@ export default function Header() {
   const { user, logout } = useUser();
   const { success } = useToast();
   const navigate = useNavigate();
+  const { cart } = useCart();
+
 
   const handleLogout = () => {
     logout();

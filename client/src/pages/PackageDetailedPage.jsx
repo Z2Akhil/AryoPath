@@ -1,60 +1,85 @@
 import { AlertCircle, Home, Percent, Calendar, CreditCard, CheckCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import Form from "../components/Form.jsx";
+import { getProducts } from "../api/productApi"; // your getProducts function
+
 
 const PackageDetailedPage = () => {
-  const pkg = {
-    name: "SMOKERS PANEL ADVANCED",
-    childs: [
-      { name: "APO B / APO A1 RATIO (APO B/A1)", groupName: "CARDIAC RISK MARKERS" },
-      { name: "APOLIPOPROTEIN - A1 (APO-A1)", groupName: "CARDIAC RISK MARKERS" },
-      { name: "APOLIPOPROTEIN - B (APO-B)", groupName: "CARDIAC RISK MARKERS" },
-      { name: "HIGH SENSITIVITY C-REACTIVE PROTEIN (HS-CRP)", groupName: "CARDIAC RISK MARKERS" },
-      { name: "Lipoprotein (a) [Lp(a)]", groupName: "CARDIAC RISK MARKERS" },
-      { name: "FASTING BLOOD SUGAR(GLUCOSE)", groupName: "DIABETES" },
-      { name: "HbA1c", groupName: "DIABETES" },
-      { name: "NICOTINE METABOLITES", groupName: "DRUGS" },
-      { name: "TOTAL CHOLESTEROL", groupName: "LIPID" },
-      { name: "HDL CHOLESTEROL - DIRECT", groupName: "LIPID" },
-      { name: "LDL CHOLESTEROL - DIRECT", groupName: "LIPID" },
-      { name: "25-OH VITAMIN D (TOTAL)", groupName: "VITAMINS" },
-    ],
-    rate: { b2C: "3000", offerRate: "2700" },
-    fasting: "CF",
-  };
+  const { code } = useParams();
+  const [openCategory, setOpenCategory] = useState(null);
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        setLoading(true);
+        const data = await getProducts("ALL"); // fetch ALL products
+        setPackages(data || []);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to fetch packages");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPackages();
+  }, []);
+
+  if (loading) {
+    return <div className="text-center py-20 text-gray-500">Loading packages...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-20 text-red-500">{error}</div>;
+  }
+
+  const pkg = packages.find((p) => p.code === code);
+
+  if (!pkg) {
+    return (
+      <div className="text-center py-20 text-gray-500">
+        No package data available.
+      </div>
+    );
+  }
 
   // Group tests by category
-  const groupedTests = pkg.childs.reduce((acc, test) => {
+  const groupedTests = pkg.childs?.reduce((acc, test) => {
     if (!acc[test.groupName]) acc[test.groupName] = [];
     acc[test.groupName].push(test.name);
     return acc;
-  }, {});
+  }, {}) || {};
 
   // Check for discount
-  const isDiscounted = parseFloat(pkg.rate.offerRate) < parseFloat(pkg.rate.b2C);
+  const isDiscounted =
+    pkg.rate &&
+    parseFloat(pkg.rate.offerRate) < parseFloat(pkg.rate.b2C);
 
   return (
     <div className="bg-gray-50 min-h-screen py-10">
       <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* LEFT: Package Details (2/3 width on large screens) */}
+        {/* LEFT: Package Details */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow p-8 border border-gray-200">
-          {/* Package Title */}
           <h1 className="text-3xl font-bold text-gray-900 mb-3">{pkg.name}</h1>
 
           {/* Price Section */}
-          <div className="flex items-baseline gap-2 mb-4">
-            <p className="text-2xl font-bold text-blue-600">₹{pkg.rate.offerRate}</p>
-            {isDiscounted && (
-              <>
-                <p className="text-gray-400 line-through">₹{pkg.rate.b2C}</p>
-                <span className="bg-green-100 text-green-700 text-sm font-semibold px-2 py-0.5 rounded-md">
-                  {Math.round(
-                    ((pkg.rate.b2C - pkg.rate.offerRate) / pkg.rate.b2C) * 100
-                  )}
-                  % OFF
-                </span>
-              </>
-            )}
-          </div>
+          {pkg.rate && (
+            <div className="flex items-baseline gap-2 mb-4">
+              <p className="text-2xl font-bold text-blue-600">₹{pkg.rate.offerRate}</p>
+              {isDiscounted && (
+                <>
+                  <p className="text-gray-400 line-through">₹{pkg.rate.b2C}</p>
+                  <span className="bg-green-100 text-green-700 text-sm font-semibold px-2 py-0.5 rounded-md">
+                    {Math.round(((pkg.rate.b2C - pkg.rate.offerRate) / pkg.rate.b2C) * 100)}% OFF
+                  </span>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Fasting / Precaution Info */}
           <div className="border border-gray-200 rounded-lg bg-gray-50 p-5 mb-8 flex items-start gap-3">
@@ -71,26 +96,43 @@ const PackageDetailedPage = () => {
 
           {/* Included Tests */}
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-            Included Tests ({pkg.childs.length})
+            Included Tests ({pkg.childs?.length || 0})
           </h2>
-
-          <div className="space-y-6">
+          <div className="space-y-4">
             {Object.keys(groupedTests).map((category) => (
-              <div key={category}>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{category}</h3>
-                <ul className="list-disc list-inside text-gray-700 space-y-1">
-                  {groupedTests[category].map((test, idx) => (
-                    <li key={idx}>{test}</li>
-                  ))}
-                </ul>
+              <div key={category} className="border rounded-lg overflow-hidden">
+                {/* Accordion Header */}
+                <button
+                  onClick={() =>
+                    setOpenCategory(openCategory === category ? null : category)
+                  }
+                  className="w-full flex justify-between items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 focus:outline-none"
+                >
+                  <span className="text-m font-medium text-gray-900">{category}</span>
+                  <span
+                    className={`transform transition-transform duration-300 ${openCategory === category ? "rotate-180" : ""
+                      }`}
+                  >
+                    ▼
+                  </span>
+                </button>
+
+                {/* Accordion Content */}
+                {openCategory === category && (
+                  <ul className="list-disc list-inside text-gray-700 px-6 py-3 bg-white space-y-1">
+                    {groupedTests[category].map((test, idx) => (
+                      <li key={idx}>{test}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             ))}
           </div>
         </div>
 
         {/* RIGHT: Booking Form */}
-        <div className="bg-white rounded-2xl shadow p-8 border border-gray-200 h-fit">
-          <Form pkgName={pkg.name} pkgRate={pkg.rate.offerRate} />
+        <div className="bg-white rounded-2xl shadow  border border-gray-200 h-fit">
+          <Form pkgName={pkg.name} pkgRate={pkg.rate?.offerRate} />
         </div>
       </div>
 

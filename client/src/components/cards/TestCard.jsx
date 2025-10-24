@@ -1,75 +1,51 @@
-import { useState } from "react";
+import { useCart } from "../../context/CartContext";
 
-const TestCard = () => {
-  const data = {
-    name: "FASTING BLOOD SUGAR",
-    code: "FBS",
-    aliasName: "",
-    type: "TEST",
-    childs: [],
-    rate: {
-      b2B: "15",
-      b2C: "97",
-      offerRate: "90",
-      id: "11313",
-      payAmt: "97",
-      payAmt1: "97",
-    },
-    testCount: "1",
-    benMin: "1",
-    benMultiple: "1",
-    benMax: "10",
-    payType: null,
-    serum: "FLUORIDE",
-    edta: "FLUORIDE",
-    urine: "FLUORIDE",
-    fluoride: "FLUORIDE",
-    fasting: "CF",
-    new: "",
-    diseaseGroup: "DIABETES",
-    units: "mg/dL",
-    volume: null,
-    normalVal: null,
-    groupName: "DIABETES",
-    margin: "25",
-    hc: null,
-    specimenType: "FLUORIDE",
-    testNames: "FASTING BLOOD SUGAR",
-    additionalTests: null,
-    imageLocation: null,
-    imageMaster: null,
-    validTo: null,
-    hcrInclude: 0,
-    ownPkg: "N",
-    bookedCount: "1026",
-    barcodes: null,
-    category: "DIABETES",
-  };
+const TestCard = ({ test }) => {
+  const {
+    name = "Unknown Test",
+    code = "",
+    rate = { b2B: "0", b2C: "0", offerRate: "0", payAmt: "0" },
+    bookedCount = "0",
+    category = "",
+    specimenType = "N/A",
+    units = "",
+    fasting = "N/A",
+  } = test;
 
-  const { name, code, rate, bookedCount, category, specimenType, units, fasting } = data;
-
-  // Calculate discount if any
   const discount =
     rate.b2C && parseFloat(rate.b2C) > parseFloat(rate.offerRate)
-      ? Math.round(((parseFloat(rate.b2C) - parseFloat(rate.offerRate)) / parseFloat(rate.b2C)) * 100)
+      ? Math.round(
+          ((parseFloat(rate.b2C) - parseFloat(rate.offerRate)) /
+            parseFloat(rate.b2C)) *
+            100
+        )
       : 0;
 
-  // Cart state
-  const [inCart, setInCart] = useState(false);
+  const { cart, addToCart, removeFromCart } = useCart();
+
+  const inCart = cart.some((item) => item.code === code);
 
   return (
     <div className="bg-white shadow-lg rounded-xl p-5 max-w-sm w-full flex flex-col justify-between hover:shadow-xl transition">
       {/* Header: Test Name & Category */}
       <div className="mb-3">
         <h2 className="text-lg font-bold text-gray-900">{name}</h2>
-        <p className="text-sm text-gray-500">{code} • {category}</p>
+        <p className="text-sm text-gray-500">
+          {code} • {category}
+        </p>
       </div>
 
       {/* Specimen / Units / Fasting Info */}
       <div className="text-sm text-gray-600 mb-4">
-        <p>Specimen: <span className="font-medium">{specimenType}</span></p>
-        <p>Units: <span className="font-medium">{units}</span></p>
-        <p>Fasting: <span className="font-medium">{fasting}</span></p>
+        <p>
+          Specimen: <span className="font-medium">{specimenType}</span>
+        </p>
+        <p>
+          Units: <span className="font-medium">{units}</span>
+        </p>
+        <p>
+          Fasting: <span className="font-medium">{fasting}</span>
+        </p>
       </div>
 
       {/* Price & Discount */}
@@ -96,7 +72,7 @@ const TestCard = () => {
 
         {/* Add to Cart / Remove Button */}
         <button
-          onClick={() => setInCart(!inCart)}
+          onClick={() => (inCart ? removeFromCart(code) : addToCart(test))}
           className={`font-medium px-5 py-2 rounded text-sm transition ${
             inCart
               ? "bg-red-500 text-white hover:bg-red-600"
@@ -108,7 +84,9 @@ const TestCard = () => {
       </div>
 
       {/* Footer: Booked Count */}
-      <p className="text-xs text-gray-500">Booked by {bookedCount} patients</p>
+      <p className="text-xs text-gray-500">
+        Booked by {bookedCount} patients
+      </p>
     </div>
   );
 };

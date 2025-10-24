@@ -12,7 +12,7 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <img
-                  src="./lo.jpg"
+                  src="./logo.jpg"
                   alt="Company Logo"
                   className="w-10 h-10 object-contain rounded-full"
                 />
@@ -46,31 +46,31 @@ export default function Footer() {
             <h4 className="text-lg font-semibold text-white">Quick Links</h4>
             <ul className="space-y-3 text-sm">
               <li>
-                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                <a href="/" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
                   Home
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                <a href="/packages" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
                   Popular Packages
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                <a href="/tests" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
                   All Tests
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                <a href="/offers" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
                   Special Offers
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
+                <a href="/about" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2">
                   <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
                   About Us
                 </a>
