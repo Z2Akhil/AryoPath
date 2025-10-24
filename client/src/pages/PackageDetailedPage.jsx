@@ -132,7 +132,7 @@ const PackageDetailedPage = () => {
 
         {/* RIGHT: Booking Form */}
         <div className="bg-white rounded-2xl shadow  border border-gray-200 h-fit">
-          <Form pkgName={pkg.name} pkgRate={pkg.rate?.offerRate} />
+          <Form pkgName={pkg.name} pkgRate={pkg.rate?.offerRate} pkgId={code} />
         </div>
       </div>
 
