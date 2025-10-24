@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider } from './context/UserProvider';
+import { ToastProvider } from './context/ToastContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ToastContainer from '@/components/Toast';
 
 import LandingPage from '@/pages/LandingPage';
 import PackagePage from '@/pages/PackagePage';
@@ -17,32 +19,35 @@ import OrderPage from '@/pages/OrderPage';
 
 function App() {
   return (
-    <UserProvider>
-      <Router>
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="grow">
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/packages" element={<PackagePage />} />
-              <Route path="/packages/:id" element={<PackageDetailedPage />} />
-              <Route path="/tests" element={<TestPage />} />
-              <Route path="/offers" element={<OfferPage />} />
-              <Route path="/account" element={<AccountPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/orders" element={<OrderPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/popular-packages" element={<Navigate to="/packages" replace />} />
-              <Route path="/all-tests" element={<Navigate to="/tests" replace />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      </Router>
-    </UserProvider>
+    <ToastProvider>
+      <UserProvider>
+        <Router>
+          <div className="min-h-screen flex flex-col">
+            <Header />
+            <main className="grow">
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/packages" element={<PackagePage />} />
+                <Route path="/packages/:id" element={<PackageDetailedPage />} />
+                <Route path="/tests" element={<TestPage />} />
+                <Route path="/offers" element={<OfferPage />} />
+                <Route path="/account" element={<AccountPage />} />
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/orders" element={<OrderPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/popular-packages" element={<Navigate to="/packages" replace />} />
+                <Route path="/all-tests" element={<Navigate to="/tests" replace />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </main>
+            <Footer />
+            <ToastContainer />
+          </div>
+        </Router>
+      </UserProvider>
+    </ToastProvider>
   );
 }
 
