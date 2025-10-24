@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_KEY = "0L75qPMP5vuCdSLQ@Gs2hlYPyX7af7Ru.eRAxbxWKc63ma2fq4CD@oQ=="; // replace with your API key
+const API_KEY = import.meta.env.VITE_API_KEY; // replace with your API key
 
 // Create axios instance
 export const axiosInstance = axios.create({
