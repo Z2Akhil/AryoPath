@@ -247,7 +247,7 @@ export default function Header() {
 
             {/* Right Section */}
             <div className="flex items-center gap-4">
-              <CartIcon />
+              <CartIcon count={cart.length} />
               <DesktopNav 
                 user={user} 
                 onLogin={() => setAuthOpen(true)} 
