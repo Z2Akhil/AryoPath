@@ -90,7 +90,6 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
       <h3 className="text-center text-lg font-semibold text-gray-400">{pkgName}</h3>
       <h2 className="text-2xl font-bold text-gray-800 mt-2">Book Now, Pay Later</h2>
       <p className="text-green-700 font-medium mb-2">Simple Process, No Spam Calls</p>
-
       <select
         value={numPersons}
         onChange={handlePersonsChange}
@@ -98,11 +97,11 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
       >
         {[...Array(10)].map((_, i) => (
           <option key={i + 1} value={i + 1}>
-            {i + 1 === 1 ? `(₹${pkgRate})` : `(₹${pkgRate} per person)`}
+            {i + 1} {i + 1 === 1 ? 'Person' : 'Persons'}
+            {i + 1 === 1 ? ` (₹${pkgRate})` : ` (₹${pkgRate} per person)`}
           </option>
         ))}
       </select>
-
       <p className="text-sm mb-1">
         Write <strong>Exact Pincode</strong>, not nearby Pincode
       </p>
