@@ -190,7 +190,7 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
       <input type="email" placeholder="Email" className="w-full border border-gray-400 rounded px-3 py-2 text-sm mb-2" />
       <input type="text" placeholder="Mobile (Indian Number Only)" className="w-full border border-gray-400 rounded px-3 py-2 text-sm mb-2" />
       <textarea rows="2" placeholder="Complete Address" className="w-full border border-gray-400 rounded px-3 py-2 text-sm mb-2"></textarea>
-
+      <p className="text-sm mb-3">make sure to fill the above fields first.</p>
       <select
         value={appointmentDate}
         onChange={(e) => setAppointmentDate(e.target.value)}

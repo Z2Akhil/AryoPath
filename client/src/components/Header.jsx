@@ -6,7 +6,7 @@ import { useToast } from '../context/ToastContext';
 import AuthModal from './AuthModal';
 import ConfirmationDialog from './ConfirmationDialog';
 import { useCart } from "../context/CartContext";
-
+import SearchBar from './SearchBar';
 
 /* ---------- config ---------- */
 const NAV_LINKS = [
@@ -31,21 +31,6 @@ const Logo = () => (
       <p className="text-xs text-gray-500 font-medium">In association with ThyroCare</p>
     </div>
   </Link>
-);
-
-const SearchBar = () => (
-  <div className="relative w-full max-w-xl group">
-    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-      <Search className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-    </div>
-    <input
-      type="text"
-      placeholder="Search health packages, tests, and more..."
-      className="block w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-full text-sm bg-white/80 backdrop-blur-sm
-                 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 
-                 transition-all duration-300 hover:border-gray-300 shadow-sm hover:shadow-md"
-    />
-  </div>
 );
 
 const CartIcon = ({count}) => (
