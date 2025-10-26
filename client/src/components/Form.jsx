@@ -52,9 +52,26 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
 
     try {
       setLoading(true);
-      const items = [
-        { Id: pkgId, PatientQuantity: numPersons, PatientIds: beneficiaries.map((_, i) => i + 1) },
-      ];
+
+      let items = [];
+
+      if (Array.isArray(pkgId)) {
+        // ✅ Multiple packages
+        items = pkgId.map((id) => ({
+          Id: id,
+          PatientQuantity: numPersons,
+          PatientIds: beneficiaries.map((_, i) => i + 1),
+        }));
+      } else {
+        // ✅ Single package
+        items = [
+          {
+            Id: pkgId,
+            PatientQuantity: numPersons,
+            PatientIds: beneficiaries.map((_, i) => i + 1),
+          },
+        ];
+      }
 
       const patients = beneficiaries.map((b, i) => ({
         Id: i + 1,
@@ -63,13 +80,17 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
         Age: parseInt(b.age),
       }));
 
-      const response = await getAppointmentSlots({
+      const payload={
         pincode,
         date: appointmentDate,
         patients,
+        BenCount: numPersons,
         items,
-      });
+      };
 
+      console.log("Payload for fetching appointment slots:", payload);
+      const response = await getAppointmentSlots(payload);
+       
       if (response?.respId === "RES00001") {
         setAvailableSlots(response.lSlotDataRes || []);
       } else {
@@ -87,7 +108,13 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
 
   return (
     <div className="w-full bg-white border border-gray-300 rounded-2xl p-6 shadow-sm">
-      <h3 className="text-center text-lg font-semibold text-gray-400">{pkgName}</h3>
+      <h3 className="text-center text-lg font-semibold text-gray-400">
+        {Array.isArray(pkgName)
+          ? pkgName.length === 1
+            ? pkgName[0]
+            : "YOUR TEST PACKAGES"
+          : pkgName}
+      </h3>
       <h2 className="text-2xl font-bold text-gray-800 mt-2">Book Now, Pay Later</h2>
       <p className="text-green-700 font-medium mb-2">Simple Process, No Spam Calls</p>
       <select
@@ -98,7 +125,7 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
         {[...Array(10)].map((_, i) => (
           <option key={i + 1} value={i + 1}>
             {i + 1} {i + 1 === 1 ? 'Person' : 'Persons'}
-            {i + 1 === 1 ? ` (₹${pkgRate})` : ` (₹${pkgRate} per person)`}
+            {i + 1 === 1 ? ` (₹${pkgRate})` : ` (₹${(i+1)*pkgRate} only)`}
           </option>
         ))}
       </select>
@@ -128,7 +155,7 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
           {pincodeStatus}
         </p>
       )}
-
+      <p>Write <strong>Full Name</strong></p>
       {beneficiaries.map((b, index) => (
         <div key={index} className="mb-3">
           <input
@@ -207,7 +234,7 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
       </p>
 
       <button type="submit" className="w-full bg-blue-600 text-white font-semibold py-2 my-3 rounded hover:bg-blue-700 transition-colors">
-        Submit
+        BOOK NOW
       </button>
     </div>
   );

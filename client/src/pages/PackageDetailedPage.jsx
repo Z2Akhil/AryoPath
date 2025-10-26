@@ -1,4 +1,4 @@
-import { AlertCircle, Home, Percent, Calendar, CreditCard, CheckCircle } from "lucide-react";
+import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Form from "../components/Form.jsx";
@@ -28,6 +28,27 @@ const PackageDetailedPage = () => {
 
     fetchPackages();
   }, []);
+
+  const handleShare = async (pkg) => {
+    const shareUrl = `${window.location.origin}/package/${pkg.code}`;
+    const shareData = {
+      title: pkg.name,
+      text: `Check out this test package: ${pkg.name}`,
+      url: shareUrl,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
+    } else {
+      // Fallback: copy link to clipboard
+      await navigator.clipboard.writeText(shareUrl);
+      alert("Link copied to clipboard!");
+    }
+  };
 
   if (loading) {
     return <div className="text-center py-20 text-gray-500">Loading packages...</div>;
@@ -64,8 +85,17 @@ const PackageDetailedPage = () => {
       <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* LEFT: Package Details */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow p-8 border border-gray-200">
-          <h1 className="text-3xl font-bold text-gray-900 mb-3">{pkg.name}</h1>
-
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-3xl font-bold text-gray-900">{pkg.name}</h1>
+            <button
+              onClick={() => handleShare(pkg)}
+              className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition"
+              title="Share this test"
+            >
+              <Share2 className="w-5 h-5" />
+              <span className="hidden sm:inline text-sm font-medium">Share</span>
+            </button>
+          </div>
           {/* Price Section */}
           {pkg.rate && (
             <div className="flex items-baseline gap-2 mb-4">
@@ -109,12 +139,10 @@ const PackageDetailedPage = () => {
                   className="w-full flex justify-between items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 focus:outline-none"
                 >
                   <span className="text-m font-medium text-gray-900">{category}</span>
-                  <span
-                    className={`transform transition-transform duration-300 ${openCategory === category ? "rotate-180" : ""
+                  <ChevronDown
+                    className={`w-5 h-5 text-gray-600 transform transition-transform duration-300 ${openCategory === category ? "rotate-180" : ""
                       }`}
-                  >
-                    ▼
-                  </span>
+                  />
                 </button>
 
                 {/* Accordion Content */}

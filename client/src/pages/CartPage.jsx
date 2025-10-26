@@ -5,10 +5,16 @@ import Form from "../components/Form"; // import your form component
 const CartPage = () => {
   const { cart, removeFromCart, clearCart } = useCart();
 
+  // 🧮 Calculate total price
   const total = cart.reduce(
     (sum, item) => sum + parseFloat(item.rate.offerRate || 0),
     0
   );
+
+  // 🧩 Create arrays of test names and IDs
+  const pkgNames = cart.map((item) => item.name);
+  const pkgIds = cart.map((item) => item.code);
+  const pkgRates = cart.map((item) => item.rate.offerRate); //array of rates
 
   return (
     <div className="max-w-6xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -38,7 +44,9 @@ const CartPage = () => {
                   <p className="text-sm text-gray-700 mt-1">
                     <span className="font-semibold text-blue-700">₹{item.rate.offerRate}</span>{" "}
                     {item.rate.b2C && item.rate.b2C !== item.rate.offerRate && (
-                      <span className="text-gray-400 line-through text-xs ml-1">₹{item.rate.b2C}</span>
+                      <span className="text-gray-400 line-through text-xs ml-1">
+                        ₹{item.rate.b2C}
+                      </span>
                     )}
                   </p>
                 </div>
@@ -53,7 +61,7 @@ const CartPage = () => {
               </div>
             ))}
 
-            {/* Order Summary Below Items */}
+            {/* Order Summary */}
             <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-5">
               <h2 className="text-lg font-semibold text-gray-800 mb-3">Order Summary</h2>
 
@@ -68,7 +76,9 @@ const CartPage = () => {
 
               <div className="flex justify-between items-center mt-4">
                 <p className="text-base font-medium text-gray-800">Total</p>
-                <p className="text-base font-semibold text-blue-700">₹{total.toFixed(2)}</p>
+                <p className="text-base font-semibold text-blue-700">
+                  ₹{total.toFixed(2)}
+                </p>
               </div>
 
               <div className="mt-5">
@@ -82,9 +92,13 @@ const CartPage = () => {
             </div>
           </div>
 
-          {/* Right: Form Section */}
+          {/* Right: Booking Form */}
           <div className="lg:col-span-1">
-            <Form pkgName="YOUR TEST PACKAGE" pkgRate={total} />
+            <Form
+              pkgName={pkgNames} // array of names
+              pkgRate={total} // passing sum of rates
+              pkgId={pkgIds} // array of IDs
+            />
           </div>
         </div>
       )}
