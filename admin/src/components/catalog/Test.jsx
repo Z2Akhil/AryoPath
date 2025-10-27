@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import AdminTable from "../../components/AdminTable";
+import AdminTable from "../AdminTable";
 import { getProducts } from "../../api/getProductApi"; // your getProducts function
 
-const TestPage = () => {
+const TestCatalog = () => {
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -61,4 +61,4 @@ const TestPage = () => {
   );
 };
 
-export default TestPage;
+export default TestCatalog;
