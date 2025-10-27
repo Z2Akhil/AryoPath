@@ -9,6 +9,11 @@ export default function AdminPanel() {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const toggleProduct = () => setProductOpen(!productOpen);
 
+  // 🧠 Close sidebar automatically on link click (only for mobile)
+  const handleLinkClick = () => {
+    if (window.innerWidth < 1024) setSidebarOpen(false);
+  };
+
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* Sidebar */}
@@ -27,18 +32,21 @@ export default function AdminPanel() {
         <nav className="p-4 space-y-2 text-gray-700">
           <NavLink
             to="home"
+            onClick={handleLinkClick}
             className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
           >
             Home
           </NavLink>
           <NavLink
             to="reports"
+            onClick={handleLinkClick}
             className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
           >
             Reports
           </NavLink>
           <NavLink
             to="orders"
+            onClick={handleLinkClick}
             className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
           >
             Orders
@@ -57,18 +65,21 @@ export default function AdminPanel() {
             <div className="pl-8 space-y-2 text-sm">
               <NavLink
                 to="offers"
+                onClick={handleLinkClick}
                 className="block px-3 py-1 rounded-md hover:bg-blue-100"
               >
                 Offers
               </NavLink>
               <NavLink
                 to="packages"
+                onClick={handleLinkClick}
                 className="block px-3 py-1 rounded-md hover:bg-blue-100"
               >
                 Packages
               </NavLink>
               <NavLink
                 to="tests"
+                onClick={handleLinkClick}
                 className="block px-3 py-1 rounded-md hover:bg-blue-100"
               >
                 Tests
@@ -78,6 +89,7 @@ export default function AdminPanel() {
 
           <NavLink
             to="settings"
+            onClick={handleLinkClick}
             className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
           >
             Settings
@@ -98,7 +110,6 @@ export default function AdminPanel() {
 
         {/* Main content */}
         <main className="flex-1 bg-gray-50 overflow-auto">
-          {/* Outlet fully occupies available space */}
           <div className="h-full w-full">
             <Outlet />
           </div>

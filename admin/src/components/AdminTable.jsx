@@ -8,10 +8,13 @@ const AdminTable = ({ data, onEdit }) => {
   if (!data || data.length === 0)
     return <p className="text-center p-4">No data available.</p>;
 
-  // Table headings
+  // ✅ Detect whether to hide category column
+  const hideCategory = data[0]?.type === "OFFER";
+
+  // ✅ Table headings
   const headings = [
     "NAME",
-    "CATEGORY",
+    ...(hideCategory ? [] : ["CATEGORY"]),
     "THYROCARE RATE (b2C)",
     "THYROCARE MARGIN",
     "SELLING PRICE",
@@ -28,7 +31,7 @@ const AdminTable = ({ data, onEdit }) => {
       filtered = filtered.filter(
         (item) =>
           item.name?.toLowerCase().includes(lowerSearch) ||
-          item.category?.toLowerCase().includes(lowerSearch)
+          (!hideCategory && item.category?.toLowerCase().includes(lowerSearch))
       );
     }
 
@@ -43,7 +46,7 @@ const AdminTable = ({ data, onEdit }) => {
     }
 
     return filtered;
-  }, [data, searchTerm, sortOption]);
+  }, [data, searchTerm, sortOption, hideCategory]);
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
@@ -51,7 +54,7 @@ const AdminTable = ({ data, onEdit }) => {
       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 p-4 bg-gray-50 border-b border-gray-200 sticky top-0 z-20">
         <input
           type="text"
-          placeholder="🔍 Search by name or category..."
+          placeholder={`🔍 Search by name${hideCategory ? "" : " or category"}...`}
           className="border border-gray-300 focus:border-blue-400 focus:ring focus:ring-blue-100 outline-none transition-all p-2.5 rounded-md w-full sm:w-1/2"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -87,17 +90,11 @@ const AdminTable = ({ data, onEdit }) => {
             {filteredData.length > 0 ? (
               filteredData.map((item, idx) => {
                 const b2B = parseFloat(item.rate?.b2B || 0);
-                const b2C = parseFloat(item.rate?.offerRate||item.rate?.b2C || 0);
+                const b2C = parseFloat(item.rate?.offerRate || item.rate?.b2C || 0);
                 const offerRate = parseFloat(item.rate?.offerRate || 0);
-
                 const thyrocareMargin = parseFloat(item.margin);
-
-                // Use overridden selling price or fallback to offerRate or null
-                const sellingPrice =  offerRate ?? null;
-
-                // Actual margin = selling price - b2B
-                const actualMargin = thyrocareMargin-(b2C-sellingPrice);
-                  
+                const sellingPrice = offerRate ?? null;
+                const actualMargin = thyrocareMargin - (b2C - sellingPrice);
 
                 return (
                   <tr
@@ -107,7 +104,9 @@ const AdminTable = ({ data, onEdit }) => {
                     }`}
                   >
                     <td className="px-4 py-3 border-b">{item.name || "-"}</td>
-                    <td className="px-4 py-3 border-b">{item.category || "-"}</td>
+                    {!hideCategory && (
+                      <td className="px-4 py-3 border-b">{item.category || "-"}</td>
+                    )}
                     <td className="px-4 py-3 border-b text-blue-700 font-medium">
                       ₹{b2C || "-"}
                     </td>
