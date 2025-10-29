@@ -1,18 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import AdminTable from "../AdminTable";
-import { getProducts } from "../../api/getProductApi"; // your getProducts function
+import Pagination from "../Pagination";
+import { getProducts } from "../../api/getProductApi";
 
 const OfferCatalog = () => {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchOffers = async () => {
       try {
         setLoading(true);
-        const data = await getProducts("OFFER"); // fetch OFFER products
-
+        const data = await getProducts("OFFER");
         const uniqueOffers = Array.from(
           new Map(data.map((offer) => [offer.code, offer])).values()
         );
@@ -29,6 +31,18 @@ const OfferCatalog = () => {
     fetchOffers();
   }, []);
 
+  const paginatedOffers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return offers.slice(startIndex, endIndex);
+  }, [offers, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(offers.length / itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [itemsPerPage]);
+
   if (loading) {
     return <div className="text-center py-20 text-gray-500">Loading offers...</div>;
   }
@@ -40,11 +54,21 @@ const OfferCatalog = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
       {offers.length > 0 ? (
-        <AdminTable
-          data={offers}
-          editableFields={["rate.offerRate"]} // optional
-          onEdit={(item) => console.log("Edit:", item)}
-        />
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+          <AdminTable
+            data={paginatedOffers}
+            editableFields={["rate.offerRate"]}
+            onEdit={(item) => console.log("Edit:", item)}
+          />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={setItemsPerPage}
+            totalItems={offers.length}
+          />
+        </div>
       ) : (
         <p className="text-gray-500 col-span-full text-center">
           No offers available.
