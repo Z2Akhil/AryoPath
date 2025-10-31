@@ -1,8 +1,6 @@
 import axios from "axios";
+import authService from "../services/authService";
 
-const API_KEY = import.meta.env.VITE_API_KEY; // replace with your API key
-
-// Create axios instance
 export const axiosInstance = axios.create({
   baseURL: "/api",
   headers: {
@@ -10,9 +8,36 @@ export const axiosInstance = axios.create({
   },
 });
 
-// Interceptor to automatically attach API key to every request
+// Request interceptor to automatically attach API key to every request
 axiosInstance.interceptors.request.use((config) => {
-  if (!config.data) config.data = {};
-  config.data.ApiKey = API_KEY;
+  // Get current API key from auth service
+  const apiKey = authService.getCurrentApiKey();
+  
+  if (apiKey) {
+    // Add API key as x-api-key header
+    config.headers['x-api-key'] = apiKey;
+  }
+  
   return config;
 });
+
+// Response interceptor to handle authentication errors
+axiosInstance.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // Handle authentication-related errors
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Clear authentication data on auth errors
+      authService.clearAuthData();
+      
+      // Redirect to login if we're not already there
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
