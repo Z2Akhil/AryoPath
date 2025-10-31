@@ -1,58 +1,67 @@
 import { useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
-import { Menu, X, ChevronDown, ChevronUp } from "lucide-react";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { Menu, X, ChevronDown, ChevronUp, LogOut, User } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import MobileDrawer from "../components/auth/MobileDrawer";
 
 export default function AdminPanel() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [productOpen, setProductOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const location = useLocation();
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const toggleProduct = () => setProductOpen(!productOpen);
 
-  // 🧠 Close sidebar automatically on link click (only for mobile)
   const handleLinkClick = () => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
   };
 
+  // Get current page title based on route
+  const getCurrentPageTitle = () => {
+    const path = location.pathname;
+    
+    if (path.includes('/home') || path === '/') return 'Home';
+    if (path.includes('/reports')) return 'Reports';
+    if (path.includes('/orders')) return 'Orders';
+    if (path.includes('/offers')) return 'Offers';
+    if (path.includes('/packages')) return 'Packages';
+    if (path.includes('/tests')) return 'Tests';
+    if (path.includes('/account')) return 'Account';
+    
+    return 'Dashboard';
+  };
+
+  const currentPageTitle = getCurrentPageTitle();
+
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* Sidebar */}
-      <aside
-        className={`fixed lg:static z-40 top-0 left-0 h-full w-64 bg-white shadow-md transform transition-transform duration-300 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
-      >
+      {/* Desktop Sidebar - Hidden on mobile */}
+      <aside className="hidden lg:block z-40 h-full w-64 bg-white shadow-md">
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h1 className="text-xl font-semibold text-blue-600">Admin Panel</h1>
-          <button onClick={toggleSidebar} className="lg:hidden">
-            <X className="text-gray-600" />
-          </button>
         </div>
 
         <nav className="p-4 space-y-2 text-gray-700">
           <NavLink
             to="home"
-            onClick={handleLinkClick}
             className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
           >
             Home
           </NavLink>
           <NavLink
             to="reports"
-            onClick={handleLinkClick}
             className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
           >
             Reports
           </NavLink>
           <NavLink
             to="orders"
-            onClick={handleLinkClick}
             className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
           >
             Orders
           </NavLink>
 
-          {/* Accordion Section */}
           <button
             onClick={toggleProduct}
             className="flex justify-between items-center w-full px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
@@ -65,21 +74,18 @@ export default function AdminPanel() {
             <div className="pl-8 space-y-2 text-sm">
               <NavLink
                 to="offers"
-                onClick={handleLinkClick}
                 className="block px-3 py-1 rounded-md hover:bg-blue-100"
               >
                 Offers
               </NavLink>
               <NavLink
                 to="packages"
-                onClick={handleLinkClick}
                 className="block px-3 py-1 rounded-md hover:bg-blue-100"
               >
                 Packages
               </NavLink>
               <NavLink
                 to="tests"
-                onClick={handleLinkClick}
                 className="block px-3 py-1 rounded-md hover:bg-blue-100"
               >
                 Tests
@@ -88,11 +94,10 @@ export default function AdminPanel() {
           )}
 
           <NavLink
-            to="settings"
-            onClick={handleLinkClick}
+            to="account"
             className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
           >
-            Settings
+            Account
           </NavLink>
         </nav>
       </aside>
@@ -104,8 +109,25 @@ export default function AdminPanel() {
           <button onClick={toggleSidebar} className="lg:hidden">
             <Menu className="text-gray-700" />
           </button>
-          <h2 className="text-lg font-semibold text-gray-700">Dashboard</h2>
-          <div></div>
+          <h2 className="text-lg font-semibold text-gray-700 hidden lg:block">
+            {currentPageTitle}
+          </h2>
+          <div className="flex items-center space-x-4">
+            {user && (
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <User size={16} />
+                <span>{user.adminProfile?.name || user.username}</span>
+              </div>
+            )}
+            <button
+              onClick={logout}
+              className="flex items-center space-x-1 px-3 py-1 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-200"
+              title="Logout"
+            >
+              <LogOut size={16} />
+              <span>Logout</span>
+            </button>
+          </div>
         </header>
 
         {/* Main content */}
@@ -115,6 +137,14 @@ export default function AdminPanel() {
           </div>
         </main>
       </div>
+
+      {/* Mobile Drawer - Enhanced mobile experience */}
+      <MobileDrawer
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        productOpen={productOpen}
+        toggleProduct={toggleProduct}
+      />
     </div>
   );
 }
