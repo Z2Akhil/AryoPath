@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         "/api": {
-          target: "http://localhost:3000",
+          target: process.env.VITE_BACKEND_API || "http://localhost:3000",
           changeOrigin: true,
           secure: false,
           rewrite: (p) => p.replace(/^\/api/, "/api"),
