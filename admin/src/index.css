@@ -1,4 +1,35 @@
 @import 'tailwindcss';
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.ease-out-cubic {
+  transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
 /* Custom thin scrollbar for modern look */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
@@ -9,4 +40,12 @@
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgba(107, 114, 128, 0.7);
+}
+
+.btn-gradient {
+  background: linear-gradient(to right, #2563eb, #1d4ed8);
+}
+
+.btn-gradient:hover {
+  background: linear-gradient(to right, #1d4ed8, #1e40af);
 }
