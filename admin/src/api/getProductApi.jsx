@@ -7,8 +7,8 @@ import { axiosInstance } from "./axiosInstance";
  */
 export const getProducts = async (productType) => {
   try {
-    const response = await axiosInstance.post("/productsmaster/Products", {
-      ProductType: productType,
+    const response = await axiosInstance.post("/admin/products", {
+      productType: productType,
     });
 
     const data = response.data;
