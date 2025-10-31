@@ -233,6 +233,8 @@ class AuthController {
         token,
         user: {
           id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
           mobileNumber: user.mobileNumber,
           isVerified: user.isVerified,
         },
@@ -490,6 +492,8 @@ class AuthController {
         success: true,
         user: {
           id: req.user._id,
+          firstName: req.user.firstName,
+          lastName: req.user.lastName,
           mobileNumber: req.user.mobileNumber,
           isVerified: req.user.isVerified,
           createdAt: req.user.createdAt,

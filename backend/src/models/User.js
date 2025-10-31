@@ -26,6 +26,32 @@ const userSchema = new mongoose.Schema({
       message: "Invalid mobile number",
     },
   },
+  email: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    validate: {
+      validator: function (v) {
+        return !v || validator.isEmail(v);
+      },
+      message: "Invalid email address",
+    },
+  },
+  address: {
+    type: String,
+    trim: true,
+    maxlength: [200, 'Address cannot exceed 200 characters']
+  },
+  city: {
+    type: String,
+    trim: true,
+    maxlength: [50, 'City cannot exceed 50 characters']
+  },
+  state: {
+    type: String,
+    trim: true,
+    maxlength: [50, 'State cannot exceed 50 characters']
+  },
   password: {
     type: String,
     minlength: [6, "Password must be atleast 6 character long."],
