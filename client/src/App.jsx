@@ -1,15 +1,10 @@
-// src/App.jsx
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider } from './context/UserProvider';
-// 1. Import ToastProvider (use relative path or ensure alias works)
 import { ToastProvider } from './context/ToastContext';
 import { CartProvider } from './context/CartContext';
-import Header from './components/Header'; // Use relative paths
+import Header from './components/Header'; 
 import Footer from './components/Footer';
-import ToastContainer from './components/Toast'; // Assuming path is correct
-
-// Import Pages (use relative paths or ensure alias works)
+import ToastContainer from './components/Toast';
 import LandingPage from './pages/LandingPage';
 import PackagePage from './pages/PackagePage';
 import OfferPage from './pages/OfferPage';
@@ -24,7 +19,6 @@ import OrderPage from './pages/OrderPage';
 
 function App() {
   return (
-    // 2. Wrap everything in ToastProvider
     <ToastProvider>
       <UserProvider>
         <CartProvider>
@@ -33,7 +27,6 @@ function App() {
               <Header />
               <main className="grow">
                 <Routes>
-                  {/* Your Routes remain the same */}
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/packages" element={<PackagePage />} />
                   <Route path="/packages/:code" element={<PackageDetailedPage />} />
@@ -51,7 +44,6 @@ function App() {
                 </Routes>
               </main>
               <Footer />
-              {/* Optional: Render ToastContainer for displaying toasts */}
               <ToastContainer />
             </div>
           </Router>
