@@ -15,7 +15,6 @@ const LandingPage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
       <Hero />
-      <HomeCarousel />
 
       {/* Packages Section */}
       <div className="mb-8">
@@ -46,6 +45,7 @@ const LandingPage = () => {
           </Link>
         </div>
       </div>
+      <HomeCarousel />
     </div>
   );
 };
