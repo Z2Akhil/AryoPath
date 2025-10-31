@@ -33,7 +33,7 @@ const HomeCarousel = () => {
   };
 
   return (
-    <div className="my-12">
+    <div className="hidden md:block my-12">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Why Choose Us?</h2>
       <Slider {...settings}>
         {carouselItems.map(item => (
