@@ -127,7 +127,7 @@ const Form = ({ pkgRate, pkgId }) => {
       const response = await checkPincode(pincode);
 
       if (response?.status === "Y" && response?.respId === "RES00001") {
-        setPincodeStatus("Service is available in your area!");
+        setPincodeStatus("✅ Service is available in your area!");
       } else {
         setPincodeStatus(`${response?.response || "Service not available"}`);
       }
@@ -230,7 +230,7 @@ const Form = ({ pkgRate, pkgId }) => {
         </div>
 
         {pincodeStatus && (
-          <p className={`text-sm mb-3 ${pincodeStatus.includes("✅") ? "text-green-600" : "text-red-600"}`}>
+          <p className={`text-sm mb-3 ${pincodeStatus.includes("✅") ? " text-green-600" : "text-red-600"}`}>
             {pincodeStatus}
           </p>
         )}
