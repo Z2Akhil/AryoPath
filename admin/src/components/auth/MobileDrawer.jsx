@@ -20,7 +20,7 @@ const MobileDrawer = ({
         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-fade-in"
       />
 
-      <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-out-cubic animate-slide-in-right">
+      <div className="fixed top-0 left-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-out-cubic animate-slide-in-left">
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-100">
