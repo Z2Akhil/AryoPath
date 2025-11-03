@@ -63,7 +63,6 @@ router.get('/profile', async (req, res) => {
   }
 });
 
-// Update user profile
 router.put('/profile', async (req, res) => {
   try {
     const { email, address, city, state } = req.body;
