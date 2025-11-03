@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
-import AdminTable from "../../components/AdminTable";
-import Pagination from "../../components/Pagination";
+import AdminTable from "../AdminTable";
+import Pagination from "../Pagination";
 import { getProducts } from "../../api/getProductApi";
 
 const PackageCatalog = () => {
@@ -14,10 +14,13 @@ const PackageCatalog = () => {
     const fetchPackages = async () => {
       try {
         setLoading(true);
-        const data = await getProducts("PROFILE");
+        const response = await getProducts("PROFILE");
 
+        // The new API returns { success: true, products: [...] }
+        const products = response.products || response || [];
+        
         const uniquePackages = Array.from(
-          new Map(data.map((pkg) => [pkg.code, pkg])).values()
+          new Map(products.map((pkg) => [pkg.code, pkg])).values()
         )
 
         setPackages(uniquePackages || []);
@@ -45,6 +48,11 @@ const PackageCatalog = () => {
     setCurrentPage(1);
   }, [itemsPerPage]);
 
+  const handleEdit = (item) => {
+    console.log("Edit package:", item);
+    // You can implement a modal for detailed editing here
+  };
+
   if (loading) {
     return <div className="text-center py-20 text-gray-500">Loading packages...</div>;
   }
@@ -59,8 +67,7 @@ const PackageCatalog = () => {
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <AdminTable
             data={paginatedPackages}
-            editableFields={["rate.offerRate"]} // optional
-            onEdit={(item) => console.log("Edit:", item)}
+            onEdit={handleEdit}
           />
           <Pagination
             currentPage={currentPage}

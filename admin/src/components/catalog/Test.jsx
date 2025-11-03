@@ -14,10 +14,13 @@ const TestCatalog = () => {
     const fetchTests = async () => {
       try {
         setLoading(true);
-        const data = await getProducts("TEST");
+        const response = await getProducts("TEST");
 
+        // The new API returns { success: true, products: [...] }
+        const products = response.products || response || [];
+        
         const uniqueTests = Array.from(
-          new Map(data.map((test) => [test.code, test])).values()
+          new Map(products.map((test) => [test.code, test])).values()
         );
 
         setTests(uniqueTests || []);
@@ -44,6 +47,11 @@ const TestCatalog = () => {
     setCurrentPage(1);
   }, [itemsPerPage]);
 
+  const handleEdit = (item) => {
+    console.log("Edit test:", item);
+    // You can implement a modal for detailed editing here
+  };
+
   if (loading) {
     return (
       <div className="text-center py-20 text-gray-500">
@@ -64,8 +72,7 @@ const TestCatalog = () => {
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <AdminTable
             data={paginatedTests}
-            editableFields={["rate.offerRate"]}
-            onEdit={(item) => console.log("Edit:", item)}
+            onEdit={handleEdit}
           />
           <Pagination
             currentPage={currentPage}
