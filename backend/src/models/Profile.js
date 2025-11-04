@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const profileSchema = new mongoose.Schema({
   code: { type: String, required: true, unique: true, trim: true },
   name: { type: String, required: true, trim: true },
-  type: { type: String, enum: ['PROFILE'], required: true },
+  type: { type: String, enum: ['PROFILE','POP'], required: true },
 
   thyrocareData: {
     aliasName: String,
@@ -43,21 +43,10 @@ const profileSchema = new mongoose.Schema({
     },
     margin: Number,
     childs: [{
-      name: String,
-      code: String,
-      groupName: String,
-      type: String,
-      aliasName: String,
-      testCount: Number,
-      rate: {
-        b2B: Number,
-        b2C: Number,
-        offerRate: Number,
-        id: String,
-        payAmt: Number,
-        payAmt1: Number
-      },
-      margin: Number
+      name: { type: String, default: '' },
+      code: { type: String, default: '' },
+      groupName: { type: String, default: '' },
+      type: { type: String, default: '' }
     }]
   },
 
@@ -175,6 +164,8 @@ profileSchema.statics.findOrCreateFromThyroCare = async function(thyrocareProduc
           }
         }
       }
+
+      
       
       if (Array.isArray(cleanedThyrocareData.childs)) {
         
@@ -184,18 +175,7 @@ profileSchema.statics.findOrCreateFromThyroCare = async function(thyrocareProduc
               name: '',
               code: '',
               groupName: '',
-              type: '',
-              aliasName: '',
-              testCount: 0,
-              rate: {
-                b2B: 0,
-                b2C: 0,
-                offerRate: 0,
-                id: '',
-                payAmt: 0,
-                payAmt1: 0
-              },
-              margin: 0
+              type: ''
             };
           }
           
@@ -204,47 +184,8 @@ profileSchema.statics.findOrCreateFromThyroCare = async function(thyrocareProduc
             name: child.name || '',
             code: child.code || '',
             groupName: child.groupName || '',
-            type: child.type || '',
-            aliasName: child.aliasName || '',
-            testCount: 0,
-            rate: {
-              b2B: 0,
-              b2C: 0,
-              offerRate: 0,
-              id: '',
-              payAmt: 0,
-              payAmt1: 0
-            },
-            margin: 0
+            type: child.type || ''
           };
-          
-          // Convert child numeric fields
-          const childNumericFields = ['testCount', 'margin'];
-          childNumericFields.forEach(field => {
-            if (child[field] !== undefined && child[field] !== null) {
-              const value = child[field];
-              if (typeof value === 'string' && value.trim() !== '') {
-                mappedChild[field] = Number(value);
-              } else if (value === '' || value === null) {
-                mappedChild[field] = 0;
-              }
-            }
-          });
-          
-          // Handle child rate object - create a new rate object to avoid mutation
-          if (child.rate) {
-            const childRateNumericFields = ['b2B', 'b2C', 'offerRate', 'payAmt', 'payAmt1'];
-            childRateNumericFields.forEach(field => {
-              if (child.rate[field] !== undefined && child.rate[field] !== null) {
-                const value = child.rate[field];
-                if (typeof value === 'string' && value.trim() !== '') {
-                  mappedChild.rate[field] = Number(value);
-                } else if (value === '' || value === null) {
-                  mappedChild.rate[field] = 0;
-                }
-              }
-            });
-          }
           
           return mappedChild;
         });
@@ -256,7 +197,7 @@ profileSchema.statics.findOrCreateFromThyroCare = async function(thyrocareProduc
     }
     
     // Ensure type is valid
-    if (cleanedThyrocareData.type !== 'PROFILE') {
+    if (!['PROFILE','POP'].includes(cleanedThyrocareData.type)) {
       console.warn(`Invalid product type for Profile model: ${cleanedThyrocareData.type}, forcing to PROFILE`);
       cleanedThyrocareData.type = 'PROFILE';
     }

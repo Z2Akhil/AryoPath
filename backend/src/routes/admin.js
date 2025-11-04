@@ -347,6 +347,9 @@ router.post('/products', adminAuth, async (req, res) => {
           case 'PROFILE':
             product = await Profile.findOrCreateFromThyroCare(thyrocareProduct);
             break;
+          case 'POP':
+            product = await Profile.findOrCreateFromThyroCare(thyrocareProduct);
+            break;
           case 'OFFER':
             product = await Offer.findOrCreateFromThyroCare(thyrocareProduct);
             break;
