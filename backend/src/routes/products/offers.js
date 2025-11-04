@@ -50,7 +50,7 @@ router.get('/', adminAuth, async (req, res) => {
           code: thyrocareProduct.code,
           name: thyrocareProduct.name,
           type: thyrocareProduct.type
-        });
+        }); 
         
         // Use Offer model for OFFER products
         const product = await Offer.findOrCreateFromThyroCare(thyrocareProduct);
