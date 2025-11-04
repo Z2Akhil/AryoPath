@@ -18,6 +18,7 @@ const adminActivitySchema = new mongoose.Schema({
     enum: [
       'LOGIN',
       'LOGOUT',
+      'SESSION_EXPIRED',
       'PRODUCT_FETCH',
       'ORDER_VIEW',
       'ORDER_CREATE',

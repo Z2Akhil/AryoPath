@@ -14,9 +14,13 @@ const OfferCatalog = () => {
     const fetchOffers = async () => {
       try {
         setLoading(true);
-        const data = await getProducts("OFFER");
+        const response = await getProducts("OFFER");
+
+        // The new API returns { success: true, products: [...] }
+        const products = response.products || response || [];
+        
         const uniqueOffers = Array.from(
-          new Map(data.map((offer) => [offer.code, offer])).values()
+          new Map(products.map((offer) => [offer.code, offer])).values()
         );
         setOffers(uniqueOffers || []);
 
@@ -43,6 +47,11 @@ const OfferCatalog = () => {
     setCurrentPage(1);
   }, [itemsPerPage]);
 
+  const handleEdit = (item) => {
+    console.log("Edit offer:", item);
+    // You can implement a modal for detailed editing here
+  };
+
   if (loading) {
     return <div className="text-center py-20 text-gray-500">Loading offers...</div>;
   }
@@ -57,8 +66,7 @@ const OfferCatalog = () => {
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <AdminTable
             data={paginatedOffers}
-            editableFields={["rate.offerRate"]}
-            onEdit={(item) => console.log("Edit:", item)}
+            onEdit={handleEdit}
           />
           <Pagination
             currentPage={currentPage}
