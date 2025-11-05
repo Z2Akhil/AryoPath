@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import PackageCard from "../components/cards/PackageCard";
-import { getProducts } from "../api/productApi"; // your getProducts function
+import { getProductsFromBackend } from "../api/backendProductApi"; // Use our backend API
 
 const PackagePage = ({limit}) => {
   const [packages, setPackages] = useState([]);
@@ -11,7 +11,7 @@ const PackagePage = ({limit}) => {
     const fetchPackages = async () => {
       try {
         setLoading(true);
-        const data = await getProducts("PROFILE"); // fetch PROFILE products
+        const data = await getProductsFromBackend("PROFILE"); // fetch PROFILE products from our backend
 
         const uniquePackages=Array.from(
           new Map(data.map((pkg)=>[pkg.code,pkg])).values()

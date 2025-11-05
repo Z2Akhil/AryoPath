@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import OfferCard from "../components/cards/OfferCard";
-import { getProducts } from "../api/productApi"; // your getProducts function
+import { getProductsFromBackend } from "../api/backendProductApi"; // Use our backend API
 
 const OfferPage = ({limit}) => {
   const [offers, setOffers] = useState([]);
@@ -11,7 +11,7 @@ const OfferPage = ({limit}) => {
     const fetchOffers = async () => {
       try {
         setLoading(true);
-        const data = await getProducts("OFFER"); // fetch OFFER products
+        const data = await getProductsFromBackend("OFFER"); // fetch OFFER products from our backend
 
         const uniqueOffers = Array.from(
           new Map(data.map((offer) => [offer.code, offer])).values()

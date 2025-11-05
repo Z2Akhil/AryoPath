@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import TestCard from "../components/cards/TestCard";
-import { getProducts } from "../api/productApi";
+import { getProductsFromBackend } from "../api/backendProductApi"; // Use our backend API
 
 const TestPage = ({ limit }) => {
   const [tests, setTests] = useState([]);
@@ -11,9 +11,8 @@ const TestPage = ({ limit }) => {
     const fetchTests = async () => {
       try {
         setLoading(true);
-        const data = await getProducts("TEST");
+        const data = await getProductsFromBackend("TEST");
 
-        //Remove duplicates based on `code`
         const uniqueTests = Array.from(
           new Map(data.map((test) => [test.code, test])).values()
         );
