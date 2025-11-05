@@ -58,3 +58,16 @@
 .btn-gradient:hover {
   background: linear-gradient(to right, #1d4ed8, #1e40af);
 }
+
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.3s ease-out forwards;
+}
