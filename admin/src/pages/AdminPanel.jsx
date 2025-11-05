@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { Menu, X, ChevronDown, ChevronUp, LogOut, User } from "lucide-react";
+import { Menu, ChevronDown, ChevronUp, LogOut, User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import MobileDrawer from "../components/auth/MobileDrawer";
 
@@ -13,11 +13,6 @@ export default function AdminPanel() {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const toggleProduct = () => setProductOpen(!productOpen);
 
-  const handleLinkClick = () => {
-    if (window.innerWidth < 1024) setSidebarOpen(false);
-  };
-
-  // Get current page title based on route
   const getCurrentPageTitle = () => {
     const path = location.pathname;
     
