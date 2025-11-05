@@ -7,6 +7,7 @@ import AdminActivity from '../models/AdminActivity.js';
 import Test from '../models/Test.js';
 import Profile from '../models/Profile.js';
 import Offer from '../models/Offer.js';
+import User from '../models/User.js';
 
 const router = express.Router();
 
@@ -293,6 +294,16 @@ router.post('/products', adminAuth, async (req, res) => {
     console.log('Fetching products with custom pricing from Thyrocare API and database');
 
     const thyrocareApiUrl = (process.env.THYROCARE_API_URL || 'https://velso.thyrocare.cloud').trim();
+
+    // Enhanced logging for API key verification
+    console.log('🔑 THYROCARE API KEY VERIFICATION:', {
+      apiKeyPrefix: req.adminApiKey.substring(0, 10) + '...',
+      apiKeyLength: req.adminApiKey.length,
+      sessionId: req.adminSession._id,
+      apiKeyExpiresAt: req.adminSession.apiKeyExpiresAt?.toISOString(),
+      currentTime: new Date().toISOString(),
+      isApiKeyExpired: req.adminSession.isApiKeyExpired()
+    });
 
     // Step 1: Fetch products from ThyroCare API
     const response = await axios.post(`${thyrocareApiUrl}/api/productsmaster/Products`, {
@@ -582,6 +593,69 @@ router.put('/products/pricing', adminAuth, async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to update pricing'
+    });
+  }
+});
+
+// Users endpoint - get all users
+router.get('/users', adminAuth, async (req, res) => {
+  const startTime = Date.now();
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const userAgent = req.get('User-Agent') || '';
+
+  try {
+    console.log('Fetching all users for admin:', req.admin.name);
+
+    // Fetch all users from database
+    const users = await User.find({})
+      .select('-password') // Exclude password field
+      .sort({ createdAt: -1 });
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'USERS_FETCH',
+      description: `Admin ${req.admin.name} fetched all users`,
+      resource: 'users',
+      endpoint: '/api/admin/users',
+      method: 'GET',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 200,
+      responseTime: Date.now() - startTime,
+      metadata: {
+        userCount: users.length
+      }
+    });
+
+    res.json({
+      success: true,
+      users: users,
+      totalCount: users.length
+    });
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error('Users fetch error:', error);
+
+    await AdminActivity.logActivity({
+      adminId: req.admin._id,
+      sessionId: req.adminSession._id,
+      action: 'ERROR',
+      description: `Failed to fetch users: ${error.message}`,
+      resource: 'users',
+      endpoint: '/api/admin/users',
+      method: 'GET',
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      statusCode: 500,
+      responseTime: responseTime,
+      errorMessage: error.message
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch users'
     });
   }
 });

@@ -98,11 +98,15 @@ adminSessionSchema.pre('save', function(next) {
 
 adminSessionSchema.statics.createFromThyroCare = async function(adminId, thyrocareData, ipAddress, userAgent = '') {
   try {
+    // Set both API key and session to expire at 00:00 IST
     const apiKeyExpiresAt = new Date();
     apiKeyExpiresAt.setDate(apiKeyExpiresAt.getDate() + 1);
-    apiKeyExpiresAt.setHours(0, 0, 0, 0);
+    apiKeyExpiresAt.setHours(0, 0, 0, 0); // 00:00 IST
     
     const accessTokenExpiresAt = new Date(thyrocareData.exp * 1000 || Date.now() + 3600000); // 1 hour default
+    
+    // Align session expiry with API key expiry (00:00 IST)
+    const sessionExpiresAt = new Date(apiKeyExpiresAt);
     
     const session = new this({
       adminId: adminId,
@@ -113,16 +117,16 @@ adminSessionSchema.statics.createFromThyroCare = async function(adminId, thyroca
       userAgent: userAgent,
       apiKeyExpiresAt: apiKeyExpiresAt,
       accessTokenExpiresAt: accessTokenExpiresAt,
-      sessionExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      sessionExpiresAt: sessionExpiresAt, // Same as API key expiry
       isActive: true
     });
 
-    console.log('🆕 Creating new session:', {
+    console.log('🆕 Creating new session with aligned expiry:', {
       adminId: adminId,
       apiKey: thyrocareData.apiKey.substring(0, 10) + '...',
-      apiKeyExpiresAt: apiKeyExpiresAt,
-      accessTokenExpiresAt: accessTokenExpiresAt,
-      sessionExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      apiKeyExpiresAt: apiKeyExpiresAt.toISOString(),
+      accessTokenExpiresAt: accessTokenExpiresAt.toISOString(),
+      sessionExpiresAt: sessionExpiresAt.toISOString()
     });
 
     await session.save();
@@ -155,10 +159,10 @@ adminSessionSchema.methods.isSessionExpired = function() {
 };
 
 // Method to check if session is valid
+// Only validates API key and session expiry - access token expiry handled separately
 adminSessionSchema.methods.isValid = function() {
   return this.isActive && 
          !this.isApiKeyExpired() && 
-         !this.isAccessTokenExpired() && 
          !this.isSessionExpired();
 };
 
@@ -171,50 +175,73 @@ adminSessionSchema.methods.refreshUsage = async function() {
 
 // Static method to find active session by API key
 adminSessionSchema.statics.findActiveByApiKey = async function(apiKey) {
-  console.log('🔍 Searching for active session with API key:', {
-    apiKey: apiKey.substring(0, 10) + '...',
-    currentTime: new Date()
+  const currentTime = new Date();
+  
+  console.log('🔍 ADMIN SESSION - LOOKUP STARTED:', {
+    apiKeyPrefix: apiKey.substring(0, 10) + '...',
+    currentTime: currentTime.toISOString(),
+    query: { thyrocareApiKey: apiKey }
   });
   
-  const query = {
-    thyrocareApiKey: apiKey,
-    isActive: true,
-    apiKeyExpiresAt: { $gt: new Date() },
-    accessTokenExpiresAt: { $gt: new Date() },
-    sessionExpiresAt: { $gt: new Date() }
-  };
+  // First, try to find any session with this API key
+  const anySession = await this.findOne({ thyrocareApiKey: apiKey }).populate('adminId');
   
-  console.log('🔍 Query details:', query);
-  
-  const session = await this.findOne(query).populate('adminId');
-  
-  if (session) {
-    console.log('✅ Session found:', {
-      sessionId: session._id,
-      admin: session.adminId?.name,
-      apiKeyExpiresAt: session.apiKeyExpiresAt,
-      accessTokenExpiresAt: session.accessTokenExpiresAt,
-      sessionExpiresAt: session.sessionExpiresAt
-    });
-  } else {
-    console.log('❌ No active session found for API key');
-    
-    // Check if there's any session with this API key (even inactive)
-    const anySession = await this.findOne({ thyrocareApiKey: apiKey });
-    if (anySession) {
-      console.log('ℹ️ Found inactive session:', {
-        sessionId: anySession._id,
-        isActive: anySession.isActive,
-        apiKeyExpiresAt: anySession.apiKeyExpiresAt,
-        accessTokenExpiresAt: anySession.accessTokenExpiresAt,
-        sessionExpiresAt: anySession.sessionExpiresAt
-      });
-    } else {
-      console.log('❌ No session found at all for this API key');
-    }
+  if (!anySession) {
+    console.log('❌ ADMIN SESSION - No session found at all for this API key');
+    return null;
   }
   
-  return session;
+  console.log('✅ ADMIN SESSION - Session found in database:', {
+    sessionId: anySession._id,
+    admin: anySession.adminId?.name,
+    isActive: anySession.isActive,
+    apiKeyExpiresAt: anySession.apiKeyExpiresAt?.toISOString(),
+    accessTokenExpiresAt: anySession.accessTokenExpiresAt?.toISOString(),
+    sessionExpiresAt: anySession.sessionExpiresAt?.toISOString(),
+    createdAt: anySession.createdAt?.toISOString(),
+    lastUsedAt: anySession.lastUsedAt?.toISOString()
+  });
+  
+  // Detailed token validation logging
+  const apiKeyExpired = anySession.isApiKeyExpired();
+  const accessTokenExpired = anySession.isAccessTokenExpired();
+  const sessionExpired = anySession.isSessionExpired();
+  
+  console.log('📊 ADMIN SESSION - TOKEN VALIDATION:', {
+    isActive: anySession.isActive,
+    apiKeyExpired: apiKeyExpired,
+    accessTokenExpired: accessTokenExpired,
+    sessionExpired: sessionExpired,
+    currentTime: currentTime.toISOString(),
+    timeUntilApiKeyExpiry: anySession.apiKeyExpiresAt ? Math.floor((anySession.apiKeyExpiresAt - currentTime) / 1000) + 's' : 'N/A',
+    timeUntilAccessTokenExpiry: anySession.accessTokenExpiresAt ? Math.floor((anySession.accessTokenExpiresAt - currentTime) / 1000) + 's' : 'N/A',
+    timeUntilSessionExpiry: anySession.sessionExpiresAt ? Math.floor((anySession.sessionExpiresAt - currentTime) / 1000) + 's' : 'N/A'
+  });
+  
+  // Check if session is valid using the isValid method
+  if (anySession.isValid()) {
+    console.log('✅ ADMIN SESSION - Session is VALID and ACTIVE');
+    return anySession;
+  }
+  
+  // If session exists but is not valid, log the specific reasons
+  console.log('❌ ADMIN SESSION - Session exists but is INVALID:', {
+    reason: 'One or more validation checks failed',
+    validationChecks: {
+      isActive: anySession.isActive,
+      isApiKeyExpired: apiKeyExpired,
+      isAccessTokenExpired: accessTokenExpired,
+      isSessionExpired: sessionExpired
+    },
+    failedChecks: [
+      !anySession.isActive && 'isActive=false',
+      apiKeyExpired && 'apiKeyExpired',
+      accessTokenExpired && 'accessTokenExpired',
+      sessionExpired && 'sessionExpired'
+    ].filter(Boolean)
+  });
+  
+  return null;
 };
 
 // Static method to cleanup expired sessions

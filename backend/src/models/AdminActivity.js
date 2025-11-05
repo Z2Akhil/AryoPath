@@ -28,7 +28,10 @@ const adminActivitySchema = new mongoose.Schema({
       'PROFILE_UPDATE',
       'API_CALL',
       'ERROR',
-      'OTHER'
+      'OTHER',
+      'USERS_FETCH',
+      'USERS_VIEW',
+      'PRICING_UPDATE'
     ]
   },
   description: {
