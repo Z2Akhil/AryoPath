@@ -1,11 +1,9 @@
-import React from "react";
 import { Link } from "react-router-dom";
+import { getProductDisplayPrice } from "../../api/backendProductApi";
 
 const PackageCard = ({ pkg }) => {
-  // ✅ Destructure props safely with defaults
   const {
     name = "Health Package",
-    rate = {},
     testCount = 0,
     bookedCount = 0,
     category,
@@ -13,9 +11,13 @@ const PackageCard = ({ pkg }) => {
     fasting,
     imageLocation,
     imageMaster = [],
+    isCustomized
   } = pkg;
 
   const imgSrc = imageLocation || imageMaster?.[0]?.imgLocations || "/packagePic.png";
+  
+  // Get enhanced pricing information
+  const priceInfo = getProductDisplayPrice(pkg);
 
   return (
     <div className="w-full sm:max-w-sm bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition">
@@ -35,7 +37,12 @@ const PackageCard = ({ pkg }) => {
             {category}
           </span>
         )}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white px-3 py-2 text-sm sm:text-base font-semibold">
+        {priceInfo.hasDiscount && (
+          <span className="absolute top-2 left-2 bg-red-500 text-white text-xs sm:text-sm px-2 py-1 rounded font-bold">
+            {priceInfo.discountPercentage}% OFF
+          </span>
+        )}
+        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/70 to-transparent text-white px-3 py-2 text-sm sm:text-base font-semibold">
           {name}
         </div>
       </div>
@@ -68,14 +75,24 @@ const PackageCard = ({ pkg }) => {
         {/* Price & Button */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
           <div>
-            {rate?.b2C && rate.b2C !== rate.offerRate && (
-              <p className="text-red-400 line-through font-bold text-xs sm:text-sm">
-                ₹{rate.b2C}
-              </p>
+            {priceInfo.hasDiscount && (
+              <div className="flex items-center gap-2">
+                <p className="text-gray-500 line-through font-medium text-xs sm:text-sm">
+                  ₹{priceInfo.originalPrice}
+                </p>
+                <p className="text-red-500 font-bold text-xs sm:text-sm">
+                  {priceInfo.discountPercentage}% OFF
+                </p>
+              </div>
             )}
             <p className="text-blue-700 font-semibold text-sm sm:text-lg">
-              ₹{rate?.offerRate || rate?.payAmt}
+              ₹{priceInfo.displayPrice}
             </p>
+            {isCustomized && (
+              <p className="text-green-600 text-xs font-medium mt-1">
+                Special Price
+              </p>
+            )}
           </div>
           <Link
             to={`/packages/${pkg.code}`}
