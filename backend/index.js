@@ -6,9 +6,6 @@ import "dotenv/config";
 import authRouter from "./src/routes/auth.js";
 import userRouter from "./src/routes/user.js";
 import adminRouter from "./src/routes/admin.js";
-import testsRouter from "./src/routes/products/tests.js";
-import profilesRouter from "./src/routes/products/profiles.js";
-import offersRouter from "./src/routes/products/offers.js";
 
 const app = express();
 
@@ -30,9 +27,6 @@ const PORT = process.env.PORT || 3000;
 app.use("/api/auth", authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/admin', adminRouter);
-app.use('/api/products/tests', testsRouter);
-app.use('/api/products/profiles', profilesRouter);
-app.use('/api/products/offers', offersRouter);
 
 app.get("/", (req, res) => {
   res.json({
