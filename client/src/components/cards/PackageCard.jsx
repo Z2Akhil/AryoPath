@@ -22,7 +22,7 @@ const PackageCard = ({ pkg }) => {
   return (
     <div className="w-full sm:max-w-sm bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
       {/* Image Section - Fixed Height */}
-      <div className="relative h-48 sm:h-52 flex-shrink-0">
+      <div className="relative h-48 sm:h-52 shrink-0">
         <img
           src={imgSrc}
           alt={name}
@@ -39,13 +39,13 @@ const PackageCard = ({ pkg }) => {
           </span>
         )}
         
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white px-3 py-2 text-sm sm:text-base font-semibold">
+        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/70 to-transparent text-white px-3 py-2 text-sm sm:text-base font-semibold">
           {name}
         </div>
       </div>
 
       {/* Content Section - Flexible */}
-      <div className="p-3 sm:p-4 flex flex-col flex-grow">
+      <div className="p-3 sm:p-4 flex flex-col grow">
         {/* Title - Fixed Height */}
         <h2 className="text-base sm:text-lg font-bold text-gray-800 mb-2 line-clamp-1">
           {name}
