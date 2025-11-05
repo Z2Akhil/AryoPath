@@ -9,6 +9,7 @@ import HomePage from "./pages/HomePage";
 import ReportsPage from "./pages/ReportPage";
 import OrdersPage from "./pages/OrderPage";
 import AccountPage from "./pages/AccountPage";
+import UsersPage from "./pages/UsersPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
           <Route path="packages" element={<PackageCatalog />} />
           <Route path="offers" element={<OfferCatalog />} />
           <Route path="tests" element={<TestCatalog />} />
+          <Route path="users" element={<UsersPage />} />
           <Route path="account" element={<AccountPage />} />
         </Route>
         
