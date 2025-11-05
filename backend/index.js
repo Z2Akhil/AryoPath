@@ -12,8 +12,12 @@ import offersRouter from "./src/routes/products/offers.js";
 
 const app = express();
 
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5174'],
+  credentials: true,
+}));
+
 app.use(helmet());
-app.use(cors());
 app.use(express.json());
 
 mongoose
