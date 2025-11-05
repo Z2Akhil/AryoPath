@@ -26,6 +26,7 @@ const PackageCard = ({ pkg }) => {
         <img
           src={imgSrc}
           alt={name}
+          loading="lazy"
           onError={(e) => {
             e.currentTarget.onerror = null; // prevent infinite loop
             e.currentTarget.src = "/packagePic.png"; // fallback image

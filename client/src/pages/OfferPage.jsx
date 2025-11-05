@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import OfferCard from "../components/cards/OfferCard";
 import { getProductsFromBackend } from "../api/backendProductApi"; // Use our backend API
+import Pagination from "../components/Pagination";
 
 const OfferPage = ({limit}) => {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [currentPage,setCurrentPage]=useState(1);
+  const [itemsPerPage,setItemsPerPage]=useState(12);
   useEffect(() => {
     const fetchOffers = async () => {
       try {
@@ -37,7 +39,12 @@ const OfferPage = ({limit}) => {
     return <div className="text-center py-20 text-red-500">{error}</div>;
   }
 
-const displayOffers=limit ? offers.slice(0,limit):offers;
+const totalItems=offers.length;
+const totalPages=Math.ceil(totalItems/itemsPerPage);
+const startIndex=(currentPage-1)*itemsPerPage;
+const endIndex=startIndex+itemsPerPage;
+
+const displayOffers=limit ? offers.slice(0,limit):offers.slice(startIndex,endIndex);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
@@ -54,6 +61,18 @@ const displayOffers=limit ? offers.slice(0,limit):offers;
           </p>
         )}
       </div>
+      {!limit && totalItems>itemsPerPage && totalPages>1&&(
+        <div className=" mt-3 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={setItemsPerPage}
+            totalItems={totalItems}
+           />
+        </div>
+      )}
     </div>
   );
 };
