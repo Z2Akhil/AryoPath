@@ -11,14 +11,34 @@ import Offer from '../models/Offer.js';
 const router = express.Router();
 
 const handleExistingSession = async (admin, existingSession, req, res, startTime, ipAddress, userAgent) => {
-  // Check if the existing session's API key is still valid
+  console.log('🔄 Reusing existing session:', {
+    sessionId: existingSession._id,
+    apiKey: existingSession.thyrocareApiKey.substring(0, 10) + '...',
+    admin: admin.name
+  });
+  
   if (existingSession.isApiKeyExpired()) {
-    console.log('Existing session API key expired, forcing fresh ThyroCare API call');
     return await handleThyroCareLogin(req, res, startTime, ipAddress, userAgent, req.body.username, req.body.password);
   }
 
-  // Refresh the existing session usage instead of creating a new one
+  const now = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+  const nowIST = new Date(now.getTime() + istOffset);
+  const sessionCreatedIST = new Date(existingSession.createdAt.getTime() + istOffset);
+  
+  const hasCrossedMidnight = nowIST.getDate() !== sessionCreatedIST.getDate() || 
+                            nowIST.getMonth() !== sessionCreatedIST.getMonth() || 
+                            nowIST.getFullYear() !== sessionCreatedIST.getFullYear();
+  
+  if (hasCrossedMidnight) {
+    console.log('❌ ThyroCare API key has expired (crossed midnight), forcing fresh ThyroCare API call');
+    console.log('Session created IST:', sessionCreatedIST);
+    console.log('Current time IST:', nowIST);
+    return await handleThyroCareLogin(req, res, startTime, ipAddress, userAgent, req.body.username, req.body.password);
+  }
+
   await existingSession.refreshUsage();
+  
   
   await AdminActivity.logActivity({
     adminId: admin._id,
@@ -94,7 +114,6 @@ const handleThyroCareLogin = async (req, res, startTime, ipAddress, userAgent, u
     
     const admin = await Admin.findOrCreateFromThyroCare(thyrocareData, username);
     
-    // Update password in our database
     await admin.updatePassword(password);
     
     const session = await AdminSession.createFromThyroCare(
@@ -161,7 +180,6 @@ const handleThyroCareLogin = async (req, res, startTime, ipAddress, userAgent, u
 
 router.post('/login', async (req, res) => {
   const startTime = Date.now();
-  // Fix deprecated connection property
   const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   const userAgent = req.get('User-Agent') || '';
 
