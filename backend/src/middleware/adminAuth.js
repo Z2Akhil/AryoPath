@@ -3,13 +3,21 @@ import AdminActivity from '../models/AdminActivity.js';
 
 const adminAuth = async (req, res, next) => {
   const startTime = Date.now();
-  const ipAddress = req.ip || req.connection.remoteAddress;
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   const userAgent = req.get('User-Agent') || '';
 
   try {
     const apiKey = req.body?.apiKey || req.headers['x-api-key'];
     
+    console.log('Admin auth middleware checking API key:', {
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length,
+      endpoint: req.path,
+      method: req.method
+    });
+    
     if (!apiKey) {
+      console.log('No API key provided in request');
       return res.status(401).json({
         success: false,
         error: 'API key is required for admin access'
@@ -17,6 +25,7 @@ const adminAuth = async (req, res, next) => {
     }
 
     if (typeof apiKey !== 'string' || apiKey.trim().length === 0) {
+      console.log('Invalid API key format:', apiKey);
       return res.status(401).json({
         success: false,
         error: 'Invalid API key format'
@@ -26,6 +35,7 @@ const adminAuth = async (req, res, next) => {
     const session = await AdminSession.findActiveByApiKey(apiKey);
     
     if (!session) {
+      console.log('No active session found for API key:', apiKey.substring(0, 10) + '...');
       return res.status(401).json({
         success: false,
         error: 'Invalid or expired API key'
@@ -33,6 +43,12 @@ const adminAuth = async (req, res, next) => {
     }
 
     if (!session.isValid()) {
+      console.log('Session is not valid:', {
+        isActive: session.isActive,
+        isApiKeyExpired: session.isApiKeyExpired(),
+        isAccessTokenExpired: session.isAccessTokenExpired(),
+        isSessionExpired: session.isSessionExpired()
+      });
       return res.status(401).json({
         success: false,
         error: 'Session expired. Please login again.'
