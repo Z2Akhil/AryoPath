@@ -117,9 +117,24 @@ adminSessionSchema.statics.createFromThyroCare = async function(adminId, thyroca
       isActive: true
     });
 
+    console.log('🆕 Creating new session:', {
+      adminId: adminId,
+      apiKey: thyrocareData.apiKey.substring(0, 10) + '...',
+      apiKeyExpiresAt: apiKeyExpiresAt,
+      accessTokenExpiresAt: accessTokenExpiresAt,
+      sessionExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+    });
+
     await session.save();
+    
+    console.log('✅ Session created successfully:', {
+      sessionId: session._id,
+      apiKey: session.thyrocareApiKey.substring(0, 10) + '...'
+    });
+    
     return session;
   } catch (error) {
+    console.error('❌ Error creating session:', error);
     throw error;
   }
 };
@@ -156,13 +171,50 @@ adminSessionSchema.methods.refreshUsage = async function() {
 
 // Static method to find active session by API key
 adminSessionSchema.statics.findActiveByApiKey = async function(apiKey) {
-  return await this.findOne({
+  console.log('🔍 Searching for active session with API key:', {
+    apiKey: apiKey.substring(0, 10) + '...',
+    currentTime: new Date()
+  });
+  
+  const query = {
     thyrocareApiKey: apiKey,
     isActive: true,
     apiKeyExpiresAt: { $gt: new Date() },
     accessTokenExpiresAt: { $gt: new Date() },
     sessionExpiresAt: { $gt: new Date() }
-  }).populate('adminId');
+  };
+  
+  console.log('🔍 Query details:', query);
+  
+  const session = await this.findOne(query).populate('adminId');
+  
+  if (session) {
+    console.log('✅ Session found:', {
+      sessionId: session._id,
+      admin: session.adminId?.name,
+      apiKeyExpiresAt: session.apiKeyExpiresAt,
+      accessTokenExpiresAt: session.accessTokenExpiresAt,
+      sessionExpiresAt: session.sessionExpiresAt
+    });
+  } else {
+    console.log('❌ No active session found for API key');
+    
+    // Check if there's any session with this API key (even inactive)
+    const anySession = await this.findOne({ thyrocareApiKey: apiKey });
+    if (anySession) {
+      console.log('ℹ️ Found inactive session:', {
+        sessionId: anySession._id,
+        isActive: anySession.isActive,
+        apiKeyExpiresAt: anySession.apiKeyExpiresAt,
+        accessTokenExpiresAt: anySession.accessTokenExpiresAt,
+        sessionExpiresAt: anySession.sessionExpiresAt
+      });
+    } else {
+      console.log('❌ No session found at all for this API key');
+    }
+  }
+  
+  return session;
 };
 
 // Static method to cleanup expired sessions
