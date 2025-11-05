@@ -13,6 +13,13 @@ axiosInstance.interceptors.request.use((config) => {
   // Get current API key from auth service
   const apiKey = authService.getCurrentApiKey();
   
+  console.log('Axios request interceptor:', {
+    url: config.url,
+    method: config.method,
+    hasApiKey: !!apiKey,
+    apiKey: apiKey ? apiKey.substring(0, 10) + '...' : null
+  });
+  
   if (apiKey) {
     // Add API key as x-api-key header
     config.headers['x-api-key'] = apiKey;
