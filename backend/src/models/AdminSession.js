@@ -263,4 +263,52 @@ adminSessionSchema.statics.cleanupExpired = async function() {
   return result.modifiedCount;
 };
 
+// Static method to deactivate all previous sessions for an admin
+adminSessionSchema.statics.deactivatePreviousSessions = async function(adminId) {
+  try {
+    const result = await this.updateMany(
+      {
+        adminId: adminId,
+        isActive: true
+      },
+      {
+        isActive: false,
+        updatedAt: new Date()
+      }
+    );
+
+    console.log('🔄 Deactivated previous sessions:', {
+      adminId: adminId,
+      deactivatedCount: result.modifiedCount
+    });
+
+    return result.modifiedCount;
+  } catch (error) {
+    console.error('❌ Error deactivating previous sessions:', error);
+    throw error;
+  }
+};
+
+// Static method to create a single active session (deactivates previous ones)
+adminSessionSchema.statics.createSingleActiveSession = async function(adminId, thyrocareData, ipAddress, userAgent = '') {
+  try {
+    // Step 1: Deactivate all previous sessions for this admin
+    await this.deactivatePreviousSessions(adminId);
+
+    // Step 2: Create new session using existing logic
+    const session = await this.createFromThyroCare(adminId, thyrocareData, ipAddress, userAgent);
+
+    console.log('✅ Created single active session:', {
+      sessionId: session._id,
+      adminId: adminId,
+      apiKey: session.thyrocareApiKey.substring(0, 10) + '...'
+    });
+
+    return session;
+  } catch (error) {
+    console.error('❌ Error creating single active session:', error);
+    throw error;
+  }
+};
+
 export default mongoose.model('AdminSession', adminSessionSchema);
