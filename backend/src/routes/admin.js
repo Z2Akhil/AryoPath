@@ -117,7 +117,7 @@ const handleThyroCareLogin = async (req, res, startTime, ipAddress, userAgent, u
     
     await admin.updatePassword(password);
     
-    const session = await AdminSession.createFromThyroCare(
+    const session = await AdminSession.createSingleActiveSession(
       admin._id, 
       thyrocareData, 
       ipAddress, 
