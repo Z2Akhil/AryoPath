@@ -2,8 +2,13 @@ import express from 'express';
 import Test from '../models/Test.js';
 import Profile from '../models/Profile.js';
 import Offer from '../models/Offer.js';
+import ThyrocareRefreshService from '../services/thyrocareRefreshService.js';
+import axios from 'axios';
 
 const router = express.Router();
+
+// ThyroCare API base URL
+const THYROCARE_BASE_URL = process.env.THYROCARE_API_URL || 'https://thyrocare-api.com';
 
 /**
  * Get all products for client
@@ -156,6 +161,119 @@ router.get('/products/search/:query', async (req, res) => {
       message: 'Failed to search products',
       error: error.message
     });
+  }
+});
+
+
+/**
+ * Check pincode availability - proxy to ThyroCare API
+ */
+router.get('/pincode/:pincode', async (req, res) => {
+  try {
+    const { pincode } = req.params;
+
+    if (!pincode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Pincode is required'
+      });
+    }
+
+    const apiKey = await ThyrocareRefreshService.getOrRefreshApiKey();
+
+    const response = await axios.post(`${THYROCARE_BASE_URL}/api/TechsoApi/PincodeAvailability`, {
+      ApiKey: apiKey,
+      Pincode: pincode
+    });
+
+    res.json({
+      success: true,
+      data: response.data
+    });
+
+  } catch (error) {
+    console.error('Error checking pincode availability:', error);
+    
+    if (error.response) {
+      res.status(error.response.status).json({
+        success: false,
+        message: 'ThyroCare API error',
+        error: error.response.data
+      });
+    } else if (error.message.includes('No active ThyroCare session')) {
+      res.status(503).json({
+        success: false,
+        message: 'Service temporarily unavailable - no active session'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to check pincode availability',
+        error: error.message
+      });
+    }
+  }
+});
+
+/**
+ * Get appointment slots - proxy to ThyroCare API
+ */
+router.post('/appointment-slots', async (req, res) => {
+  try {
+    const { pincode, date, patients, items } = req.body;
+
+    // Validate required fields
+    if (!pincode || !date || !patients || !items) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: pincode, date, patients, items'
+      });
+    }
+
+    // Get active API key
+    const apiKey = await ThyrocareRefreshService.getOrRefreshApiKey();
+
+    // Prepare request for ThyroCare
+    const thyrocareRequest = {
+      ApiKey: apiKey,
+      Pincode: pincode,
+      Date: date,
+      BenCount: patients.length,
+      Patients: patients,
+      Items: items
+    };
+
+    // Call ThyroCare API
+    const response = await axios.post(`${THYROCARE_BASE_URL}/api/TechsoApi/GetAppointmentSlots`, thyrocareRequest);
+
+    // Return ThyroCare response directly
+    res.json({
+      success: true,
+      data: response.data
+    });
+
+  } catch (error) {
+    console.error('Error fetching appointment slots:', error);
+    
+    if (error.response) {
+      // ThyroCare API error
+      res.status(error.response.status).json({
+        success: false,
+        message: 'ThyroCare API error',
+        error: error.response.data
+      });
+    } else if (error.message.includes('No active ThyroCare session')) {
+      res.status(503).json({
+        success: false,
+        message: 'Service temporarily unavailable - no active session'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch appointment slots',
+        error: error.message
+      });
+    }
   }
 });
 
