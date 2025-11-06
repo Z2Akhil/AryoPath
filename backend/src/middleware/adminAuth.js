@@ -1,5 +1,6 @@
 import AdminSession from '../models/AdminSession.js';
 import AdminActivity from '../models/AdminActivity.js';
+import ThyrocareRefreshService from '../services/thyrocareRefreshService.js';
 
 const adminAuth = async (req, res, next) => {
   const startTime = Date.now();
@@ -64,14 +65,34 @@ const adminAuth = async (req, res, next) => {
     console.log('📊 ADMIN AUTH - VALIDATION DETAILS:', validationDetails);
 
     if (!session.isValid()) {
-      console.log('❌ ADMIN AUTH - Session validation failed:', {
-        reason: 'One or more tokens expired',
-        details: validationDetails
-      });
-      return res.status(401).json({
-        success: false,
-        error: 'Session expired. Please login again.'
-      });
+      console.log('🔄 ADMIN AUTH - Session expired, attempting automatic refresh...');
+      
+      try {
+        // Try to automatically refresh the API key
+        const newApiKey = await ThyrocareRefreshService.getOrRefreshApiKey();
+        
+        console.log('✅ ADMIN AUTH - Automatic refresh successful, updating request with new API key');
+        
+        // Update the request with the new API key
+        req.adminSession = await AdminSession.findActiveByApiKey(newApiKey);
+        req.admin = req.adminSession.adminId;
+        req.adminApiKey = newApiKey;
+        
+        // Add the new API key to the response headers for the admin
+        res.set('X-New-Api-Key', newApiKey);
+        
+        console.log('✅ ADMIN AUTH - Session refreshed automatically:', {
+          admin: req.adminSession.adminId.name,
+          newApiKey: newApiKey.substring(0, 10) + '...'
+        });
+        
+      } catch (refreshError) {
+        console.error('❌ ADMIN AUTH - Automatic refresh failed:', refreshError);
+        return res.status(401).json({
+          success: false,
+          error: 'Session expired and automatic refresh failed. Please login again.'
+        });
+      }
     }
 
     console.log('✅ ADMIN AUTH - All tokens valid, refreshing session usage...');
