@@ -1,20 +1,18 @@
 import { useCart } from "../context/CartContext";
 import { Trash2, ShoppingCart } from "lucide-react";
-import Form from "../components/Form"; // import your form component
+import Form from "../components/Form";
 
 const CartPage = () => {
   const { cart, removeFromCart, clearCart } = useCart();
 
-  // 🧮 Calculate total price
   const total = cart.reduce(
     (sum, item) => sum + parseFloat(item.rate.offerRate || 0),
     0
   );
 
-  // 🧩 Create arrays of test names and IDs
   const pkgNames = cart.map((item) => item.name);
   const pkgIds = cart.map((item) => item.code);
-  const pkgRates = cart.map((item) => item.rate.offerRate); //array of rates
+  const pkgRates = cart.map((item) => item.rate.offerRate);
 
   return (
     <div className="max-w-6xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -95,9 +93,9 @@ const CartPage = () => {
           {/* Right: Booking Form */}
           <div className="lg:col-span-1">
             <Form
-              pkgName={pkgNames} // array of names
-              pkgRate={total} // passing sum of rates
-              pkgId={pkgIds} // array of IDs
+              pkgName={pkgNames} 
+              pkgRate={total}
+              pkgId={pkgIds}
             />
           </div>
         </div>

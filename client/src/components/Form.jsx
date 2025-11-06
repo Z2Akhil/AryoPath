@@ -49,12 +49,6 @@ const Form = ({ pkgRate, pkgId }) => {
     setBeneficiaries(Array.from({ length: count }, () => ({ name: "", age: "", gender: "" })));
   };
 
-  const handleChange = (index, field, value) => {
-    const updated = [...beneficiaries];
-    updated[index][field] = value;
-    setBeneficiaries(updated);
-  };
-
   const handleSelectBeneficiary = (beneficiary) => {
     const isAlreadySelected = beneficiaries.some(b => b.name === beneficiary.name);
     if (isAlreadySelected) {
@@ -92,18 +86,6 @@ const Form = ({ pkgRate, pkgId }) => {
       }));
     } else {
       setContactInfo(prev => ({ ...prev, [field]: value }));
-    }
-  };
-
-  const handleSaveBeneficiary = () => {
-    if (beneficiaries[0]?.name) {
-      const beneficiaryData = createBeneficiary({
-        ...beneficiaries[0],
-        relationship: 'Self'
-      });
-      if (saveBeneficiary(beneficiaryData)) {
-        alert('Beneficiary saved successfully!');
-      }
     }
   };
 
