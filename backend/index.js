@@ -7,6 +7,7 @@ import authRouter from "./src/routes/auth.js";
 import userRouter from "./src/routes/user.js";
 import adminRouter from "./src/routes/admin.js";
 import clientRouter from "./src/routes/client.js";
+import ThyrocareRefreshService from "./src/services/thyrocareRefreshService.js";
 
 const app = express();
 
@@ -20,7 +21,11 @@ app.use(express.json());
 
 mongoose
   .connect(process.env.MONGODB_URI)
-  .then(() => console.log("MongoDB Connected"))
+  .then(async () => {
+    console.log("MongoDB Connected");
+    // Check and refresh API keys on startup
+    await ThyrocareRefreshService.checkAndRefreshOnStartup();
+  })
   .catch((err) => console.log("MongoDB Connection Error: ", err));
 
 const PORT = process.env.PORT || 3000;
