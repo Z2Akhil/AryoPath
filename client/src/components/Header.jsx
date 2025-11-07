@@ -199,7 +199,7 @@ export default function Header() {
 
   return (
     <>
-      <style jsx>{`
+      <style jsx="true">{`
         @keyframes fade-in {
           from { opacity: 0; }
           to { opacity: 1; }
@@ -232,7 +232,7 @@ export default function Header() {
 
             {/* Right Section */}
             <div className="flex items-center gap-4">
-              <CartIcon count={cart.length} />
+              <CartIcon count={cart.totalItems} />
               <DesktopNav 
                 user={user} 
                 onLogin={() => setAuthOpen(true)} 
