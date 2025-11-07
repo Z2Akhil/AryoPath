@@ -5,13 +5,13 @@ import Form from "../components/Form";
 const CartPage = () => {
   const { cart, removeFromCart } = useCart();
 
-  const total = cart.reduce(
-    (sum, item) => sum + parseFloat(item.rate.offerRate || 0),
+  const total = cart?.items?.reduce(
+    (sum, item) => sum + parseFloat(item?.sellingPrice || 0),
     0
-  );
+  ) || 0;
 
-  const pkgNames = cart.map((item) => item.name);
-  const pkgIds = cart.map((item) => item.code);
+  const pkgNames = cart?.items?.map((item) => item?.name) || [];
+  const pkgIds = cart?.items?.map((item) => item?.productCode) || [];
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -21,7 +21,7 @@ const CartPage = () => {
         <h1 className="text-2xl font-bold text-gray-800">Items in your cart</h1>
       </div>
 
-      {cart.length === 0 ? (
+      {cart?.totalItems === 0 ? (
         <div className="text-center py-20 bg-white rounded-xl shadow-sm border">
           <p className="text-gray-500 text-lg mb-4">🛒 Your cart is empty</p>
           <p className="text-gray-400 text-sm">Add some tests to get started!</p>
@@ -32,30 +32,56 @@ const CartPage = () => {
           <div className="lg:col-span-2 bg-white rounded-xl">
             {/* Table */}
             <div className="rounded-xl overflow-hidden border">
-              {/* Header */}
-              <div className="hidden sm:grid grid-cols-6 bg-blue-50 text-gray-800 font-semibold border-b border-blue-200 text-sm sm:text-base">
+              {/* Desktop Header */}
+              <div className="hidden sm:grid grid-cols-7 bg-blue-50 text-gray-800 font-semibold border-b border-blue-200 text-sm">
                 <div className="col-span-3 py-3 px-4 border-r border-blue-200">Item</div>
-                <div className="col-span-1 py-3 px-4 border-r border-blue-200">Price</div>
+                <div className="col-span-2 py-3 px-4 border-r border-blue-200">Price</div>
                 <div className="col-span-2 py-3 px-4 text-center">Action</div>
               </div>
 
               {/* Body */}
               <div className="divide-y divide-gray-100">
-                {cart.map((item) => (
+                {cart?.items?.map((item) => (
                   <div
-                    key={item.code}
-                    className="grid grid-cols-3 sm:grid-cols-6 items-center hover:bg-gray-50 transition text-sm sm:text-base"
+                    key={item.productCode}
+                    className="grid grid-cols-1 sm:grid-cols-7 gap-3 sm:gap-0 p-4 sm:p-0 hover:bg-gray-50 transition text-sm"
                   >
-                    <div className="col-span-3 py-3 px-4 text-gray-800 font-medium truncate">
-                      {item.name}
+                    {/* Item Name - Full width on mobile, 3 cols on desktop */}
+                    <div className="sm:col-span-3 py-2 sm:py-3 px-4 text-gray-800 font-medium">
+                      <div className="text-base font-semibold mb-1">{item.name}</div>
+                      <div className="text-xs text-gray-500">Code: {item.productCode}</div>
                     </div>
-                    <div className="col-span-1 py-3 px-4 text-gray-700">
-                      ₹{item.rate.offerRate.toFixed(2)}
+
+                    {/* Price - Full width on mobile, 2 cols on desktop */}
+                    <div className="sm:col-span-2 py-2 sm:py-3 px-4">
+                      <div className="flex flex-col">
+                        {item.discount > 0 ? (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-500 line-through text-sm">
+                                ₹{item.originalPrice.toFixed(2)}
+                              </span>
+                              <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded">
+                                Save ₹{item.discount.toFixed(2)}
+                              </span>
+                            </div>
+                            <span className="text-blue-700 font-bold text-lg">
+                              ₹{item.sellingPrice.toFixed(2)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-blue-700 font-bold text-lg">
+                            ₹{item.sellingPrice.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="col-span-2 py-3 px-4 text-center">
+
+                    {/* Action - Full width on mobile, 2 cols on desktop */}
+                    <div className="sm:col-span-2 py-2 sm:py-3 px-4 text-center">
                       <button
-                        onClick={() => removeFromCart(item.code)}
-                        className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-semibold px-4 py-1.5 rounded-md shadow-sm transition-all duration-200"
+                        onClick={() => removeFromCart(item.productCode)}
+                        className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-md shadow-sm transition-all duration-200"
                       >
                         Remove
                       </button>
