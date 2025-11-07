@@ -11,7 +11,7 @@ const RESCHEDULABLE_STATUSES = [
 ];
 
 const AccountPage = () => {
-  const { user, updateProfile, fetchOrders, getReportDownloadLink, loading: userLoading } = useUser();
+  const { user, updateProfile, fetchOrders, getReportDownloadLink, hasCompleteContactInfo, loading: userLoading } = useUser();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
@@ -153,6 +153,30 @@ const AccountPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 bg-gray-50 min-h-[calc(100vh-200px)]">
+      
+      {/* Informational Strip for Incomplete Contact Information */}
+      {user && !hasCompleteContactInfo() && (
+        <div className="mb-6 bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-orange-800 font-semibold text-lg mb-1">Complete Your Profile</h3>
+              <p className="text-orange-700 text-sm mb-3">
+                Add your contact and address details for faster bookings and better service experience.
+              </p>
+              <button 
+                onClick={() => setIsEditingProfile(true)}
+                className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 text-sm font-medium transition-colors"
+              >
+                Add Contact Details
+              </button>
+            </div>
+            <div className="text-orange-500 ml-4">
+              <User size={24} />
+            </div>
+          </div>
+        </div>
+      )}
+
       <h1 className="text-3xl font-bold mb-8 text-gray-800">My Account</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
