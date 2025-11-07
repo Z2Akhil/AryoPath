@@ -7,6 +7,8 @@ import authRouter from "./src/routes/auth.js";
 import userRouter from "./src/routes/user.js";
 import adminRouter from "./src/routes/admin.js";
 import clientRouter from "./src/routes/client.js";
+import cartRouter from "./src/routes/cart.js";
+import beneficiaryRouter from "./src/routes/beneficiary.js";
 import ThyrocareRefreshService from "./src/services/thyrocareRefreshService.js";
 
 const app = express();
@@ -34,6 +36,8 @@ app.use("/api/auth", authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/client', clientRouter);
+app.use('/api/cart', cartRouter);
+app.use('/api/beneficiaries', beneficiaryRouter);
 
 app.get("/", (req, res) => {
   res.json({
