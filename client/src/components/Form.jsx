@@ -4,11 +4,11 @@ import { getAppointmentSlots } from "../api/appointmentSlotApi";
 import { useUser } from "../context/userContext";
 import { 
   getInitialFormData, 
-  saveContactInfo 
+  saveContactInfo  
 } from "../utils/localStorage";
 import BeneficiaryManager from "./BeneficiaryManager";
 
-const Form = ({ pkgRate, pkgId }) => {
+const Form = ({pkgName,pkgRate, pkgId }) => {
   const { user } = useUser();
   const [numPersons, setNumPersons] = useState(1);
   const [selectedBeneficiaries, setSelectedBeneficiaries] = useState([{ name: "", age: "", gender: "" }]);
@@ -191,7 +191,8 @@ const Form = ({ pkgRate, pkgId }) => {
   return (
     <>
       <form onSubmit={handleSubmit} className="w-full bg-white border border-gray-300 rounded-2xl p-6 shadow-sm">
-        <h2 className="text-2xl font-bold text-gray-800 mt-2">Book Now, Pay Later</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mt-2">{pkgName}</h2>
+        <h2 className="text-xl font-bold text-gray-800 ">Book Now, Pay Later</h2>
         <p className="text-green-700 font-medium mb-2">Simple Process, No Spam Calls</p>
         <select
           value={numPersons}
