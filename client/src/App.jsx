@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { UserProvider } from './context/UserProvider';
 import { ToastProvider } from './context/ToastContext';
 import { CartProvider } from './context/CartContext';
+import { BeneficiaryProvider } from './context/BeneficiaryContext';
 import Header from './components/Header'; 
 import Footer from './components/Footer';
 import ToastContainer from './components/Toast';
@@ -22,7 +23,8 @@ function App() {
     <ToastProvider>
       <UserProvider>
         <CartProvider>
-          <Router>
+          <BeneficiaryProvider>
+            <Router>
             <div className="min-h-screen flex flex-col">
               <Header />
               <main className="grow">
@@ -46,7 +48,8 @@ function App() {
               <Footer />
               <ToastContainer />
             </div>
-          </Router>
+            </Router>
+          </BeneficiaryProvider>
         </CartProvider>
       </UserProvider>
     </ToastProvider>
