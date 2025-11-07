@@ -210,7 +210,7 @@ const PackageDetailedPage = () => {
                     <div key={category} className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
                       <button
                         onClick={() => toggleCategory(category)}
-                        className="w-full flex justify-between items-center px-6 py-4 bg-gradient-to-r from-gray-50 to-white hover:from-blue-50 hover:to-indigo-50 transition-all"
+                        className="w-full flex justify-between items-center px-6 py-4 bg-linear-to-r from-gray-50 to-white hover:from-blue-50 hover:to-indigo-50 transition-all"
                       >
                         <div className="flex items-center gap-3">
                           <span className="text-lg font-semibold text-gray-900">{category}</span>
