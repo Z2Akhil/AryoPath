@@ -180,61 +180,85 @@ adminSessionSchema.statics.findActiveByApiKey = async function(apiKey) {
   console.log('🔍 ADMIN SESSION - LOOKUP STARTED:', {
     apiKeyPrefix: apiKey.substring(0, 10) + '...',
     currentTime: currentTime.toISOString(),
-    query: { thyrocareApiKey: apiKey }
+    query: { 
+      thyrocareApiKey: apiKey,
+      isActive: true  // Only look for active sessions
+    }
   });
   
-  // First, try to find any session with this API key
-  const anySession = await this.findOne({ thyrocareApiKey: apiKey }).populate('adminId');
+  // Find the most recent ACTIVE session with this API key
+  const activeSession = await this.findOne({ 
+    thyrocareApiKey: apiKey,
+    isActive: true 
+  })
+  .sort({ createdAt: -1 }) // Get the most recent session
+  .populate('adminId');
   
-  if (!anySession) {
-    console.log('❌ ADMIN SESSION - No session found at all for this API key');
+  if (!activeSession) {
+    console.log('❌ ADMIN SESSION - No ACTIVE session found for this API key');
+    
+    // Check if there are any inactive sessions for debugging
+    const inactiveSession = await this.findOne({ thyrocareApiKey: apiKey, isActive: false })
+      .sort({ createdAt: -1 })
+      .populate('adminId');
+    
+    if (inactiveSession) {
+      console.log('⚠️ ADMIN SESSION - Found INACTIVE session:', {
+        sessionId: inactiveSession._id,
+        admin: inactiveSession.adminId?.name,
+        isActive: inactiveSession.isActive,
+        createdAt: inactiveSession.createdAt?.toISOString(),
+        reason: 'Session was deactivated (likely due to new login)'
+      });
+    }
+    
     return null;
   }
   
-  console.log('✅ ADMIN SESSION - Session found in database:', {
-    sessionId: anySession._id,
-    admin: anySession.adminId?.name,
-    isActive: anySession.isActive,
-    apiKeyExpiresAt: anySession.apiKeyExpiresAt?.toISOString(),
-    accessTokenExpiresAt: anySession.accessTokenExpiresAt?.toISOString(),
-    sessionExpiresAt: anySession.sessionExpiresAt?.toISOString(),
-    createdAt: anySession.createdAt?.toISOString(),
-    lastUsedAt: anySession.lastUsedAt?.toISOString()
+  console.log('✅ ADMIN SESSION - Active session found in database:', {
+    sessionId: activeSession._id,
+    admin: activeSession.adminId?.name,
+    isActive: activeSession.isActive,
+    apiKeyExpiresAt: activeSession.apiKeyExpiresAt?.toISOString(),
+    accessTokenExpiresAt: activeSession.accessTokenExpiresAt?.toISOString(),
+    sessionExpiresAt: activeSession.sessionExpiresAt?.toISOString(),
+    createdAt: activeSession.createdAt?.toISOString(),
+    lastUsedAt: activeSession.lastUsedAt?.toISOString()
   });
   
   // Detailed token validation logging
-  const apiKeyExpired = anySession.isApiKeyExpired();
-  const accessTokenExpired = anySession.isAccessTokenExpired();
-  const sessionExpired = anySession.isSessionExpired();
+  const apiKeyExpired = activeSession.isApiKeyExpired();
+  const accessTokenExpired = activeSession.isAccessTokenExpired();
+  const sessionExpired = activeSession.isSessionExpired();
   
   console.log('📊 ADMIN SESSION - TOKEN VALIDATION:', {
-    isActive: anySession.isActive,
+    isActive: activeSession.isActive,
     apiKeyExpired: apiKeyExpired,
     accessTokenExpired: accessTokenExpired,
     sessionExpired: sessionExpired,
     currentTime: currentTime.toISOString(),
-    timeUntilApiKeyExpiry: anySession.apiKeyExpiresAt ? Math.floor((anySession.apiKeyExpiresAt - currentTime) / 1000) + 's' : 'N/A',
-    timeUntilAccessTokenExpiry: anySession.accessTokenExpiresAt ? Math.floor((anySession.accessTokenExpiresAt - currentTime) / 1000) + 's' : 'N/A',
-    timeUntilSessionExpiry: anySession.sessionExpiresAt ? Math.floor((anySession.sessionExpiresAt - currentTime) / 1000) + 's' : 'N/A'
+    timeUntilApiKeyExpiry: activeSession.apiKeyExpiresAt ? Math.floor((activeSession.apiKeyExpiresAt - currentTime) / 1000) + 's' : 'N/A',
+    timeUntilAccessTokenExpiry: activeSession.accessTokenExpiresAt ? Math.floor((activeSession.accessTokenExpiresAt - currentTime) / 1000) + 's' : 'N/A',
+    timeUntilSessionExpiry: activeSession.sessionExpiresAt ? Math.floor((activeSession.sessionExpiresAt - currentTime) / 1000) + 's' : 'N/A'
   });
   
   // Check if session is valid using the isValid method
-  if (anySession.isValid()) {
+  if (activeSession.isValid()) {
     console.log('✅ ADMIN SESSION - Session is VALID and ACTIVE');
-    return anySession;
+    return activeSession;
   }
   
   // If session exists but is not valid, log the specific reasons
   console.log('❌ ADMIN SESSION - Session exists but is INVALID:', {
     reason: 'One or more validation checks failed',
     validationChecks: {
-      isActive: anySession.isActive,
+      isActive: activeSession.isActive,
       isApiKeyExpired: apiKeyExpired,
       isAccessTokenExpired: accessTokenExpired,
       isSessionExpired: sessionExpired
     },
     failedChecks: [
-      !anySession.isActive && 'isActive=false',
+      !activeSession.isActive && 'isActive=false',
       apiKeyExpired && 'apiKeyExpired',
       accessTokenExpired && 'accessTokenExpired',
       sessionExpired && 'sessionExpired'
