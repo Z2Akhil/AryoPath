@@ -24,6 +24,7 @@ export default function AdminPanel() {
     if (path.includes('/tests')) return 'Tests';
     if (path.includes('/users')) return 'Users';
     if (path.includes('/account')) return 'Account';
+    if (path.includes('/settings')) return 'Settings';
     
     return 'Dashboard';
   };
@@ -94,6 +95,12 @@ export default function AdminPanel() {
             className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
           >
             Users
+          </NavLink>
+          <NavLink
+            to="settings"
+            className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
+          >
+            Settings
           </NavLink>
           <NavLink
             to="account"
