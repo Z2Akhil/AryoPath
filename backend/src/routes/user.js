@@ -65,17 +65,39 @@ router.get('/profile', async (req, res) => {
 
 router.put('/profile', async (req, res) => {
   try {
-    const { email, address, city, state } = req.body;
+    console.log('User Route: PUT /profile - Request received');
+    console.log('User Route: Request body:', req.body);
+    console.log('User Route: Authenticated user:', req.user ? req.user.mobileNumber : 'No user');
+    
+    const { firstName, lastName, email, address, city, state } = req.body;
     
     // Validate email if provided
     if (email && !validator.isEmail(email)) {
+      console.log('User Route: Invalid email provided:', email);
       return res.status(400).json({
         success: false,
         message: 'Invalid email address'
       });
     }
 
+    // Validate firstName and lastName if provided
+    if (firstName !== undefined && (!firstName.trim() || firstName.trim().length > 50)) {
+      return res.status(400).json({
+        success: false,
+        message: 'First name must be between 1 and 50 characters'
+      });
+    }
+
+    if (lastName !== undefined && (!lastName.trim() || lastName.trim().length > 50)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Last name must be between 1 and 50 characters'
+      });
+    }
+
     const updateData = {};
+    if (firstName !== undefined) updateData.firstName = firstName.trim();
+    if (lastName !== undefined) updateData.lastName = lastName.trim();
     if (email !== undefined) updateData.email = email;
     if (address !== undefined) updateData.address = address;
     if (city !== undefined) updateData.city = city;
@@ -112,6 +134,16 @@ router.put('/profile', async (req, res) => {
     });
   } catch (error) {
     console.error('Profile update error:', error);
+    
+    // Handle validation errors from Mongoose
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: errors.join(', ')
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Server error while updating profile'
