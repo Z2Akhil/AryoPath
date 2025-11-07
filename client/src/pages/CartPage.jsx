@@ -113,7 +113,7 @@ const CartPage = () => {
           </div>
 
           {/* 🧩 Form Section */}
-            <Form pkgName={pkgNames} pkgRate={total} pkgId={pkgIds} />
+            <Form pkgName={pkgNames.length === 1 ? pkgNames[0] : "Your tests"} pkgRate={total} pkgId={pkgIds} />
         </div>
       )}
     </div>
