@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { axiosInstance } from '../api/axiosInstance';
 import {
   Mail,
   Phone,
@@ -8,10 +9,6 @@ import {
   Upload,
   Image,
   X,
-  Facebook,
-  Twitter,
-  Instagram,
-  Linkedin,
 } from "lucide-react";
 import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 export default function SettingsPage() {
@@ -75,7 +72,7 @@ export default function SettingsPage() {
     setLoading(true);
 
     try {
-      // ✅ Step 1: Check if any field has data
+      // ✅ Step 1: Validate that at least one field has data
       const hasData =
         form.helplineNumber.trim() ||
         form.email.trim() ||
@@ -86,38 +83,49 @@ export default function SettingsPage() {
       if (!hasData) {
         showNotification("error", "No data filled! Please fill in at least one field.");
         setLoading(false);
-        return; 
+        return;
       }
 
-      // ✅ Step 2: Proceed to create FormData only if data is valid
+      // ✅ Step 2: Create FormData
       const formData = new FormData();
+
       if (form.helplineNumber.trim())
         formData.append("helplineNumber", form.helplineNumber);
+
       if (form.email.trim())
         formData.append("email", form.email);
-      if (form.logo) formData.append("logo", form.logo);
-      if (form.heroImage) formData.append("heroImage", form.heroImage);
 
-      // Only append social media if any are filled
+      if (form.logo)
+        formData.append("logo", form.logo);
+
+      if (form.heroImage)
+        formData.append("heroImage", form.heroImage);
+
       if (Object.values(form.socialMedia).some((link) => link.trim() !== "")) {
         formData.append("socialMedia", JSON.stringify(form.socialMedia));
       }
 
-      // ✅ Step 3: Send the request
-      const res = await fetch("/api/settings", { method: "PUT", body: formData });
+      // ✅ Step 3: Send PUT request using axiosInstance
+      const response = await axiosInstance.put("/settings", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-      if (res.ok) {
+      // ✅ Step 4: Handle success response
+      if (response.status === 200) {
         showNotification("success", "Settings updated successfully!");
       } else {
-        throw new Error("Update failed");
+        showNotification("error", response.data?.message || "Update failed.");
       }
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error("Error updating settings:", err);
       showNotification("error", "Failed to update settings. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="p-6 relative">
@@ -249,7 +257,7 @@ export default function SettingsPage() {
         {/* Social Media Links */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <Facebook className="w-4 h-4 text-blue-500" /> Social Media Links
+            <FaFacebookF className="w-4 h-4 text-blue-500" /> Social Media Links
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
@@ -295,8 +303,8 @@ export default function SettingsPage() {
           {notification.show && (
             <div
               className={`absolute bottom-14 right-0 px-4 py-2.5 flex items-center gap-2 rounded-lg shadow-md text-sm animate-fade-in-up ${notification.type === "success"
-                  ? "bg-green-600 text-white"
-                  : "bg-red-600 text-white"
+                ? "bg-green-600 text-white"
+                : "bg-red-600 text-white"
                 }`}
             >
               {notification.type === "success" ? (
