@@ -5,7 +5,7 @@ import authService from "../services/authService";
 const isProduction = import.meta.env.MODE === "production";
 // Decide which base URL to use
 const baseURL = isProduction
-  ? import.meta.env.VITE_TARGET_URL   // Production backend (from Vercel env)
+  ? `${import.meta.env.VITE_TARGET_URL}/api`   // Production backend (from Vercel env)
   : "http://localhost:3000/api";
   
 export const axiosInstance = axios.create({
