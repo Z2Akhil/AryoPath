@@ -8,16 +8,6 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
-    server: {
-      proxy: {
-        "/api": {
-          target: env.VITE_TARGET_URL,
-          changeOrigin: true,
-          secure: false,
-          rewrite: (p) => p.replace(/^\/api/, "/api"),
-        },
-      },
-    },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),

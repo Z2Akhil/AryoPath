@@ -1,4 +1,6 @@
 import { useCart } from "../../context/CartContext";
+import { getProductDisplayPrice } from "../../api/backendProductApi";
+import { Link } from "react-router-dom";
 
 const TestCard = ({ test }) => {
   const {
@@ -12,18 +14,12 @@ const TestCard = ({ test }) => {
     fasting = "N/A",
   } = test;
 
-  const discount =
-    rate.b2C && parseFloat(rate.b2C) > parseFloat(rate.offerRate)
-      ? Math.round(
-          ((parseFloat(rate.b2C) - parseFloat(rate.offerRate)) /
-            parseFloat(rate.b2C)) *
-            100
-        )
-      : 0;
+  // Get enhanced pricing information using the same logic as PackageCard
+  const priceInfo = getProductDisplayPrice(test);
 
   const { cart, addToCart, removeFromCart } = useCart();
 
-  const inCart = cart.some((item) => item.code === code);
+  const inCart = cart?.items?.some((item) => item.productCode === code) || false;
 
   return (
     <div className="bg-white shadow-lg rounded-xl p-5 max-w-sm w-full flex flex-col justify-between hover:shadow-xl transition">
@@ -48,39 +44,57 @@ const TestCard = ({ test }) => {
         </p>
       </div>
 
-      {/* Price & Discount */}
+      {/* Price & Discount - Consistent layout for all cards */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex flex-col">
-          <div className="flex items-baseline gap-2">
-            <p className="text-xl font-bold text-gray-900">₹{rate.offerRate}</p>
-            {rate.b2C && rate.b2C !== rate.offerRate && (
-              <p className="text-gray-400 line-through text-sm">₹{rate.b2C}</p>
+          <div className="flex items-baseline gap-3 flex-wrap">
+            {priceInfo.hasDiscount ? (
+              <>
+                <p className="text-gray-500 line-through font-medium text-sm">
+                  ₹{priceInfo.originalPrice}
+                </p>
+                <p className="text-blue-700 font-bold text-xl">
+                  ₹{priceInfo.displayPrice}
+                </p>
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                  {priceInfo.discountPercentage}% OFF
+                </span>
+              </>
+            ) : (
+              <>
+                <p className="text-blue-700 font-bold text-xl">
+                  ₹{priceInfo.displayPrice}
+                </p>
+                {/* Empty space to maintain consistent layout */}
+                <div className="invisible">
+                  <p className="text-gray-500 line-through font-medium text-sm">
+                    ₹0
+                  </p>
+                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                    0% OFF
+                  </span>
+                </div>
+              </>
             )}
           </div>
-          {discount > 0 && (
-            <span
-              className="mt-1 inline-block bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md"
-              style={{
-                clipPath:
-                  "polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%)",
-              }}
-            >
-              {discount}% OFF
-            </span>
-          )}
         </div>
 
-        {/* Add to Cart / Remove Button */}
-        <button
-          onClick={() => (inCart ? removeFromCart(code) : addToCart(test))}
-          className={`font-medium px-5 py-2 rounded text-sm transition ${
-            inCart
-              ? "bg-red-500 text-white hover:bg-red-600"
-              : "bg-green-600 text-white hover:bg-green-700"
-          }`}
-        >
-          {inCart ? "Remove" : "Add to Cart"}
-        </button>
+        {/* Add to Cart / View Cart Button */}
+        {inCart ? (
+          <Link
+            to="/cart"
+            className="bg-blue-600 text-white font-medium px-5 py-2 rounded text-sm hover:bg-blue-700 transition"
+          >
+            View Cart
+          </Link>
+        ) : (
+          <button
+            onClick={() => addToCart(test)}
+            className="bg-green-600 text-white font-medium px-5 py-2 rounded text-sm hover:bg-green-700 transition"
+          >
+            Add to Cart
+          </button>
+        )}
       </div>
 
       {/* Footer: Booked Count */}

@@ -7,31 +7,12 @@ import { axiosInstance } from "./axiosInstance";
  */
 export const getProducts = async (productType) => {
   try {
-    const response = await axiosInstance.post("/productsmaster/Products", {
-      ProductType: productType,
-    });
+    const response = await axiosInstance.get(`/client/products?type=${productType}`);
 
-    const data = response.data;
-
-    if (data.response === "Success" && data.master) {
-      switch (productType.toUpperCase()) {
-        case "OFFER":
-          return data.master.offer || [];
-        case "TEST":
-          return data.master.tests || [];
-        case "PROFILE":
-          return data.master.profile || [];
-        case "ALL":
-          return [
-            ...(data.master.offer || []),
-            ...(data.master.tests || []),
-            ...(data.master.profile || []),
-          ];
-        default:
-          return [];
-      }
+    if (response.data.success) {
+      return response.data.products || [];
     } else {
-      console.warn("⚠️ Unexpected API response:", data);
+      console.warn("⚠️ Unexpected API response:", response.data);
       return [];
     }
   } catch (error) {

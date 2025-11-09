@@ -7,16 +7,16 @@ export const UserProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuth = () => {
       const token = localStorage.getItem('authToken');
       const savedUser = localStorage.getItem('user');
 
       if (token && savedUser) {
         try {
-          await authService.getProfile();
+          // Simply restore user from localStorage without API call
           setUser(JSON.parse(savedUser));
         } catch (error) {
-          console.error("Auth check failed:", error.message);
+          console.error("Failed to restore user from localStorage:", error);
           authService.logout();
           setUser(null);
         }
@@ -44,6 +44,12 @@ export const UserProvider = ({ children }) => {
           isVerified: response.user.isVerified,
           name: `${response.user.firstName} ${response.user.lastName || ''}`.trim(),
         };
+
+        // Save auth token to localStorage
+        if (response.token) {
+          localStorage.setItem('authToken', response.token);
+        }
+
         localStorage.setItem('user', JSON.stringify(userData)); 
         setUser(userData); 
         return { success: true, user: userData };
@@ -69,6 +75,11 @@ export const UserProvider = ({ children }) => {
           isVerified: response.user.isVerified,
           name: `${response.user.firstName} ${response.user.lastName || ''}`.trim() || phone,
         };
+
+        // Save auth token to localStorage
+        if (response.token) {
+          localStorage.setItem('authToken', response.token);
+        }
 
         localStorage.setItem('user', JSON.stringify(userData)); 
         setUser(userData); 
@@ -154,19 +165,68 @@ export const UserProvider = ({ children }) => {
   };
 
   const updateProfile = async (profileData) => { 
-      console.log('UserProvider: Attempting updateProfile (placeholder)...', profileData);
+      console.log('UserProvider: Attempting updateProfile...', profileData);
+      console.log('UserProvider: Current user:', user);
+      
+      // Debug: Check auth token
+      const token = localStorage.getItem('authToken');
+      console.log('UserProvider: Auth token exists:', !!token);
+      if (token) {
+          console.log('UserProvider: Auth token length:', token.length);
+          console.log('UserProvider: Auth token first 20 chars:', token.substring(0, 20) + '...');
+      }
+      
       if (!user) throw new Error("Not logged in");
       try {
-          await new Promise(resolve => setTimeout(resolve, 500)); 
-          const updatedUserData = { ...user, ...profileData, name: `${profileData.firstName} ${profileData.lastName || ''}`.trim() };
-          setUser(updatedUserData); // Optimistic UI update
-          localStorage.setItem('user', JSON.stringify(updatedUserData)); // Update storage
-          console.log('Profile update simulated.');
-          return { success: true, message: "Profile updated (simulated)", user: updatedUserData };
+          console.log('UserProvider: Calling authService.updateProfile...');
+          const response = await authService.updateProfile(profileData);
+          console.log('UserProvider: Backend response:', response);
+          
+          if (response.success && response.user) {
+              const updatedUserData = {
+                  ...user,
+                  ...response.user,
+                  name: `${response.user.firstName} ${response.user.lastName || ''}`.trim()
+              };
+              setUser(updatedUserData);
+              localStorage.setItem('user', JSON.stringify(updatedUserData));
+              console.log('Profile updated successfully.');
+              return { success: true, message: "Profile updated successfully", user: updatedUserData };
+          } else {
+              throw new Error(response.message || 'Failed to update profile');
+          }
       } catch (error) {
           console.error("Update profile error:", error);
+          console.error("Update profile error details:", {
+              message: error.message,
+              status: error.response?.status,
+              statusText: error.response?.statusText,
+              data: error.response?.data,
+              headers: error.response?.headers,
+              config: {
+                  url: error.config?.url,
+                  method: error.config?.method,
+                  headers: error.config?.headers
+              }
+          });
           throw new Error(error.response?.data?.message || error.message || 'Failed to update profile');
       }
+  };
+
+  // Check if user has complete contact information
+  const hasCompleteContactInfo = () => {
+    if (!user) return false;
+    
+    const requiredFields = [
+      user.firstName,
+      user.lastName,
+      user.email,
+      user.address,
+      user.city,
+      user.state
+    ];
+    
+    return requiredFields.every(field => field && field.trim().length > 0);
   };
 
   const fetchAppointmentSlots = async (pincode, date, benCount = 1) => {
@@ -211,6 +271,7 @@ export const UserProvider = ({ children }) => {
     updateProfile, 
     fetchAppointmentSlots,
     rescheduleOrder,
+    hasCompleteContactInfo,
   };
 
    if (loading) {

@@ -1,6 +1,16 @@
-import { Facebook, Twitter, Instagram, Linkedin, Phone, Mail, Clock, MapPin } from "lucide-react";
+import { Phone, Mail, Clock, MapPin } from "lucide-react";
+import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn } from "react-icons/fa";
+import { useSiteSettings } from "../context/SiteSettingsContext";
 
 export default function Footer() {
+  const { settings, loading, error } = useSiteSettings();
+
+  if (loading) return <p className="text-center py-8 text-gray-500">Loading...</p>;
+  if (error) return <p className="text-center py-8 text-red-500">Failed to load settings</p>;
+  if (!settings) return <p className="text-center py-8 text-gray-500">No settings available</p>;
+
+  const { email, helplineNumber, socialMedia } = settings;
+  
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -26,17 +36,17 @@ export default function Footer() {
               Your trusted partner for comprehensive health diagnostics and lab services.
             </p>
             <div className="flex space-x-3">
-              <a href="#" className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors">
-                <Facebook className="w-4 h-4" />
+              <a href={socialMedia.facebook} className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors">
+                <FaFacebookF className="w-4 h-4" />
               </a>
-              <a href="#" className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors">
-                <Twitter className="w-4 h-4" />
+              <a href={socialMedia.twitter} className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors">
+                <FaTwitter className="w-4 h-4" />
               </a>
-              <a href="#" className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors">
-                <Instagram className="w-4 h-4" />
+              <a href={socialMedia.instagram} className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors">
+                <FaInstagram className="w-4 h-4" />
               </a>
-              <a href="#" className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors">
-                <Linkedin className="w-4 h-4" />
+              <a href={socialMedia.linkedin} className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors">
+                <FaLinkedinIn className="w-4 h-4" />
               </a>
             </div>
           </div>
@@ -111,14 +121,14 @@ export default function Footer() {
             <div className="space-y-3 text-sm">
               <div className="flex items-center gap-3 text-gray-300">
                 <Mail className="w-4 h-4 text-blue-400" />
-                <a href="mailto:support@aryopath.com" className="hover:text-blue-400 transition-colors">
-                  support@aryopath.com
+                <a href={`mailto:${email}`} className="hover:text-blue-400 transition-colors">
+                  {email}
                 </a>
               </div>
               <div className="flex items-center gap-3 text-gray-300">
                 <Phone className="w-4 h-4 text-blue-400" />
-                <a href="tel:+911234567890" className="hover:text-blue-400 transition-colors">
-                  +91 12345 67890
+                <a href={`tel:${helplineNumber}`} className="hover:text-blue-400 transition-colors">
+                  {helplineNumber}
                 </a>
               </div>
               <div className="flex items-center gap-3 text-gray-300">

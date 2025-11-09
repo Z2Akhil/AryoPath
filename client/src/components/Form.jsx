@@ -4,16 +4,14 @@ import { getAppointmentSlots } from "../api/appointmentSlotApi";
 import { useUser } from "../context/userContext";
 import { 
   getInitialFormData, 
-  saveBeneficiary, 
-  createBeneficiary,
-  saveContactInfo 
+  saveContactInfo  
 } from "../utils/localStorage";
 import BeneficiaryManager from "./BeneficiaryManager";
 
-const Form = ({ pkgRate, pkgId }) => {
+const Form = ({pkgName,pkgRate, pkgId }) => {
   const { user } = useUser();
   const [numPersons, setNumPersons] = useState(1);
-  const [beneficiaries, setBeneficiaries] = useState([{ name: "", age: "", gender: "" }]);
+  const [selectedBeneficiaries, setSelectedBeneficiaries] = useState([{ name: "", age: "", gender: "" }]);
   const [pincode, setPincode] = useState("");
   const [pincodeStatus, setPincodeStatus] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -37,8 +35,22 @@ const Form = ({ pkgRate, pkgId }) => {
   useEffect(() => {
     if (user) {
       const initialData = getInitialFormData();
-      setBeneficiaries(initialData.beneficiaries);
-      setContactInfo(initialData.contactInfo);
+      setSelectedBeneficiaries(initialData.beneficiaries);
+      
+      // Auto-fill contact information from user profile
+      const autoFilledContactInfo = {
+        email: user.email || initialData.contactInfo.email,
+        mobile: user.mobileNumber || initialData.contactInfo.mobile,
+        address: {
+          street: user.address || initialData.contactInfo.address.street,
+          city: user.city || initialData.contactInfo.address.city,
+          state: user.state || initialData.contactInfo.address.state,
+          pincode: initialData.contactInfo.address.pincode,
+          landmark: initialData.contactInfo.address.landmark
+        }
+      };
+      
+      setContactInfo(autoFilledContactInfo);
       setPincode(initialData.contactInfo.address.pincode);
     }
   }, [user]);
@@ -46,32 +58,32 @@ const Form = ({ pkgRate, pkgId }) => {
   const handlePersonsChange = (e) => {
     const count = parseInt(e.target.value);
     setNumPersons(count);
-    setBeneficiaries(Array.from({ length: count }, () => ({ name: "", age: "", gender: "" })));
+    setSelectedBeneficiaries(Array.from({ length: count }, () => ({ name: "", age: "", gender: "" })));
   };
 
   const handleSelectBeneficiary = (beneficiary) => {
-    const isAlreadySelected = beneficiaries.some(b => b.name === beneficiary.name);
+    const isAlreadySelected = selectedBeneficiaries.some(b => b.name === beneficiary.name);
     if (isAlreadySelected) {
       alert('This beneficiary is already selected. Please choose a different beneficiary.');
       return;
     }
     
-    const updatedBeneficiaries = [...beneficiaries];
+    const updatedBeneficiaries = [...selectedBeneficiaries];
     const emptyIndex = updatedBeneficiaries.findIndex(b => !b.name);
     
     if (emptyIndex >= 0) {
       updatedBeneficiaries[emptyIndex] = beneficiary;
-      setBeneficiaries(updatedBeneficiaries);
+      setSelectedBeneficiaries(updatedBeneficiaries);
     } else {
       updatedBeneficiaries[0] = beneficiary;
-      setBeneficiaries(updatedBeneficiaries);
+      setSelectedBeneficiaries(updatedBeneficiaries);
     }
   };
 
   const handleRemoveBeneficiary = (index) => {
-    const updatedBeneficiaries = [...beneficiaries];
+    const updatedBeneficiaries = [...selectedBeneficiaries];
     updatedBeneficiaries[index] = { name: "", age: "", gender: "" };
-    setBeneficiaries(updatedBeneficiaries);
+    setSelectedBeneficiaries(updatedBeneficiaries);
   };
 
   const handleContactInfoChange = (field, value) => {
@@ -132,19 +144,19 @@ const Form = ({ pkgRate, pkgId }) => {
         items = pkgId.map((id) => ({
           Id: id,
           PatientQuantity: numPersons,
-          PatientIds: beneficiaries.map((_, i) => i + 1),
+          PatientIds: selectedBeneficiaries.map((_, i) => i + 1),
         }));
       } else {
         items = [
           {
             Id: pkgId,
             PatientQuantity: numPersons,
-            PatientIds: beneficiaries.map((_, i) => i + 1),
+            PatientIds: selectedBeneficiaries.map((_, i) => i + 1),
           },
         ];
       }
 
-      const patients = beneficiaries.map((b, i) => ({
+      const patients = selectedBeneficiaries.map((b, i) => ({
         Id: i + 1,
         Name: b.name,
         Gender: b.gender === "Male" ? "M" : b.gender === "Female" ? "F" : "O",
@@ -179,7 +191,8 @@ const Form = ({ pkgRate, pkgId }) => {
   return (
     <>
       <form onSubmit={handleSubmit} className="w-full bg-white border border-gray-300 rounded-2xl p-6 shadow-sm">
-        <h2 className="text-2xl font-bold text-gray-800 mt-2">Book Now, Pay Later</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mt-2">{pkgName}</h2>
+        <h2 className="text-xl font-bold text-gray-800 ">Book Now, Pay Later</h2>
         <p className="text-green-700 font-medium mb-2">Simple Process, No Spam Calls</p>
         <select
           value={numPersons}
@@ -222,7 +235,7 @@ const Form = ({ pkgRate, pkgId }) => {
           <p className="font-medium text-gray-800 mb-2">Select Beneficiaries ({numPersons} required)</p>
           
           {/* Show selected beneficiaries */}
-          {beneficiaries.map((beneficiary, index) => (
+          {selectedBeneficiaries.map((beneficiary, index) => (
             beneficiary.name ? (
               <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2">
                 <div className="flex items-center justify-between">
@@ -257,9 +270,9 @@ const Form = ({ pkgRate, pkgId }) => {
             )
           ))}
           
-          {beneficiaries.filter(b => !b.name).length > 0 && (
+          {selectedBeneficiaries.filter(b => !b.name).length > 0 && (
             <p className="text-sm text-gray-600 mt-2">
-              {beneficiaries.filter(b => !b.name).length} more beneficiary(ies) required
+              {selectedBeneficiaries.filter(b => !b.name).length} more beneficiary(ies) required
             </p>
           )}
         </div>
@@ -284,10 +297,9 @@ const Form = ({ pkgRate, pkgId }) => {
             <input 
               type="text" 
               placeholder="Mobile Number" 
-              className="w-full border border-gray-400 rounded px-3 py-2 text-sm bg-gray-100 cursor-not-allowed"
-              value={user?.mobileNumber || ''}
-              readOnly
-              disabled
+              className="w-full border border-gray-400 rounded px-3 py-2 text-sm"
+              value={contactInfo.mobile}
+              onChange={(e) => handleContactInfoChange('mobile', e.target.value)}
             />
           </div>
           

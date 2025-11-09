@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Star, User } from 'lucide-react';
-import { 
-  getSavedBeneficiaries, 
-  saveBeneficiary, 
-  deleteBeneficiary, 
-  createBeneficiary 
-} from '../utils/localStorage';
+import { useState, useEffect } from 'react';
+import { Plus, Edit2, Trash2, Star, User, LogIn } from 'lucide-react';
+import { useBeneficiary } from '../context/BeneficiaryContext';
+import { useUser } from '../context/userContext';
 
-const BeneficiaryManager = ({ isOpen, onClose, onSelectBeneficiary }) => {
-  const [beneficiaries, setBeneficiaries] = useState([]);
+const BeneficiaryManager = ({ isOpen, onClose, onSelectBeneficiary, showAuthModal }) => {
+  const { user } = useUser();
+  const { 
+    beneficiaries, 
+    loading, 
+    addBeneficiary, 
+    updateBeneficiary, 
+    deleteBeneficiary,
+    setDefaultBeneficiary 
+  } = useBeneficiary();
+  
   const [isEditing, setIsEditing] = useState(false);
   const [currentBeneficiary, setCurrentBeneficiary] = useState(null);
   const [formData, setFormData] = useState({
@@ -20,16 +25,27 @@ const BeneficiaryManager = ({ isOpen, onClose, onSelectBeneficiary }) => {
 
   useEffect(() => {
     if (isOpen) {
-      loadBeneficiaries();
+      setIsEditing(false);
+      setCurrentBeneficiary(null);
+      setFormData({
+        name: '',
+        age: '',
+        gender: '',
+        relationship: 'Self'
+      });
     }
   }, [isOpen]);
 
-  const loadBeneficiaries = () => {
-    const saved = getSavedBeneficiaries();
-    setBeneficiaries(saved);
-  };
-
   const handleNewBeneficiary = () => {
+    if (!user) {
+      if (showAuthModal) {
+        showAuthModal();
+      } else {
+        alert('Please login to add beneficiaries');
+      }
+      return;
+    }
+
     setIsEditing(true);
     setCurrentBeneficiary(null);
     setFormData({
@@ -51,35 +67,58 @@ const BeneficiaryManager = ({ isOpen, onClose, onSelectBeneficiary }) => {
     });
   };
 
-  const handleSaveBeneficiary = () => {
+  const handleSaveBeneficiary = async () => {
     if (!formData.name.trim()) {
       alert('Please enter beneficiary name');
       return;
     }
 
-    const beneficiaryData = createBeneficiary({
-      ...formData,
-      id: currentBeneficiary?.id,
-      isDefault: formData.relationship === 'Self' 
-    });
+    if (!formData.gender) {
+      alert('Please select gender');
+      return;
+    }
 
-    if (saveBeneficiary(beneficiaryData)) {
-      loadBeneficiaries();
-      setIsEditing(false);
-      setCurrentBeneficiary(null);
-      setFormData({ name: '', age: '', gender: '', relationship: 'Self' });
-    } else {
+    try {
+      const beneficiaryData = {
+        name: formData.name.trim(),
+        age: formData.age,
+        gender: formData.gender,
+        relationship: formData.relationship,
+        isDefault: formData.relationship === 'Self'
+      };
+
+      let result;
+      if (currentBeneficiary) {
+        result = await updateBeneficiary(currentBeneficiary.id, beneficiaryData);
+      } else {
+        result = await addBeneficiary(beneficiaryData);
+      }
+
+      if (result.success) {
+        setIsEditing(false);
+        setCurrentBeneficiary(null);
+        setFormData({ name: '', age: '', gender: '', relationship: 'Self' });
+      } else {
+        alert(result.message || 'Failed to save beneficiary');
+      }
+    } catch (error) {
       alert('Failed to save beneficiary');
     }
   };
 
-  const handleDeleteBeneficiary = (beneficiaryId) => {
+  const handleDeleteBeneficiary = async (beneficiaryId) => {
     if (window.confirm('Are you sure you want to delete this beneficiary?')) {
-      if (deleteBeneficiary(beneficiaryId)) {
-        loadBeneficiaries();
-      } else {
-        alert('Failed to delete beneficiary');
+      const result = await deleteBeneficiary(beneficiaryId);
+      if (!result.success) {
+        alert(result.message || 'Failed to delete beneficiary');
       }
+    }
+  };
+
+  const handleSetDefault = async (beneficiaryId) => {
+    const result = await setDefaultBeneficiary(beneficiaryId);
+    if (!result.success) {
+      alert(result.message || 'Failed to set default beneficiary');
     }
   };
 
@@ -146,7 +185,7 @@ const BeneficiaryManager = ({ isOpen, onClose, onSelectBeneficiary }) => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Gender
+                      Gender *
                     </label>
                     <select
                       value={formData.gender}
@@ -183,9 +222,10 @@ const BeneficiaryManager = ({ isOpen, onClose, onSelectBeneficiary }) => {
                 <div className="flex gap-3 pt-4">
                   <button
                     onClick={handleSaveBeneficiary}
-                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    disabled={loading}
+                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Save
+                    {loading ? 'Saving...' : 'Save'}
                   </button>
                   <button
                     onClick={() => setIsEditing(false)}
@@ -198,10 +238,28 @@ const BeneficiaryManager = ({ isOpen, onClose, onSelectBeneficiary }) => {
             ) : (
               // Beneficiary List
               <div className="space-y-4">
+                {/* Login Prompt for Guest Users */}
+                {!user && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <LogIn size={20} className="text-yellow-600" />
+                      <div>
+                        <p className="text-sm font-medium text-yellow-800">
+                          Login Required
+                        </p>
+                        <p className="text-xs text-yellow-700">
+                          Please login to add and manage beneficiaries
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Add New Button */}
                 <button
                   onClick={handleNewBeneficiary}
-                  className="w-full flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors text-gray-600 hover:text-blue-600"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors text-gray-600 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus size={20} />
                   <span className="font-medium">Add New Beneficiary</span>
@@ -209,7 +267,12 @@ const BeneficiaryManager = ({ isOpen, onClose, onSelectBeneficiary }) => {
 
                 {/* Beneficiaries List */}
                 <div className="space-y-3">
-                  {beneficiaries.length === 0 ? (
+                  {loading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="text-sm text-gray-500 mt-2">Loading beneficiaries...</p>
+                    </div>
+                  ) : beneficiaries.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       <User size={48} className="mx-auto mb-3 text-gray-300" />
                       <p>No saved beneficiaries yet</p>
@@ -244,6 +307,15 @@ const BeneficiaryManager = ({ isOpen, onClose, onSelectBeneficiary }) => {
                           >
                             Use
                           </button>
+                          {!beneficiary.isDefault && (
+                            <button
+                              onClick={() => handleSetDefault(beneficiary.id)}
+                              className="p-1 text-gray-400 hover:text-yellow-600 transition-colors"
+                              title="Set as Default"
+                            >
+                              <Star size={16} />
+                            </button>
+                          )}
                           <button
                             onClick={() => handleEditBeneficiary(beneficiary)}
                             className="p-1 text-gray-400 hover:text-blue-600 transition-colors"

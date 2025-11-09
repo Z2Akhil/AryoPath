@@ -3,8 +3,10 @@ import User from "../models/User.js";
 
 const auth = async (req, res, next) => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer", "");
-
+    const authHeader = req.header("Authorization");
+    
+    const token = authHeader?.replace("Bearer", "").trim();
+   
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -15,7 +17,16 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id).select("-password");
 
-    if (!user || !user.isActive) {
+    if (!user) {
+      console.log('Auth Middleware: User not found - returning 401');
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token or user not found.",
+      });
+    }
+
+    if (!user.isActive) {
+      console.log('Auth Middleware: User not active - returning 401');
       return res.status(401).json({
         success: false,
         message: "Invalid token or user not found.",
