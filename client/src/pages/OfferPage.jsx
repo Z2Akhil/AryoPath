@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import OfferCard from "../components/cards/OfferCard";
+import SkeletonOfferCard from "../components/cards/SkeletonOfferCard";
 import { getProductsFromBackend } from "../api/backendProductApi"; // Use our backend API
 import Pagination from "../components/Pagination";
 
@@ -32,7 +33,18 @@ const OfferPage = ({limit}) => {
   }, []);
 
   if (loading) {
-    return <div className="text-center py-20 text-gray-500">Loading offers...</div>;
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
+          Offers on Health Packages
+        </h1>
+        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: limit || 8 }).map((_, index) => (
+            <SkeletonOfferCard key={index} />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (error) {
