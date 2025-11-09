@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink,Link, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Menu, X, Search, User, LogOut, ChevronDown } from 'lucide-react';
 import { useUser } from '../context/userContext';
 import { useToast } from '../context/ToastContext';
@@ -34,7 +34,7 @@ const Logo = () => (
   </Link>
 );
 
-const CartIcon = ({count}) => (
+const CartIcon = ({ count }) => (
   <Link to="/cart" className="relative group cursor-pointer">
     <div className="p-2 rounded-full bg-gray-100 group-hover:bg-blue-100 transition-colors duration-300">
       <ShoppingCart className="w-6 h-6 text-gray-700 group-hover:text-blue-600 transition-colors duration-300" />
@@ -125,13 +125,15 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose }) => {
             {user ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                    <User className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">Welcome, {user.name}</p>
-                    <p className="text-sm text-gray-500">Manage your account</p>
-                  </div>
+                  <Link to="/account" onClick={onClose} className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                      <User className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Welcome, {user.name}</p>
+                      <p className="text-sm text-gray-500">Manage your account</p>
+                    </div>
+                  </Link>
                 </div>
                 <button
                   onClick={() => { onLogoutConfirm(); onClose(); }}
@@ -235,10 +237,10 @@ export default function Header() {
             {/* Right Section */}
             <div className="flex items-center gap-4">
               <CartIcon count={cart.totalItems} />
-              <DesktopNav 
-                user={user} 
-                onLogin={() => setAuthOpen(true)} 
-                onLogoutConfirm={() => setLogoutConfirmOpen(true)} 
+              <DesktopNav
+                user={user}
+                onLogin={() => setAuthOpen(true)}
+                onLogoutConfirm={() => setLogoutConfirmOpen(true)}
               />
 
               {/* Mobile Menu Button */}
@@ -270,16 +272,16 @@ export default function Header() {
                 ))}
               </ul>
 
-                {/* Quick Actions */}
-                <div className="flex items-center gap-4 text-sm">
-                  <Link to="#" className="text-gray-600 hover:text-blue-600 transition-colors">Help Center</Link>
-                  <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                  {!loading && settings?.helplineNumber && (
-                    <a href={`tel:${settings.helplineNumber}`} className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
-                      📞 {settings.helplineNumber}
-                    </a>
-                  )}
-                </div>
+              {/* Quick Actions */}
+              <div className="flex items-center gap-4 text-sm">
+                <Link to="#" className="text-gray-600 hover:text-blue-600 transition-colors">Help Center</Link>
+                <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                {!loading && settings?.helplineNumber && (
+                  <a href={`tel:${settings.helplineNumber}`} className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
+                    📞 {settings.helplineNumber}
+                  </a>
+                )}
+              </div>
             </div>
           </nav>
         </div>
