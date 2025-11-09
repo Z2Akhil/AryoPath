@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const LOGIN_API_URL = import.meta.env.VITE_BACKEND_API + '/admin/login';
+const LOGIN_API_URL = `${import.meta.env.VITE_BACKEND_API}/api/admin/login`;
 
 class AuthService {
   /**
