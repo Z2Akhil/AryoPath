@@ -17,7 +17,6 @@ import ThyrocareRefreshService from "./src/services/thyrocareRefreshService.js";
 
 const app = express();
 
-// --- Env validation ---
 ["MONGODB_URI", "CLIENT_URLS"].forEach((key) => {
   if (!process.env[key]) {
     console.error(`❌ Missing environment variable: ${key}`);
@@ -27,16 +26,33 @@ const app = express();
 
 console.log("Allowed origins:", process.env.CLIENT_URLS);
 // --- Middleware ---
-const allowedOrigins = process.env.CLIENT_URLS.split(",");
+const allowedOrigins = process.env.CLIENT_URLS.split(",").map(url => url.trim());
+console.log("Allowed origins:", allowedOrigins);
+
 app.use(cors({
-  origin: (origin, cb) => (!origin || allowedOrigins.includes(origin) ? cb(null, true) : cb(new Error("Not allowed by CORS"))),
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`⚠️  CORS: Origin ${origin} not in allowed list, but allowing in development`);
+      return callback(null, true);
+    }
+    
+    console.log(`❌ CORS: Origin ${origin} not allowed`);
+    return callback(new Error('Not allowed by CORS'), false);
+  },
   credentials: true,
 }));
 
 app.use(helmet());
 app.use(compression());
 app.use(express.json());
-if (process.env.NODE_ENV !== "production") app.use(morgan("dev"));
+if (process.env.NODE_ENV !== "production")
+  app.use(morgan("dev"));
 app.use("/api", rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 
 // --- Routes ---
