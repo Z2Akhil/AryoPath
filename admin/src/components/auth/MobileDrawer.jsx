@@ -112,6 +112,13 @@ const MobileDrawer = ({
                 Users
               </NavLink>
               <NavLink
+                to="settings"
+                onClick={onClose}
+                className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+              >
+                Settings
+              </NavLink>
+              <NavLink
                 to="account"
                 onClick={onClose}
                 className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
