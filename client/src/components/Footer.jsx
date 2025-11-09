@@ -147,7 +147,7 @@ export default function Footer() {
         <div className="border-t border-gray-800 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-gray-400">
-              <p>&copy; 2024 AryoPath. All rights reserved. | In association with ThyroCare</p>
+              <p>&copy; {new Date().getFullYear()} AryoPath. All rights reserved. | In association with ThyroCare</p>
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-400">
               <a href="#" className="hover:text-blue-400 transition-colors">Privacy Policy</a>

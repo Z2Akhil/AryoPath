@@ -173,7 +173,7 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose }) => {
 
           {/* Footer */}
           <div className="p-6 border-t border-gray-100 bg-gray-50">
-            <p className="text-xs text-gray-500 text-center">© 2024 AryoPath. All rights reserved.</p>
+            <p className="text-xs text-gray-500 text-center">© {new Date().getFullYear()} AryoPath. All rights reserved.</p>
           </div>
         </div>
       </div>
