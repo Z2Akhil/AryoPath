@@ -49,7 +49,7 @@ const AboutPage = () => {
 
         <div className="flex flex-col md:flex-row justify-center items-center gap-8 px-6">
          
-          <div className="w-full md:w-1/2 flex justify-center">
+          <div className="w-full md:w-1/2 flex justify-centerborder-2  ">
             <iframe
               className="w-full h-64 md:h-80 rounded-lg shadow-lg"
               src="https://www.youtube.com/embed/E3yK57e_PV8"
@@ -60,7 +60,7 @@ const AboutPage = () => {
           </div>
 
         
-          <div className="w-full md:w-1/2 flex justify-center">
+          <div className="w-full md:w-1/2 flex justify-centerborder-2">
             <iframe
               className="w-full h-64 md:h-80 rounded-lg shadow-lg"
               src="https://www.youtube.com/embed/njMgF-DK7lA"
