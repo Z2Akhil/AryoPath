@@ -1,26 +1,15 @@
-import siteSettings from "../api/siteSettingsApi.jsx";
 import { Phone, Mail, Clock, MapPin } from "lucide-react";
 import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn } from "react-icons/fa";
-import{useState,useEffect} from "react";
+import { useSiteSettings } from "../context/SiteSettingsContext";
 
 export default function Footer() {
-  const [settings, setSettings] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { settings, loading, error } = useSiteSettings();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const data = await siteSettings(); 
-      setSettings(data);
-      setLoading(false);
-    };
-    fetchData(); 
-  }, []);
+  if (loading) return <p className="text-center py-8 text-gray-500">Loading...</p>;
+  if (error) return <p className="text-center py-8 text-red-500">Failed to load settings</p>;
+  if (!settings) return <p className="text-center py-8 text-gray-500">No settings available</p>;
 
-  if (loading) return <p>Loading...</p>;
-  if (!settings) return <p>Failed to load settings</p>;
-
-  const { logo, heroImage, email, helplineNumber, socialMedia } = settings;
-  console.log(settings);
+  const { email, helplineNumber, socialMedia } = settings;
   
   return (
     <footer className="bg-gray-900 text-white">

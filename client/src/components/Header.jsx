@@ -3,6 +3,7 @@ import { NavLink,Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Menu, X, Search, User, LogOut, ChevronDown } from 'lucide-react';
 import { useUser } from '../context/userContext';
 import { useToast } from '../context/ToastContext';
+import { useSiteSettings } from '../context/SiteSettingsContext';
 import AuthModal from './AuthModal';
 import ConfirmationDialog from './ConfirmationDialog';
 import { useCart } from "../context/CartContext";
@@ -187,6 +188,7 @@ export default function Header() {
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const { user, logout } = useUser();
   const { success } = useToast();
+  const { settings, loading } = useSiteSettings();
   const navigate = useNavigate();
   const { cart } = useCart();
 
@@ -268,14 +270,16 @@ export default function Header() {
                 ))}
               </ul>
 
-              {/* Quick Actions */}
-              <div className="flex items-center gap-4 text-sm">
-                <Link to="#" className="text-gray-600 hover:text-blue-600 transition-colors">Help Center</Link>
-                <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                <a href="tel:+911234567890" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
-                  📞 +91 12345 67890
-                </a>
-              </div>
+                {/* Quick Actions */}
+                <div className="flex items-center gap-4 text-sm">
+                  <Link to="#" className="text-gray-600 hover:text-blue-600 transition-colors">Help Center</Link>
+                  <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                  {!loading && settings?.helplineNumber && (
+                    <a href={`tel:${settings.helplineNumber}`} className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
+                      📞 {settings.helplineNumber}
+                    </a>
+                  )}
+                </div>
             </div>
           </nav>
         </div>
