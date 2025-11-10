@@ -130,7 +130,7 @@ const MobileDrawer = ({
 
           {/* Footer */}
           <div className="p-6 border-t border-gray-100 bg-gray-50">
-            <p className="text-xs text-gray-500 text-center">© 2024 AryoPath Admin</p>
+            <p className="text-xs text-gray-500 text-center">© {new Date().getFullYear()} AryoPath Admin</p>
           </div>
         </div>
       </div>
