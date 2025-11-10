@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Form from "../components/Form.jsx";
 import { getProductsFromBackend, getProductDisplayPrice } from "../api/backendProductApi";
+import SkeletonPackageDetailed from "../components/cards/SkeletonPackageDetailed";
 
 const PackageDetailedPage = () => {
   const { code } = useParams();
@@ -68,7 +69,7 @@ const PackageDetailedPage = () => {
   };
 
   if (loading) {
-    return <div className="text-center py-20 text-gray-500">Loading packages...</div>;
+    return <SkeletonPackageDetailed />;
   }
 
   if (error) {
