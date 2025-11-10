@@ -1,13 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
-const OfferCard = ({ pkg }) => {
-  const { name, childs = [], rate = {}, testCount = 0 } = pkg;
+import { getProductDisplayPrice } from "../../api/backendProductApi";
 
-  // Calculate discount correctly
-  const discount =
-    rate.b2C && rate.offerRate && rate.offerRate < rate.b2C
-      ? Math.round(((rate.b2C - rate.offerRate) / rate.b2C) * 100)
-      : 0;
+const OfferCard = ({ pkg }) => {
+  const { name, childs = [], testCount = 0 } = pkg;
+
+  // Get enhanced pricing information using the same logic as other cards
+  const priceInfo = getProductDisplayPrice(pkg);
 
   // Display first 3 tests as preview
   const testPreview =
@@ -30,12 +29,12 @@ const OfferCard = ({ pkg }) => {
         {/* Left side: Price & discount */}
         <div className="flex flex-col">
           <div className="flex items-baseline gap-2">
-            <p className="text-xl font-bold text-gray-900">₹{rate.offerRate}</p>
-            {rate.b2C && rate.offerRate < rate.b2C && (
-              <p className="text-gray-400 line-through text-sm">₹{rate.b2C}</p>
+            <p className="text-xl font-bold text-gray-900">₹{priceInfo.displayPrice}</p>
+            {priceInfo.hasDiscount && (
+              <p className="text-gray-400 line-through text-sm">₹{priceInfo.originalPrice}</p>
             )}
           </div>
-          {discount > 0 && (
+          {priceInfo.hasDiscount && (
             <span
               className="mt-1 inline-block bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md"
               style={{
@@ -43,18 +42,18 @@ const OfferCard = ({ pkg }) => {
                   "polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%)",
               }}
             >
-              {discount}% OFF
+              {priceInfo.discountPercentage}% OFF
             </span>
           )}
         </div>
 
         {/* Right side: Book button */}
         <Link
-  to={`/packages/${pkg.code}`}
-  className="bg-green-600 text-white font-medium px-5 py-2 rounded hover:bg-green-700 transition text-sm"
->
-  Book
-</Link>
+          to={`/packages/${pkg.code}`}
+          className="bg-green-600 text-white font-medium px-5 py-2 rounded hover:bg-green-700 transition text-sm"
+        >
+          Book
+        </Link>
       </div>
     </div>
   );
