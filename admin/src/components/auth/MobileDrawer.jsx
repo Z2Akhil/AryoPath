@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -105,6 +104,20 @@ const MobileDrawer = ({
                 )}
               </div>
 
+              <NavLink
+                to="users"
+                onClick={onClose}
+                className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+              >
+                Users
+              </NavLink>
+              <NavLink
+                to="settings"
+                onClick={onClose}
+                className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+              >
+                Settings
+              </NavLink>
               <NavLink
                 to="account"
                 onClick={onClose}

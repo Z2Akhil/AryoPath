@@ -33,6 +33,12 @@ const offerSchema = new mongoose.Schema({
     ownPkg: String,
     bookedCount: Number,
     barcodes: [String],
+    imageLocation: String,
+    imageMaster: [{
+      imgLocations: String,
+      imgType: String,
+      imgName: String
+    }],
     rate: {
       b2B: Number,
       b2C: Number,
@@ -242,6 +248,23 @@ offerSchema.methods.getCombinedData = function() {
     thyrocareRate: thyrocareRate,
     thyrocareMargin: thyrocareMargin,
     childs: this.thyrocareData.childs || [],
+    
+    // Image data for client display
+    imageLocation: this.thyrocareData.imageLocation,
+    imageMaster: this.thyrocareData.imageMaster || [],
+    
+    // Additional product details
+    testCount: this.thyrocareData.testCount,
+    bookedCount: this.thyrocareData.bookedCount,
+    specimenType: this.thyrocareData.specimenType,
+    fasting: this.thyrocareData.fasting,
+    
+    // ThyroCare rate details for comparison
+    rate: {
+      b2C: this.thyrocareData.rate?.b2C || 0,
+      offerRate: this.thyrocareData.rate?.offerRate || 0,
+      payAmt: this.thyrocareData.rate?.payAmt || 0
+    },
     
     // Our custom pricing
     discount: discount,

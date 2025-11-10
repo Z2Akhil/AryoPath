@@ -1,8 +1,15 @@
 import axios from "axios";
 import authService from "../services/authService";
 
+
+const isProduction = import.meta.env.MODE === "production";
+// Decide which base URL to use
+const baseURL = isProduction
+  ? `${import.meta.env.VITE_TARGET_URL}/api`   // Production backend (from Vercel env)
+  : "http://localhost:3000/api";
+  
 export const axiosInstance = axios.create({
-  baseURL: "/api",
+  baseURL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -12,6 +19,13 @@ export const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use((config) => {
   // Get current API key from auth service
   const apiKey = authService.getCurrentApiKey();
+  
+  console.log('Axios request interceptor:', {
+    url: config.url,
+    method: config.method,
+    hasApiKey: !!apiKey,
+    apiKey: apiKey ? apiKey.substring(0, 10) + '...' : null
+  });
   
   if (apiKey) {
     // Add API key as x-api-key header

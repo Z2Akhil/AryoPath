@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const LOGIN_API_URL = import.meta.env.VITE_BACKEND_API + '/api/admin/login';
+const LOGIN_API_URL = `${import.meta.env.VITE_TARGET_URL}/api/admin/login`;
 
 class AuthService {
   /**
@@ -11,6 +11,7 @@ class AuthService {
    */
   async login(username, password) {
     try {
+      console.log('Attempting login for user:', username);
       const response = await axios.post(LOGIN_API_URL, {
         username,
         password,
@@ -22,8 +23,10 @@ class AuthService {
         }
       });
 
+      console.log('Login API response:', response.data);
+
       if (response.data.success && response.data.apiKey) {
-        return {
+        const authData = {
           success: true,
           apiKey: response.data.apiKey,
           respId: response.data.respId,
@@ -31,6 +34,13 @@ class AuthService {
           adminProfile: response.data.adminProfile,
           sessionInfo: response.data.sessionInfo
         };
+
+        console.log('Login successful, storing auth data:', {
+          apiKey: authData.apiKey.substring(0, 10) + '...',
+          timestamp: authData.timestamp
+        });
+
+        return authData;
       } else {
         throw new Error(response.data.error || 'Login failed: Invalid credentials');
       }
@@ -75,7 +85,10 @@ class AuthService {
     
     // Check if we've crossed midnight in IST
     // API key expires at 00:00 IST daily, so check if current date is different from login date
-    const isExpired = nowIST.getDate() !== loginTimeIST.getDate();
+    // Also check if the login was from a previous day, month, or year
+    const isExpired = nowIST.getDate() !== loginTimeIST.getDate() || 
+                     nowIST.getMonth() !== loginTimeIST.getMonth() || 
+                     nowIST.getFullYear() !== loginTimeIST.getFullYear();
     
     console.log('API key expired:', isExpired);
     return isExpired;

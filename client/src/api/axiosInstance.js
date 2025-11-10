@@ -1,18 +1,29 @@
 import axios from "axios";
 
-const API_KEY = import.meta.env.VITE_API_KEY; // replace with your API key
+const isProduction = import.meta.env.MODE === "production";
 
-// Create axios instance
+// Decide which base URL to use
+const baseURL = isProduction
+  ? `${import.meta.env.VITE_TARGET_URL}/api`   // Production backend (from Vercel env)
+  : "http://localhost:3000/api";
+
 export const axiosInstance = axios.create({
-  baseURL: "/api",
+  baseURL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Interceptor to automatically attach API key to every request
-axiosInstance.interceptors.request.use((config) => {
-  if (!config.data) config.data = {};
-  config.data.ApiKey = API_KEY;
-  return config;
-});
+// Add request interceptor to include auth token automatically
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);

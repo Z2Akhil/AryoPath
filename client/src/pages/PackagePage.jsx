@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
 import PackageCard from "../components/cards/PackageCard";
-import { getProducts } from "../api/productApi"; // your getProducts function
+import SkeletonPackageCard from "../components/cards/SkeletonPackageCard";
+import { getProductsFromBackend } from "../api/backendProductApi"; // Use our backend API
+import Pagination from "../components/Pagination";
 
 const PackagePage = ({limit}) => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const[currentPage,setCurrentPage]=useState(1);
+  const [itemsPerPage,setItemsPerPage]=useState(12);
 
   useEffect(() => {
     const fetchPackages = async () => {
       try {
         setLoading(true);
-        const data = await getProducts("PROFILE"); // fetch PROFILE products
-
+        const data = await getProductsFromBackend("PROFILE");
         const uniquePackages=Array.from(
           new Map(data.map((pkg)=>[pkg.code,pkg])).values()
         )
@@ -30,14 +33,29 @@ const PackagePage = ({limit}) => {
   }, []);
 
   if (loading) {
-    return <div className="text-center py-20 text-gray-500">Loading packages...</div>;
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
+          Available Health Packages
+        </h1>
+        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: limit || 8 }).map((_, index) => (
+            <SkeletonPackageCard key={index} />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (error) {
     return <div className="text-center py-20 text-red-500">{error}</div>;
   }
-
-   const displayedPackages = limit ? packages.slice(0, limit) : packages;
+  
+  const totalItems=packages.length;
+  const totalPages=Math.ceil(totalItems/itemsPerPage);
+  const startIndex=(currentPage-1)*itemsPerPage;
+  const endIndex=startIndex+itemsPerPage;
+  const displayedPackages = limit ? packages.slice(0, limit) : packages.slice(startIndex,endIndex);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
@@ -54,6 +72,18 @@ const PackagePage = ({limit}) => {
           </p>
         )}
       </div>
+   {!limit && totalItems>itemsPerPage && totalPages>1&&(
+      <div className=" mt-3 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          onItemsPerPageChange={setItemsPerPage}
+          totalItems={totalItems}
+        />
+      </div>
+     )}
     </div>
   );
 };

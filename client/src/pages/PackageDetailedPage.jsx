@@ -2,12 +2,11 @@ import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, 
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Form from "../components/Form.jsx";
-import { getProducts } from "../api/productApi"; // your getProducts function
-
+import { getProductsFromBackend } from "../api/backendProductApi";
 
 const PackageDetailedPage = () => {
   const { code } = useParams();
-  const [openCategory, setOpenCategory] = useState(null);
+  const [openCategory, setOpenCategory] = useState(new Set());
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,7 +15,7 @@ const PackageDetailedPage = () => {
     const fetchPackages = async () => {
       try {
         setLoading(true);
-        const data = await getProducts("ALL"); // fetch ALL products
+        const data = await getProductsFromBackend("ALL");
         setPackages(data || []);
       } catch (err) {
         console.error(err);
@@ -28,6 +27,25 @@ const PackageDetailedPage = () => {
 
     fetchPackages();
   }, []);
+
+  // Initialize categories when packages are loaded
+  useEffect(() => {
+    if (packages.length > 0 && code) {
+      const pkg = packages.find((p) => p.code === code);
+      if (pkg && pkg.childs) {
+        const groupedTests = pkg.childs.reduce((acc, test) => {
+          if (!acc[test.groupName]) acc[test.groupName] = [];
+          acc[test.groupName].push(test.name);
+          return acc;
+        }, {});
+        
+        if (Object.keys(groupedTests).length > 0) {
+          const allCategories = new Set(Object.keys(groupedTests));
+          setOpenCategory(allCategories);
+        }
+      }
+    }
+  }, [packages, code]);
 
   const handleShare = async (pkg) => {
     const shareUrl = `${window.location.origin}/package/${pkg.code}`;
@@ -44,7 +62,6 @@ const PackageDetailedPage = () => {
         console.error("Error sharing:", err);
       }
     } else {
-      // Fallback: copy link to clipboard
       await navigator.clipboard.writeText(shareUrl);
       alert("Link copied to clipboard!");
     }
@@ -68,99 +85,173 @@ const PackageDetailedPage = () => {
     );
   }
 
-  // Group tests by category
   const groupedTests = pkg.childs?.reduce((acc, test) => {
     if (!acc[test.groupName]) acc[test.groupName] = [];
     acc[test.groupName].push(test.name);
     return acc;
   }, {}) || {};
 
-  // Check for discount
+  const toggleCategory = (category) => {
+    const newOpenCategory = new Set(openCategory);
+    if (newOpenCategory.has(category)) {
+      newOpenCategory.delete(category);
+    } else {
+      newOpenCategory.add(category);
+    }
+    setOpenCategory(newOpenCategory);
+  };
+
   const isDiscounted =
     pkg.rate &&
     parseFloat(pkg.rate.offerRate) < parseFloat(pkg.rate.b2C);
 
   return (
-    <div className="bg-gray-50 min-h-screen py-10">
-      <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* LEFT: Package Details */}
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow p-8 border border-gray-200">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-3xl font-bold text-gray-900">{pkg.name}</h1>
-            <button
-              onClick={() => handleShare(pkg)}
-              className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition"
-              title="Share this test"
-            >
-              <Share2 className="w-5 h-5" />
-              <span className="hidden sm:inline text-sm font-medium">Share</span>
-            </button>
-          </div>
-          {/* Price Section */}
-          {pkg.rate && (
-            <div className="flex items-baseline gap-2 mb-4">
-              <p className="text-2xl font-bold text-blue-600">₹{pkg.rate.offerRate}</p>
-              {isDiscounted && (
-                <>
-                  <p className="text-gray-400 line-through">₹{pkg.rate.b2C}</p>
-                  <span className="bg-green-100 text-green-700 text-sm font-semibold px-2 py-0.5 rounded-md">
-                    {Math.round(((pkg.rate.b2C - pkg.rate.offerRate) / pkg.rate.b2C) * 100)}% OFF
-                  </span>
-                </>
-              )}
-            </div>
-          )}
+    <div className="min-h-screen py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumb */}
+        <nav className="flex mb-8" aria-label="Breadcrumb">
+          <ol className="flex items-center space-x-2 text-sm text-gray-600">
+            <li><a href="/" className="hover:text-blue-600 transition-colors">Home</a></li>
+            <li className="flex items-center">
+              <ChevronDown className="w-4 h-4 rotate-270" />
+              <a href="/packages" className="ml-2 hover:text-blue-600 transition-colors">Packages</a>
+            </li>
+            <li className="flex items-center">
+              <ChevronDown className="w-4 h-4 rotate-270" />
+              <span className="ml-2 text-gray-900 font-medium truncate max-w-xs">{pkg.name}</span>
+            </li>
+          </ol>
+        </nav>
 
-          {/* Fasting / Precaution Info */}
-          <div className="border border-gray-200 rounded-lg bg-gray-50 p-5 mb-8 flex items-start gap-3">
-            <AlertCircle className="text-blue-500 w-6 h-6 shrink-0 mt-1" />
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800">Precaution</h3>
-              <p className="text-gray-600 mt-1">
-                {pkg.fasting === "CF"
-                  ? "Do not consume anything other than water for 8 - 10 hours before the test."
-                  : "No fasting required for this test."}
-              </p>
-            </div>
-          </div>
-
-          {/* Included Tests */}
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-            Included Tests ({pkg.childs?.length || 0})
-          </h2>
-          <div className="space-y-4">
-            {Object.keys(groupedTests).map((category) => (
-              <div key={category} className="border rounded-lg overflow-hidden">
-                {/* Accordion Header */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* LEFT: Package Details */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Main Card */}
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-6">
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2 leading-tight">{pkg.name}</h1>
+                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <span className="flex items-center gap-1">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      {pkg.testCount || pkg.childs?.length || 0} Tests Included
+                    </span>
+                    {pkg.fasting && (
+                      <span className="flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4 text-orange-500" />
+                        {pkg.fasting === "CF" ? "Fasting Required" : "No Fasting"}
+                      </span>
+                    )}
+                  </div>
+                </div>
                 <button
-                  onClick={() =>
-                    setOpenCategory(openCategory === category ? null : category)
-                  }
-                  className="w-full flex justify-between items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 focus:outline-none"
+                  onClick={() => handleShare(pkg)}
+                  className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all mt-4 sm:mt-0"
+                  title="Share this test"
                 >
-                  <span className="text-m font-medium text-gray-900">{category}</span>
-                  <ChevronDown
-                    className={`w-5 h-5 text-gray-600 transform transition-transform duration-300 ${openCategory === category ? "rotate-180" : ""
-                      }`}
-                  />
+                  <Share2 className="w-5 h-5" />
+                  <span className="font-medium">Share</span>
                 </button>
-
-                {/* Accordion Content */}
-                {openCategory === category && (
-                  <ul className="list-disc list-inside text-gray-700 px-6 py-3 bg-white space-y-1">
-                    {groupedTests[category].map((test, idx) => (
-                      <li key={idx}>{test}</li>
-                    ))}
-                  </ul>
-                )}
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* RIGHT: Booking Form */}
-        <div className="bg-white rounded-2xl shadow  border border-gray-200 h-fit">
-          <Form pkgName={pkg.name} pkgRate={pkg.rate?.offerRate} pkgId={code} />
+              {/* Price Section */}
+              {pkg.rate && (
+                <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 border border-blue-100">
+                  <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between">
+                    <div className="flex items-baseline gap-3 mb-4 sm:mb-0">
+                      <p className="text-4xl font-bold text-blue-700">₹{pkg.rate.offerRate}</p>
+                      {isDiscounted && (
+                        <div className="flex items-center gap-2">
+                          <p className="text-xl text-gray-500 line-through">₹{pkg.rate.b2C}</p>
+                          <span className="bg-linear-to-r from-green-500 to-emerald-500 text-white text-sm font-bold px-3 py-1 rounded-full shadow-sm">
+                            {Math.round(((pkg.rate.b2C - pkg.rate.offerRate) / pkg.rate.b2C) * 100)}% OFF
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {isDiscounted && (
+                      <div className="text-sm text-gray-600">
+                        You save ₹{pkg.rate.b2C - pkg.rate.offerRate}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Fasting / Precaution Info */}
+              {pkg.fasting && (
+                <div className="border-l-4 border-blue-500 bg-blue-50 rounded-r-lg p-5 mb-6">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="text-blue-600 w-6 h-6 shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-1">Important Instructions</h3>
+                      <p className="text-gray-700 leading-relaxed">
+                        {pkg.fasting === "CF"
+                          ? "For accurate results, please do not consume anything other than water for 8-10 hours before the test. You may drink water as needed."
+                          : "No special preparation required. You can take this test at any time of the day."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Included Tests */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Included Tests ({pkg.childs?.length || 0})
+                  </h2>
+                  <div className="text-sm text-gray-600">
+                    All categories expanded
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {Object.keys(groupedTests).map((category) => (
+                    <div key={category} className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                      <button
+                        onClick={() => toggleCategory(category)}
+                        className="w-full flex justify-between items-center px-6 py-4 bg-linear-to-r from-gray-50 to-white hover:from-blue-50 hover:to-indigo-50 transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg font-semibold text-gray-900">{category}</span>
+                          <span className="bg-gray-100 text-gray-600 text-sm px-2 py-1 rounded-full">
+                            {groupedTests[category].length} tests
+                          </span>
+                        </div>
+                        <ChevronDown
+                          className={`w-5 h-5 text-gray-500 transform transition-transform duration-300 ${openCategory.has(category) ? "rotate-180" : ""
+                            }`}
+                        />
+                      </button>
+
+                      {openCategory.has(category) && (
+                        <div className="border-t border-gray-100">
+                          <ul className="px-6 py-4 space-y-2 bg-white">
+                            {groupedTests[category].map((test, idx) => (
+                              <li key={idx} className="flex items-center gap-3 text-gray-700">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <span>{test}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: Booking Form */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 sticky top-8">
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Book This Test</h3>
+                <Form pkgName={pkg.name} pkgRate={pkg.rate?.offerRate} pkgId={code} />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

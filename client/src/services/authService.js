@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL =`${import.meta.env.VITE_TARGET_URL}/api`; 
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -27,7 +27,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Only redirect to login if there was a token and it expired
     if (error.response?.status === 401 && localStorage.getItem('authToken')) {
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
@@ -107,7 +106,13 @@ export const authService = {
 
   // Get user profile
   async getProfile() {
-    const response = await api.get('/auth/profile');
+    const response = await api.get('/user/profile');
+    return response.data;
+  },
+
+  // Update user profile
+  async updateProfile(profileData) {
+    const response = await api.put('/user/profile', profileData);
     return response.data;
   },
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { Menu, X, ChevronDown, ChevronUp, LogOut, User } from "lucide-react";
+import { Menu, ChevronDown, ChevronUp, LogOut, User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import MobileDrawer from "../components/auth/MobileDrawer";
 
@@ -13,11 +13,6 @@ export default function AdminPanel() {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const toggleProduct = () => setProductOpen(!productOpen);
 
-  const handleLinkClick = () => {
-    if (window.innerWidth < 1024) setSidebarOpen(false);
-  };
-
-  // Get current page title based on route
   const getCurrentPageTitle = () => {
     const path = location.pathname;
     
@@ -27,7 +22,9 @@ export default function AdminPanel() {
     if (path.includes('/offers')) return 'Offers';
     if (path.includes('/packages')) return 'Packages';
     if (path.includes('/tests')) return 'Tests';
+    if (path.includes('/users')) return 'Users';
     if (path.includes('/account')) return 'Account';
+    if (path.includes('/settings')) return 'Settings';
     
     return 'Dashboard';
   };
@@ -93,6 +90,18 @@ export default function AdminPanel() {
             </div>
           )}
 
+          <NavLink
+            to="users"
+            className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
+          >
+            Users
+          </NavLink>
+          <NavLink
+            to="settings"
+            className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
+          >
+            Settings
+          </NavLink>
           <NavLink
             to="account"
             className="block px-4 py-2 rounded-md hover:bg-blue-50 font-medium"
