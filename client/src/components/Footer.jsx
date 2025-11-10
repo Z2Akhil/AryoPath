@@ -6,18 +6,53 @@ import { useSiteSettings } from "../context/SiteSettingsContext";
 export default function Footer() {
   const { settings, loading, error } = useSiteSettings();
   const [openSection, setOpenSection] = useState(null);
-  const [imgError,setImgError]=useState(false);
+  const [imgError, setImgError] = useState(false);
   const toggleSection = (section) => {
     setOpenSection(openSection === section ? null : section);
   };
 
-  if (loading) return <p className="text-center py-8 text-gray-500">Loading...</p>;
+  if (loading) {
+    return (
+      <footer className="bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-pulse">
+          {/* Skeleton grid layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-700 rounded-full"></div>
+                  <div className="space-y-2">
+                    <div className="w-24 h-4 bg-gray-700 rounded"></div>
+                    <div className="w-32 h-3 bg-gray-700 rounded"></div>
+                  </div>
+                </div>
+                {[...Array(4)].map((_, j) => (
+                  <div key={j} className="h-3 w-3/4 bg-gray-700 rounded"></div>
+                ))}
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom Bar Skeleton */}
+          <div className="border-t border-gray-800 mt-12 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="w-2/3 h-4 bg-gray-700 rounded"></div>
+            <div className="flex gap-6">
+              <div className="w-20 h-3 bg-gray-700 rounded"></div>
+              <div className="w-20 h-3 bg-gray-700 rounded"></div>
+              <div className="w-20 h-3 bg-gray-700 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </footer>
+    );
+  }
+
   if (error) return <p className="text-center py-8 text-red-500">Failed to load settings</p>;
   if (!settings) return <p className="text-center py-8 text-gray-500">No settings available</p>;
 
-  const {logo, email, helplineNumber, socialMedia } = settings;
+  const { logo, email, helplineNumber, socialMedia } = settings;
 
-   const logoImage = !imgError && settings?.logo ? settings.logo : "./logo.jpg";
+  const logoImage = !imgError && settings?.logo ? settings.logo : "./logo.jpg";
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -72,9 +107,8 @@ export default function Footer() {
             </button>
 
             <ul
-              className={`overflow-hidden transition-all duration-300 md:block ${
-                openSection === "links" ? "max-h-96 mt-3" : "max-h-0 md:max-h-none"
-              }`}
+              className={`overflow-hidden transition-all duration-300 md:block ${openSection === "links" ? "max-h-96 mt-3" : "max-h-0 md:max-h-none"
+                }`}
             >
               <li>
                 <a href="/" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center gap-2 mt-2">
@@ -122,9 +156,8 @@ export default function Footer() {
             </button>
 
             <ul
-              className={`overflow-hidden transition-all duration-300 md:block ${
-                openSection === "services" ? "max-h-96 mt-3" : "max-h-0 md:max-h-none"
-              }`}
+              className={`overflow-hidden transition-all duration-300 md:block ${openSection === "services" ? "max-h-96 mt-3" : "max-h-0 md:max-h-none"
+                }`}
             >
               {[
                 "Home Sample Collection",
@@ -154,9 +187,8 @@ export default function Footer() {
             </button>
 
             <div
-              className={`overflow-hidden transition-all duration-300 md:block ${
-                openSection === "contact" ? "max-h-96 mt-3" : "max-h-0 md:max-h-none"
-              }`}
+              className={`overflow-hidden transition-all duration-300 md:block ${openSection === "contact" ? "max-h-96 mt-3" : "max-h-0 md:max-h-none"
+                }`}
             >
               <div className="flex items-center gap-3 text-gray-300 text-sm mt-2">
                 <Mail className="w-4 h-4 text-blue-400" />
