@@ -6,7 +6,7 @@ import { useSiteSettings } from "../context/SiteSettingsContext";
 export default function Footer() {
   const { settings, loading, error } = useSiteSettings();
   const [openSection, setOpenSection] = useState(null);
-
+  const [imgError,setImgError]=useState(false);
   const toggleSection = (section) => {
     setOpenSection(openSection === section ? null : section);
   };
@@ -15,8 +15,9 @@ export default function Footer() {
   if (error) return <p className="text-center py-8 text-red-500">Failed to load settings</p>;
   if (!settings) return <p className="text-center py-8 text-gray-500">No settings available</p>;
 
-  const { email, helplineNumber, socialMedia } = settings;
+  const {logo, email, helplineNumber, socialMedia } = settings;
 
+   const logoImage = !imgError && settings?.logo ? settings.logo : "./logo.jpg";
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -26,8 +27,9 @@ export default function Footer() {
           <div className="space-y-6">
             <div className="flex items-center gap-3">
               <img
-                src="./logo.jpg"
+                src={logoImage}
                 alt="Company Logo"
+                onError={() => setImgError(true)}
                 className="w-10 h-10 object-contain rounded-full"
               />
               <div>

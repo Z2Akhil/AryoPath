@@ -18,21 +18,31 @@ const NAV_LINKS = [
   { label: 'About Us', href: '/about' },
 ];
 
-const Logo = () => (
-  <Link to="/" className="flex items-center gap-3 group cursor-pointer">
-    <div className="flex items-center gap-2">
-      <img
-        src="./logo.jpg"
-        alt="Company Logo"
-        className="w-10 h-10 object-contain"
-      />
-    </div>
-    <div className="leading-tight">
-      <p className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">AryoPath</p>
-      <p className="text-xs text-gray-500 font-medium">In association with ThyroCare</p>
-    </div>
-  </Link>
-);
+const Logo = ({ logo }) => {
+  const [imgError, setImgError] = useState(false);
+
+  return (
+    <Link to="/" className="flex items-center gap-3 group cursor-pointer">
+      <div className="flex items-center gap-2">
+        <img
+          src={!imgError && logo ? logo : "./logo.jpg"}  
+          alt="Company Logo"
+          className="w-10 h-10 object-contain"
+          onError={() => setImgError(true)}               
+        />
+      </div>
+      <div className="leading-tight">
+        <p className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+          AryoPath
+        </p>
+        <p className="text-xs text-gray-500 font-medium">
+          In association with ThyroCare
+        </p>
+      </div>
+    </Link>
+  );
+};
+
 
 const CartIcon = ({ count }) => (
   <Link to="/cart" className="relative group cursor-pointer">
@@ -190,10 +200,10 @@ export default function Header() {
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const { user, logout } = useUser();
   const { success } = useToast();
-  const { settings, loading } = useSiteSettings();
+  const { settings, loading, error } = useSiteSettings();
   const navigate = useNavigate();
   const { cart } = useCart();
-
+  
 
   const handleLogout = () => {
     logout();
@@ -227,7 +237,7 @@ export default function Header() {
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Top Bar */}
           <div className="flex items-center justify-between h-20">
-            <Logo />
+            <Logo logo={settings?.logo} error={error} />
 
             {/* Desktop Search */}
             <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
