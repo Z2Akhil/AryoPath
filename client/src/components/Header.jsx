@@ -125,7 +125,7 @@ const MobileDrawer = ({ open, user, onLogin, onLogoutConfirm, onClose }) => {
             <button
               onClick={onClose}
               className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-            
+            >
               <X size={20} className="text-gray-600" />
             </button>
           </div>
@@ -237,7 +237,7 @@ export default function Header() {
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Top Bar */}
           <div className="flex items-center justify-between h-20">
-            <Logo logo={settings?.logo} />
+            <Logo logo={settings?.logo} error={error} />
 
             {/* Desktop Search */}
             <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
