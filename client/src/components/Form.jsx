@@ -101,11 +101,86 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (saveContactForFuture) {
-      saveContactInfo(contactInfo);
+    // Validate all required fields
+    if (!pincode || pincode.length !== 6 || !pincodeStatus?.includes("✅")) {
+      alert("Please check pincode availability first");
+      return;
+    }
+
+    if (!selectedBeneficiaries.every(b => b.name && b.age && b.gender)) {
+      alert("Please complete all beneficiary information");
+      return;
+    }
+
+    if (!contactInfo.email || !contactInfo.mobile || !contactInfo.address.street || !contactInfo.address.city || !contactInfo.address.state) {
+      alert("Please complete all contact information");
+      return;
+    }
+
+    if (!appointmentDate || !selectedSlot) {
+      alert("Please select appointment date and time slot");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Prepare order data
+      const orderData = {
+        packageId: pkgId,
+        packageName: pkgName,
+        packagePrice: pkgRate,
+        beneficiaries: selectedBeneficiaries,
+        contactInfo: contactInfo,
+        appointment: {
+          date: appointmentDate,
+          slotId: selectedSlot
+        },
+        selectedSlot: availableSlots.find(slot => slot.id === selectedSlot)?.slot || selectedSlot
+      };
+
+      // Submit order to backend
+      const response = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      let result;
+      try {
+        const responseText = await response.text();
+        result = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError);
+        throw new Error('Invalid response from server');
+      }
+
+      if (result.success) {
+        // Save contact info if requested
+        if (saveContactForFuture) {
+          saveContactInfo(contactInfo);
+        }
+
+        // Show success message and redirect to order confirmation
+        alert(`Order created successfully! Order ID: ${result.data.orderId}`);
+        
+        // Redirect to order confirmation page or home
+        window.location.href = `/orders/${result.data.orderId}`;
+      } else {
+        alert(`Order creation failed: ${result.message || 'Unknown error'}`);
+      }
+
+    } catch (error) {
+      console.error('Error creating order:', error);
+      alert('Failed to create order. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -133,7 +208,36 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
   };
 
   const fetchAppointmentSlots = async () => {
-    if (!appointmentDate) return;
+    // Validate all required fields before making API call
+    if (!appointmentDate) {
+      alert("Please select an appointment date first");
+      return;
+    }
+
+    if (!pincode || pincode.length !== 6) {
+      alert("Please enter a valid 6-digit pincode and check availability first");
+      return;
+    }
+
+    // Check if all beneficiaries are properly filled
+    const incompleteBeneficiaries = selectedBeneficiaries.filter(b => 
+      !b.name || !b.age || !b.gender
+    );
+    
+    if (incompleteBeneficiaries.length > 0) {
+      alert(`Please complete beneficiary information for ${incompleteBeneficiaries.length} beneficiary(ies) before fetching slots`);
+      return;
+    }
+
+    // Validate beneficiary ages are numbers
+    const invalidAges = selectedBeneficiaries.filter(b => 
+      isNaN(parseInt(b.age)) || parseInt(b.age) <= 0
+    );
+    
+    if (invalidAges.length > 0) {
+      alert("Please enter valid ages for all beneficiaries");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -163,13 +267,15 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
         Age: parseInt(b.age),
       }));
 
-      const payload={
+      const payload = {
         pincode,
         date: appointmentDate,
         patients,
         BenCount: numPersons,
         items,
       };
+
+      console.log("Fetching appointment slots with payload:", payload);
 
       const response = await getAppointmentSlots(payload);
        
@@ -182,7 +288,15 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
     } catch (error) {
       console.error("Error fetching slots:", error);
       setAvailableSlots([]);
-      alert("Failed to fetch slots. Please try again.");
+      
+      // Show more specific error messages
+      if (error.response?.status === 400) {
+        alert("Invalid request data. Please check all fields are correctly filled.");
+      } else if (error.response?.status === 503) {
+        alert("Service temporarily unavailable. Please try again later.");
+      } else {
+        alert("Failed to fetch slots. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -363,12 +477,28 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
           )}
         </div>
 
-        <p className="text-sm mb-3">make sure to fill the above fields first.</p>
+        {/* Validation Status */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+          <p className="text-sm font-medium text-yellow-800 mb-1">Before selecting appointment date:</p>
+          <ul className="text-xs text-yellow-700 space-y-1">
+            <li className={`flex items-center gap-2 ${pincode && pincode.length === 6 && pincodeStatus?.includes("✅") ? "text-green-600" : ""}`}>
+              {pincode && pincode.length === 6 && pincodeStatus?.includes("✅") ? "✓" : "•"} Valid pincode checked
+            </li>
+            <li className={`flex items-center gap-2 ${selectedBeneficiaries.every(b => b.name && b.age && b.gender) ? "text-green-600" : ""}`}>
+              {selectedBeneficiaries.every(b => b.name && b.age && b.gender) ? "✓" : "•"} All beneficiaries filled
+            </li>
+            <li className={`flex items-center gap-2 ${contactInfo.email && contactInfo.mobile && contactInfo.address.street ? "text-green-600" : ""}`}>
+              {contactInfo.email && contactInfo.mobile && contactInfo.address.street ? "✓" : "•"} Contact information complete
+            </li>
+          </ul>
+        </div>
+
         <select
           value={appointmentDate}
           onChange={(e) => setAppointmentDate(e.target.value)}
           onBlur={fetchAppointmentSlots}
           className="w-full border border-gray-400 rounded px-3 py-2 text-sm mb-2"
+          disabled={!pincode || pincode.length !== 6 || !pincodeStatus?.includes("✅") || !selectedBeneficiaries.every(b => b.name && b.age && b.gender)}
         >
           <option value="">Select Preferred Appointment Date</option>
           {[...Array(7)].map((_, i) => {
@@ -404,8 +534,14 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
           Order with incomplete/invalid address will be rejected.
         </p>
 
-        <button type="submit" className="w-full bg-blue-600 text-white font-semibold py-2 my-3 rounded hover:bg-blue-700 transition-colors">
-          BOOK NOW
+        <button 
+          type="submit" 
+          disabled={loading}
+          className={`w-full bg-blue-600 text-white font-semibold py-2 my-3 rounded transition-colors ${
+            loading ? 'opacity-60 cursor-not-allowed' : 'hover:bg-blue-700'
+          }`}
+        >
+          {loading ? 'Creating Order...' : 'BOOK NOW'}
         </button>
       </form>
 
