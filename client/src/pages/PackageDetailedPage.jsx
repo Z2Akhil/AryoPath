@@ -2,7 +2,8 @@ import { AlertCircle, Home, Percent, Share2, ChevronDown, Calendar, CreditCard, 
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Form from "../components/Form.jsx";
-import { getProductsFromBackend } from "../api/backendProductApi";
+import { getProductsFromBackend, getProductDisplayPrice } from "../api/backendProductApi";
+import SkeletonPackageDetailed from "../components/cards/SkeletonPackageDetailed";
 
 const PackageDetailedPage = () => {
   const { code } = useParams();
@@ -68,7 +69,7 @@ const PackageDetailedPage = () => {
   };
 
   if (loading) {
-    return <div className="text-center py-20 text-gray-500">Loading packages...</div>;
+    return <SkeletonPackageDetailed />;
   }
 
   if (error) {
@@ -101,9 +102,8 @@ const PackageDetailedPage = () => {
     setOpenCategory(newOpenCategory);
   };
 
-  const isDiscounted =
-    pkg.rate &&
-    parseFloat(pkg.rate.offerRate) < parseFloat(pkg.rate.b2C);
+  // Get enhanced pricing information using the same logic as PackageCard
+  const priceInfo = getProductDisplayPrice(pkg);
 
   return (
     <div className="min-h-screen py-8">
@@ -159,19 +159,19 @@ const PackageDetailedPage = () => {
                 <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 border border-blue-100">
                   <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between">
                     <div className="flex items-baseline gap-3 mb-4 sm:mb-0">
-                      <p className="text-4xl font-bold text-blue-700">₹{pkg.rate.offerRate}</p>
-                      {isDiscounted && (
+                      <p className="text-4xl font-bold text-blue-700">₹{priceInfo.displayPrice}</p>
+                      {priceInfo.hasDiscount && (
                         <div className="flex items-center gap-2">
-                          <p className="text-xl text-gray-500 line-through">₹{pkg.rate.b2C}</p>
+                          <p className="text-xl text-gray-500 line-through">₹{priceInfo.originalPrice}</p>
                           <span className="bg-linear-to-r from-green-500 to-emerald-500 text-white text-sm font-bold px-3 py-1 rounded-full shadow-sm">
-                            {Math.round(((pkg.rate.b2C - pkg.rate.offerRate) / pkg.rate.b2C) * 100)}% OFF
+                            {priceInfo.discountPercentage}% OFF
                           </span>
                         </div>
                       )}
                     </div>
-                    {isDiscounted && (
+                    {priceInfo.hasDiscount && (
                       <div className="text-sm text-gray-600">
-                        You save ₹{pkg.rate.b2C - pkg.rate.offerRate}
+                        You save ₹{priceInfo.originalPrice - priceInfo.displayPrice}
                       </div>
                     )}
                   </div>

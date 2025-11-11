@@ -1,81 +1,157 @@
 import axios from 'axios';
 import Admin from '../models/Admin.js';
 import AdminSession from '../models/AdminSession.js';
+import { thyrocareCircuitBreaker } from '../utils/circuitBreaker.js';
+import { thyrocareRequestQueue } from '../utils/requestQueue.js';
 
 /**
- * Service for automatically refreshing ThyroCare API keys
+ * Service for automatically refreshing ThyroCare API keys with retry logic
  */
 class ThyrocareRefreshService {
   
   /**
-   * Automatically refresh ThyroCare API keys using stored credentials
+   * Automatically refresh ThyroCare API keys using stored credentials with circuit breaker and queue
    * @returns {Promise<Object>} The new session object
    */
   static async refreshApiKeys() {
-    try {
-      console.log('🔄 Starting automatic API key refresh...');
+    // Use circuit breaker and request queue for protection
+    const apiCall = async () => {
+      const maxRetries = 2; // Reduced retries since we have circuit breaker
+      const baseDelay = 5000; // 5 seconds base delay
       
-      const username = process.env.THYROCARE_USERNAME;
-      const password = process.env.THYROCARE_PASSWORD;
-      const thyrocareApiUrl = process.env.THYROCARE_API_URL;
-      
-      if (!username || !password) {
-        throw new Error('ThyroCare credentials not configured in environment variables');
-      }
-      
-      console.log('Making automatic ThyroCare API call...');
-      const response = await axios.post(`${thyrocareApiUrl}/api/Login/Login`, {
-        username,
-        password,
-        portalType: 'DSAPortal',
-        userType: 'DSA'
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`🔄 Starting automatic API key refresh (attempt ${attempt}/${maxRetries})...`);
+          
+          const username = process.env.THYROCARE_USERNAME;
+          const password = process.env.THYROCARE_PASSWORD;
+          const thyrocareApiUrl = process.env.THYROCARE_API_URL;
+          
+          if (!username || !password) {
+            throw new Error('ThyroCare credentials not configured in environment variables');
+          }
+          
+          console.log('Making automatic ThyroCare API call...');
+          const response = await axios.post(`${thyrocareApiUrl}/api/Login/Login`, {
+            username,
+            password,
+            portalType: 'DSAPortal',
+            userType: 'DSA'
+          }, {
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            timeout: 30000 // 30 second timeout
+          });
+
+          console.log('Automatic ThyroCare API response:', {
+            status: response.status,
+            response: response.data.response
+          });
+
+          // Check for blocking response
+          if (response.data.response === 'Login has been blocked, try after some time') {
+            console.warn('⚠️ ThyroCare API is blocking login attempts');
+            
+            if (attempt < maxRetries) {
+              const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+              console.log(`⏳ API blocked, waiting ${delay/1000} seconds before retry...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue; // Retry
+            } else {
+              throw new Error('ThyroCare API is blocking login attempts. Please try again later.');
+            }
+          }
+
+          if (response.data.response === 'Success' && response.data.apiKey) {
+            const thyrocareData = response.data;
+            
+            // Find or create admin from ThyroCare data
+            const admin = await Admin.findOrCreateFromThyroCare(thyrocareData, username);
+            
+            // Create single active session (deactivates previous ones)
+            const session = await AdminSession.createSingleActiveSession(
+              admin._id, 
+              thyrocareData, 
+              'AUTO_REFRESH', // Special IP for automatic refreshes
+              'AUTO_REFRESH_SERVICE'
+            );
+            
+            console.log('✅ Automatic API key refresh successful:', {
+              sessionId: session._id,
+              apiKey: session.thyrocareApiKey.substring(0, 10) + '...',
+              expiresAt: session.apiKeyExpiresAt?.toISOString()
+            });
+            
+            return session;
+          } else {
+            throw new Error('Automatic refresh failed: ' + (response.data.response || 'Invalid response from ThyroCare'));
+          }
+          
+        } catch (error) {
+          console.error(`❌ Automatic API key refresh failed (attempt ${attempt}/${maxRetries}):`, error);
+          
+          // Check if this is a blocking error
+          if (error.response?.data?.response === 'Login has been blocked, try after some time') {
+            console.warn('⚠️ ThyroCare API is blocking login attempts');
+            
+            if (attempt < maxRetries) {
+              const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+              console.log(`⏳ API blocked, waiting ${delay/1000} seconds before retry...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue; // Retry
+            } else {
+              throw new Error('ThyroCare API is blocking login attempts. Please try again later.');
+            }
+          }
+          
+          if (error.response) {
+            console.error('ThyroCare API error:', {
+              status: error.response.status,
+              data: error.response.data
+            });
+            
+            // Don't retry on 4xx errors (except 429 rate limit)
+            if (error.response.status >= 400 && error.response.status < 500 && error.response.status !== 429) {
+              throw new Error(`ThyroCare API error: ${error.response.data?.response || error.response.status}`);
+            }
+            
+            // Retry on 5xx errors and 429 rate limit
+            if (attempt < maxRetries) {
+              const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+              console.log(`⏳ API error, waiting ${delay/1000} seconds before retry...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue;
+            }
+          }
+          
+          // Network errors - retry with exponential backoff
+          if (attempt < maxRetries) {
+            const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+            console.log(`⏳ Network error, waiting ${delay/1000} seconds before retry...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+          
+          throw error;
         }
-      });
-
-      console.log('Automatic ThyroCare API response:', {
-        status: response.status,
-        response: response.data.response
-      });
-
-      if (response.data.response === 'Success' && response.data.apiKey) {
-        const thyrocareData = response.data;
-        
-        // Find or create admin from ThyroCare data
-        const admin = await Admin.findOrCreateFromThyroCare(thyrocareData, username);
-        
-        // Create single active session (deactivates previous ones)
-        const session = await AdminSession.createSingleActiveSession(
-          admin._id, 
-          thyrocareData, 
-          'AUTO_REFRESH', // Special IP for automatic refreshes
-          'AUTO_REFRESH_SERVICE'
-        );
-        
-        console.log('✅ Automatic API key refresh successful:', {
-          sessionId: session._id,
-          apiKey: session.thyrocareApiKey.substring(0, 10) + '...',
-          expiresAt: session.apiKeyExpiresAt?.toISOString()
-        });
-        
-        return session;
-      } else {
-        throw new Error('Automatic refresh failed: ' + (response.data.response || 'Invalid response from ThyroCare'));
       }
       
+      throw new Error('All retry attempts failed for API key refresh');
+    };
+
+    // Use circuit breaker and request queue for protection
+    try {
+      const queuedApiCall = async () => {
+        return await thyrocareCircuitBreaker.execute(apiCall);
+      };
+      
+      return await thyrocareRequestQueue.enqueue(queuedApiCall, {
+        priority: 'normal',
+        metadata: { type: 'api_key_refresh', source: 'auto_refresh' }
+      });
     } catch (error) {
-      console.error('❌ Automatic API key refresh failed:', error);
-      
-      if (error.response) {
-        console.error('ThyroCare API error:', {
-          status: error.response.status,
-          data: error.response.data
-        });
-        throw new Error(`ThyroCare API error: ${error.response.data?.response || error.response.status}`);
-      }
-      
+      console.error('❌ API key refresh failed with circuit breaker/queue:', error);
       throw error;
     }
   }
