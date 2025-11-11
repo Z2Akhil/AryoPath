@@ -248,7 +248,7 @@ const PackageDetailedPage = () => {
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 sticky top-8">
               <div className="p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Book This Test</h3>
-                <Form pkgName={pkg.name} pkgRate={pkg.rate?.offerRate} pkgId={code} />
+                <Form pkgName={pkg.name} pkgRate={priceInfo.displayPrice} pkgId={code} />
               </div>
             </div>
           </div>
