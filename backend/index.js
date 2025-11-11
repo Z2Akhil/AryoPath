@@ -13,6 +13,7 @@ import clientRouter from "./src/routes/client.js";
 import cartRouter from "./src/routes/cart.js";
 import SiteSettingsRouter from "./src/routes/siteSettings.js";
 import beneficiaryRouter from "./src/routes/beneficiary.js";
+import orderRouter from "./src/routes/order.js";
 import ThyrocareRefreshService from "./src/services/thyrocareRefreshService.js";
 
 const app = express();
@@ -63,6 +64,7 @@ app.use("/api/client", clientRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/beneficiaries", beneficiaryRouter);
 app.use("/api/settings", SiteSettingsRouter);
+app.use("/api/orders", orderRouter);
 
 // --- Health check route ---
 app.get("/", (req, res) => res.json({ success: true, message: "API is running fine", timestamp: new Date().toISOString() }));
