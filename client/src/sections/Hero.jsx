@@ -28,7 +28,7 @@ const Hero = () => {
 
   // Decide which image to show
   const heroImage =
-    !imgError && settings?.heroImage ? settings.heroImage : "./hero.jpg";
+    !imgError && settings?.heroImage ? settings.heroImage : "/hero.png";
 
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden md:flex mb-12">
