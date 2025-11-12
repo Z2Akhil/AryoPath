@@ -80,12 +80,13 @@ class OrderController {
         },
         source: 'AryoPath'
       });
-
+     console.log(order);
+     
       await order.save();
 
       // Now create order in Thyrocare system
       try {
-        const thyrocareResponse = await this.createThyrocareOrder(order, activeSession);
+        const thyrocareResponse = await OrderController.createThyrocareOrder(order, activeSession);
         
         // Update order with Thyrocare response
         order.thyrocare.orderNo = thyrocareResponse.order_no;
@@ -174,9 +175,10 @@ class OrderController {
         package: order.package.code,
         beneficiaries: order.beneficiaries.length
       });
-
+      console.log(payload);
+      
       const response = await axios.post(
-        'https://velso.thyrocare.com/api/booking-master/v2/create-order',
+        'https://dx-dsa-service.thyrocare.com/api/booking-master/v2/create-order',
         payload,
         {
           headers: {
@@ -297,7 +299,7 @@ class OrderController {
 
       // Retry Thyrocare order creation
       try {
-        const thyrocareResponse = await this.createThyrocareOrder(order, activeSession);
+        const thyrocareResponse = await OrderController.createThyrocareOrder(order, activeSession);
         
         order.thyrocare.orderNo = thyrocareResponse.order_no;
         order.thyrocare.response = thyrocareResponse;

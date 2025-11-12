@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { checkPincode } from "../api/pinCodeAvailabilityApi";
 import { getAppointmentSlots } from "../api/appointmentSlotApi";
 import { useUser } from "../context/userContext";
-import { 
-  getInitialFormData, 
-  saveContactInfo  
+import { axiosInstance } from "../api/axiosInstance";
+import {
+  getInitialFormData,
+  saveContactInfo
 } from "../utils/localStorage";
 import BeneficiaryManager from "./BeneficiaryManager";
 
-const Form = ({pkgName,pkgRate, pkgId }) => {
+const Form = ({ pkgName, pkgRate, pkgId }) => {
   const { user } = useUser();
   const [numPersons, setNumPersons] = useState(1);
   const [selectedBeneficiaries, setSelectedBeneficiaries] = useState([{ name: "", age: "", gender: "" }]);
@@ -36,7 +37,7 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
     if (user) {
       const initialData = getInitialFormData();
       setSelectedBeneficiaries(initialData.beneficiaries);
-      
+
       // Auto-fill contact information from user profile
       const autoFilledContactInfo = {
         email: user.email || initialData.contactInfo.email,
@@ -49,7 +50,7 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
           landmark: initialData.contactInfo.address.landmark
         }
       };
-      
+
       setContactInfo(autoFilledContactInfo);
       setPincode(initialData.contactInfo.address.pincode);
     }
@@ -67,10 +68,10 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
       alert('This beneficiary is already selected. Please choose a different beneficiary.');
       return;
     }
-    
+
     const updatedBeneficiaries = [...selectedBeneficiaries];
     const emptyIndex = updatedBeneficiaries.findIndex(b => !b.name);
-    
+
     if (emptyIndex >= 0) {
       updatedBeneficiaries[emptyIndex] = beneficiary;
       setSelectedBeneficiaries(updatedBeneficiaries);
@@ -103,7 +104,7 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate all required fields
     if (!pincode || pincode.length !== 6 || !pincodeStatus?.includes("✅")) {
       alert("Please check pincode availability first");
@@ -115,7 +116,13 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
       return;
     }
 
-    if (!contactInfo.email || !contactInfo.mobile || !contactInfo.address.street || !contactInfo.address.city || !contactInfo.address.state) {
+    if (
+      !contactInfo.email ||
+      !contactInfo.mobile ||
+      !contactInfo.address.street ||
+      !contactInfo.address.city ||
+      !contactInfo.address.state
+    ) {
       alert("Please complete all contact information");
       return;
     }
@@ -134,32 +141,25 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
         packageName: pkgName,
         packagePrice: pkgRate,
         beneficiaries: selectedBeneficiaries,
-        contactInfo: contactInfo,
+        contactInfo: {
+          ...contactInfo,
+          address: {
+            ...contactInfo.address,
+            pincode,
+          },
+        },
         appointment: {
           date: appointmentDate,
-          slotId: selectedSlot
+          slotId: selectedSlot,
+          slot: availableSlots.find(slot => slot.id === selectedSlot)?.slot || ""
         },
-        selectedSlot: availableSlots.find(slot => slot.id === selectedSlot)?.slot || selectedSlot
+        selectedSlot: availableSlots.find(slot => slot.id === selectedSlot)?.slot || ""
       };
 
-      // Submit order to backend
-      const response = await fetch('/api/orders/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(orderData)
-      });
+      console.log(orderData);
 
-      let result;
-      try {
-        const responseText = await response.text();
-        result = responseText ? JSON.parse(responseText) : {};
-      } catch (parseError) {
-        console.error('Error parsing response:', parseError);
-        throw new Error('Invalid response from server');
-      }
+      // Submit order to backend using axiosInstance
+      const { data: result } = await axiosInstance.post("/orders/create", orderData);
 
       if (result.success) {
         // Save contact info if requested
@@ -167,22 +167,21 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
           saveContactInfo(contactInfo);
         }
 
-        // Show success message and redirect to order confirmation
         alert(`Order created successfully! Order ID: ${result.data.orderId}`);
-        
-        // Redirect to order confirmation page or home
+
+        // Redirect to order confirmation page
         window.location.href = `/orders/${result.data.orderId}`;
       } else {
-        alert(`Order creation failed: ${result.message || 'Unknown error'}`);
+        alert(`Order creation failed: ${result.message || "Unknown error"}`);
       }
-
     } catch (error) {
-      console.error('Error creating order:', error);
-      alert('Failed to create order. Please try again.');
+      console.error("Error creating order:", error);
+      alert(error.response?.data?.message || "Failed to create order. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
 
   const handlePincodeCheck = async () => {
     if (!pincode || pincode.length !== 6) {
@@ -220,20 +219,20 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
     }
 
     // Check if all beneficiaries are properly filled
-    const incompleteBeneficiaries = selectedBeneficiaries.filter(b => 
+    const incompleteBeneficiaries = selectedBeneficiaries.filter(b =>
       !b.name || !b.age || !b.gender
     );
-    
+
     if (incompleteBeneficiaries.length > 0) {
       alert(`Please complete beneficiary information for ${incompleteBeneficiaries.length} beneficiary(ies) before fetching slots`);
       return;
     }
 
     // Validate beneficiary ages are numbers
-    const invalidAges = selectedBeneficiaries.filter(b => 
+    const invalidAges = selectedBeneficiaries.filter(b =>
       isNaN(parseInt(b.age)) || parseInt(b.age) <= 0
     );
-    
+
     if (invalidAges.length > 0) {
       alert("Please enter valid ages for all beneficiaries");
       return;
@@ -278,7 +277,7 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
       console.log("Fetching appointment slots with payload:", payload);
 
       const response = await getAppointmentSlots(payload);
-       
+
       if (response?.respId === "RES00001") {
         setAvailableSlots(response.lSlotDataRes || []);
       } else {
@@ -288,7 +287,7 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
     } catch (error) {
       console.error("Error fetching slots:", error);
       setAvailableSlots([]);
-      
+
       // Show more specific error messages
       if (error.response?.status === 400) {
         alert("Invalid request data. Please check all fields are correctly filled.");
@@ -316,7 +315,7 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
           {[...Array(10)].map((_, i) => (
             <option key={i + 1} value={i + 1}>
               {i + 1} {i + 1 === 1 ? 'Person' : 'Persons'}
-              {i + 1 === 1 ? ` (₹${pkgRate})` : ` (₹${(i+1)*pkgRate} only)`}
+              {i + 1 === 1 ? ` (₹${pkgRate})` : ` (₹${(i + 1) * pkgRate} only)`}
             </option>
           ))}
         </select>
@@ -347,7 +346,7 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
         {/* Beneficiary Selection Section */}
         <div className="mb-4">
           <p className="font-medium text-gray-800 mb-2">Select Beneficiaries ({numPersons} required)</p>
-          
+
           {/* Show selected beneficiaries */}
           {selectedBeneficiaries.map((beneficiary, index) => (
             beneficiary.name ? (
@@ -383,7 +382,7 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
               </div>
             )
           ))}
-          
+
           {selectedBeneficiaries.filter(b => !b.name).length > 0 && (
             <p className="text-sm text-gray-600 mt-2">
               {selectedBeneficiaries.filter(b => !b.name).length} more beneficiary(ies) required
@@ -393,42 +392,42 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
 
         <div className="mb-4">
           <p className="font-medium text-gray-800 mb-2">Contact Information</p>
-          
+
           {/* Email Field */}
           <div className="mb-2">
             <label className="block text-sm text-gray-600 mb-1">Email</label>
-            <input 
-              type="email" 
-              placeholder="Enter your email address" 
+            <input
+              type="email"
+              placeholder="Enter your email address"
               className="w-full border border-gray-400 rounded px-3 py-2 text-sm"
               value={contactInfo.email}
               onChange={(e) => handleContactInfoChange('email', e.target.value)}
             />
           </div>
-          
+
           <div className="mb-2">
             <label className="block text-sm text-gray-600 mb-1">Mobile Number</label>
-            <input 
-              type="text" 
-              placeholder="Mobile Number" 
+            <input
+              type="text"
+              placeholder="Mobile Number"
               className="w-full border border-gray-400 rounded px-3 py-2 text-sm"
               value={contactInfo.mobile}
               onChange={(e) => handleContactInfoChange('mobile', e.target.value)}
             />
           </div>
-          
+
           {/* Address Field */}
           <div className="mb-2">
             <label className="block text-sm text-gray-600 mb-1">Address</label>
-            <textarea 
-              rows="2" 
-              placeholder="Street address, area, landmark" 
+            <textarea
+              rows="2"
+              placeholder="Street address, area, landmark"
               className="w-full border border-gray-400 rounded px-3 py-2 text-sm"
               value={contactInfo.address.street}
               onChange={(e) => handleContactInfoChange('address.street', e.target.value)}
             />
           </div>
-          
+
           {/* City and State Fields */}
           <div className="grid grid-cols-2 gap-2 mb-3">
             <div>
@@ -452,7 +451,7 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
               />
             </div>
           </div>
-          
+
           {/* Save Contact Option */}
           <div className="flex items-center gap-2 mb-3">
             <input
@@ -466,7 +465,7 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
               Save this contact information for future bookings
             </label>
           </div>
-          
+
           {/* Show saved status */}
           {contactInfo.email && contactInfo.address.city && contactInfo.address.state && (
             <div className="bg-blue-50 border border-blue-200 rounded p-2 mb-2">
@@ -534,12 +533,11 @@ const Form = ({pkgName,pkgRate, pkgId }) => {
           Order with incomplete/invalid address will be rejected.
         </p>
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={loading}
-          className={`w-full bg-blue-600 text-white font-semibold py-2 my-3 rounded transition-colors ${
-            loading ? 'opacity-60 cursor-not-allowed' : 'hover:bg-blue-700'
-          }`}
+          className={`w-full bg-blue-600 text-white font-semibold py-2 my-3 rounded transition-colors ${loading ? 'opacity-60 cursor-not-allowed' : 'hover:bg-blue-700'
+            }`}
         >
           {loading ? 'Creating Order...' : 'BOOK NOW'}
         </button>
