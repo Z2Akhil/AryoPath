@@ -11,6 +11,7 @@ import OrdersPage from "./pages/OrderPage";
 import AccountPage from "./pages/AccountPage";
 import UsersPage from "./pages/UsersPage";
 import SettingsPage from "./pages/SettingsPage";
+import SMSManagementPage from "./pages/SMSManagementPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
           <Route path="offers" element={<OfferCatalog />} />
           <Route path="tests" element={<TestCatalog />} />
           <Route path="users" element={<UsersPage />} />
+          <Route path="sms-management" element={<SMSManagementPage />} />
           <Route path="account" element={<AccountPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
