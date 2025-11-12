@@ -154,7 +154,7 @@ class OrderController {
         passon: 0,
         pay_type: 'POSTPAID',
         pincode: order.contactInfo.address.pincode,
-        products: order.package.code,
+        products: Array.isArray(order.package.code) ? order.package.code.join(',') : order.package.code,
         ref_code: adminSession.adminId.mobile,
         reports: 'Y',
         service_type: 'HOME',
