@@ -1,7 +1,7 @@
 import User from "../models/User.js";
 import OTP from "../models/OTP.js";
 import jwt from "jsonwebtoken";
-import OTPGenerator, { generateOTP } from "../utils/otpGenerator.js";
+import OTPGenerator from "../utils/otpGenerator.js";
 import SMSService from "../utils/smsService.js";
 
 class AuthController {
@@ -268,7 +268,6 @@ class AuthController {
           message: "User not found",
         });
       }
-
       // Generate OTP for password reset
       const otp = OTPGenerator.generateOTP();
       const expiresAt = OTPGenerator.getExpiryTime();

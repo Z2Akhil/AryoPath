@@ -29,7 +29,7 @@ const ForgotPasswordForm = ({ onClose, onSwitchToLogin }) => {
 
   const handleRequestOTP = async (e) => {
     if (e) {
-      e.preventDefault(); // Prevent form submission
+      e.preventDefault();
     }
     
     if (!formData.mobileNumber.trim()) {
