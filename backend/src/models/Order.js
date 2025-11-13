@@ -25,7 +25,7 @@ const orderSchema = new mongoose.Schema({
   // Package information
   package: {
     code: {
-      type: String,
+      type: [String],
       required: true
     },
     name: {
