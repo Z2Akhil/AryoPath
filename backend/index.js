@@ -25,7 +25,6 @@ const app = express();
   }
 });
 
-console.log("Allowed origins:", process.env.CLIENT_URLS);
 // --- Middleware ---
 const allowedOrigins = process.env.CLIENT_URLS.split(",").map(url => url.trim());
 console.log("Allowed origins:", allowedOrigins);

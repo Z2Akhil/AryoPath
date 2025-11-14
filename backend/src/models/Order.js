@@ -223,7 +223,6 @@ const orderSchema = new mongoose.Schema({
 });
 
 // Indexes for faster queries
-orderSchema.index({ orderId: 1 });
 orderSchema.index({ userId: 1 });
 orderSchema.index({ adminId: 1 });
 orderSchema.index({ 'thyrocare.orderNo': 1 });
