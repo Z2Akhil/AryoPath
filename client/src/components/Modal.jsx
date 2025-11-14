@@ -7,13 +7,13 @@ const Modal = ({ children, title, onClose }) => {
   return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
-      onClick={onClose} 
+      onClick={onClose}
     >
       <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden transform transition-all duration-300 animate-scale-in"
-        onClick={(e) => e.stopPropagation()} 
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white rounded-t-2xl">
+        <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-linear-to-r from-blue-50 to-white rounded-t-2xl">
           <h2 className="text-xl font-bold text-gray-900">{title}</h2>
           <button
             onClick={onClose}
@@ -23,7 +23,6 @@ const Modal = ({ children, title, onClose }) => {
             <span className="sr-only">Close modal</span>
           </button>
         </div>
-        
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
           {children}
         </div>
