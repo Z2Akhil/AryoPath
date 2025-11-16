@@ -3,6 +3,10 @@ import { checkPincode } from "../api/pinCodeAvailabilityApi";
 import { getAppointmentSlots } from "../api/appointmentSlotApi";
 import { useUser } from "../context/userContext";
 import { axiosInstance } from "../api/axiosInstance";
+import { useCart } from "../context/CartContext";
+import SuccessOrderCard from "./cards/SuccessOrderCard";
+import { useOrderSuccess } from "../context/OrderSuccessContext";
+
 import {
   getInitialFormData,
   saveContactInfo
@@ -32,7 +36,8 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
     }
   });
   const [saveContactForFuture, setSaveContactForFuture] = useState(false);
-
+  const { cart, clearCart } = useCart();
+  const { showSuccessCard } = useOrderSuccess();
   useEffect(() => {
     if (user) {
       const initialData = getInitialFormData();
@@ -166,11 +171,19 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
         if (saveContactForFuture) {
           saveContactInfo(contactInfo);
         }
+        // ---- CART CLEARING LOGIC ----
+        const cartIds = (cart?.items || []).map(item => item.productCode).sort();
+        const bookedIds = Array.isArray(pkgId) ? [...pkgId].sort() : [pkgId];
 
-        alert(`Order created successfully! Order ID: ${result.data.orderId}`);
-
-        // Redirect to order confirmation page
-        window.location.href = `/orders/${result.data.orderId}`;
+        // If same items → clear the cart
+        if (JSON.stringify(cartIds) === JSON.stringify(bookedIds)) {
+          await clearCart();
+        }
+        showSuccessCard({
+          orderId: result.data.orderId,
+          packageName: pkgName,
+          amount: pkgRate
+        });
       } else {
         alert(`Order creation failed: ${result.message || "Unknown error"}`);
       }

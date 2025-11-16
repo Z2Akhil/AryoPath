@@ -16,6 +16,7 @@ export const getAppointmentSlots = async ({ pincode, date, patients, items }) =>
       patients,
       items
     });
+    console.log("in get appointment slot");
     return response.data.data;
   } catch (error) {
     console.error("Error fetching appointment slots:", error.response?.data || error.message);
