@@ -12,7 +12,7 @@ const CartPage = () => {
 
   const pkgNames = cart?.items?.map((item) => item?.name) || [];
   const pkgIds = cart?.items?.map((item) => item?.productCode) || [];
-
+  
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       {/* Header */}
@@ -113,7 +113,7 @@ const CartPage = () => {
           </div>
 
           {/* 🧩 Form Section */}
-            <Form pkgName={pkgNames.length === 1 ? pkgNames[0] : "Lab Tests Combo"} pkgRate={total} pkgId={pkgIds} />
+            <Form pkgName={pkgNames} pkgRate={total} pkgId={pkgIds} />
         </div>
       )}
     </div>

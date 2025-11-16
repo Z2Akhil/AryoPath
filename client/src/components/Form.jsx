@@ -14,6 +14,7 @@ import {
 import BeneficiaryManager from "./BeneficiaryManager";
 
 const Form = ({ pkgName, pkgRate, pkgId }) => {
+  const pkgNames = [].concat(pkgName || []);
   const { user } = useUser();
   const [numPersons, setNumPersons] = useState(1);
   const [selectedBeneficiaries, setSelectedBeneficiaries] = useState([{ name: "", age: "", gender: "" }]);
@@ -143,7 +144,7 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
       // Prepare order data
       const orderData = {
         packageId: pkgId,
-        packageName: pkgName,
+        packageName: pkgNames.join(", "),
         packagePrice: pkgRate,
         beneficiaries: selectedBeneficiaries,
         contactInfo: {
@@ -181,7 +182,7 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
         }
         showSuccessCard({
           orderId: result.data.orderId,
-          packageName: pkgName,
+          packageName: pkgNames.join(","),
           amount: pkgRate
         });
       } else {
@@ -317,7 +318,7 @@ const Form = ({ pkgName, pkgRate, pkgId }) => {
   return (
     <>
       <form onSubmit={handleSubmit} className="w-full bg-white border border-gray-300 rounded-2xl p-6 shadow-sm">
-        <h2 className="text-2xl font-bold text-gray-800 mt-2">{pkgName}</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mt-2">{pkgNames.length===1?pkgNames[0]:"Lab Tests Combo"}</h2>
         <h2 className="text-xl font-bold text-gray-800 ">Book Now, Pay Later</h2>
         <p className="text-green-700 font-medium mb-2">Simple Process, No Spam Calls</p>
         <select
