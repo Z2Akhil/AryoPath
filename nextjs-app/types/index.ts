@@ -92,7 +92,19 @@ export interface Cart {
   guestSessionId?: string;
 }
 
+export interface MedicineCartItem {
+  slug: string;
+  name: string;
+  mrp: number;
+  offerPrice: number;
+  type: string;
+  quantity: number;
+  thumbnail?: { url: string; publicId?: string };
+  prescriptionRequired?: boolean;
+}
+
 export interface CartContextType {
+  // ── Thyrocare cart (backend-synced) ───────────────────────────────────────
   cart: Cart;
   loading: boolean;
   addToCart: (item: any) => Promise<{ success: boolean; message: string }>;
@@ -100,6 +112,15 @@ export interface CartContextType {
   updateQuantity: (productCode: string, productType: string, quantity: number) => Promise<{ success: boolean; message: string }>;
   clearCart: () => Promise<{ success: boolean; message: string }>;
   refreshCart: () => Promise<void>;
+
+  // ── Medicine cart (local state + localStorage) ────────────────────────────
+  medicineCart: MedicineCartItem[];
+  medicineCartTotal: number;
+  medicineCartCount: number;
+  addMedicineToCart: (item: Omit<MedicineCartItem, 'quantity'>) => void;
+  removeMedicineFromCart: (slug: string) => void;
+  updateMedicineQty: (slug: string, qty: number) => void;
+  clearMedicineCart: () => void;
 }
 
 export interface Admin {

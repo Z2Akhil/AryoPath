@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, ReactNode } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { ShoppingCart, Menu, X, User, LogOut, ChevronDown, Settings, Package } from 'lucide-react';
 import { useSiteSettings } from '@/providers/SiteSettingsProvider';
 import { useCart } from '@/providers/CartProvider';
@@ -16,7 +16,7 @@ const NAV_LINKS = [
   { label: 'Packages', href: '/profiles' },
   { label: 'Offers', href: '/offers' },
   { label: 'Lab Tests', href: '/tests' },
-  { label: 'Medicines', href: '#', comingSoon: true },
+  { label: 'Medicines', href: '/medicines' },
   { label: 'Doctor Consult', href: '#', comingSoon: true },
   { label: 'About Us', href: '/about' },
 ];
@@ -221,8 +221,10 @@ const Header = ({ children }: HeaderProps) => {
   const lastScrollY = useRef(0);
 
   const { user, logout } = useUser();
-  const { cart } = useCart();
-  const cartCount = cart?.items?.length || 0;
+  const { cart, medicineCartCount } = useCart();
+  const pathname = usePathname();
+  const hideMedicineSearchBar = pathname?.startsWith('/medicines');
+  const cartCount = (cart?.items?.length || 0) + (medicineCartCount || 0);
   const { settings, loading } = useSiteSettings();
   const { openAuth } = useAuthModal();
   const router = useRouter();
@@ -295,9 +297,11 @@ const Header = ({ children }: HeaderProps) => {
             <Logo logo={settings?.logo} loading={loading} />
 
             {/* Search — desktop */}
-            <div className="hidden lg:flex flex-1 max-w-xl">
-              <SearchBar />
-            </div>
+            {!hideMedicineSearchBar && (
+              <div className="hidden lg:flex flex-1 max-w-xl">
+                <SearchBar />
+              </div>
+            )}
 
             <div className="flex items-center gap-2 ml-auto">
               <CartIcon count={cartCount} />
@@ -353,9 +357,11 @@ const Header = ({ children }: HeaderProps) => {
       </header>
 
       {/* ── MOBILE SEARCH BAR (below header, scrolls away) ─────────── */}
-      <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-2.5 z-30">
-        <SearchBar />
-      </div>
+      {!hideMedicineSearchBar && (
+        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-2.5 z-30">
+          <SearchBar />
+        </div>
+      )}
 
       {/* ── MOBILE PILL QUICK-LINKS (fixed, appears on scroll-up) ─── */}
       <div
