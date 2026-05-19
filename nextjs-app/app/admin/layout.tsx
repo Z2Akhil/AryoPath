@@ -56,6 +56,7 @@ export default function AdminLayout({
         if (pathname.includes('/account')) return 'Account';
         if (pathname.includes('/settings')) return 'Settings';
         if (pathname.includes('/medicines')) return 'Medicines';
+        if (pathname.includes('/doctors')) return 'Doctors';
         return 'Dashboard';
     };
 

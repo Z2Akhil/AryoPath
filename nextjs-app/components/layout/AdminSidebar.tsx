@@ -15,7 +15,8 @@ import {
     ChevronLeft,
     ChevronRight,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Stethoscope,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -106,6 +107,11 @@ const AdminSidebar: React.FC<SidebarProps> = ({
                         </Link>
                     </div>
                 )}
+
+                <Link href="/admin/doctors" className={navLinkClass('/admin/doctors')} title="Doctors">
+                    <Stethoscope className="h-5 w-5" />
+                    {!collapsed && <span className="ml-3">Doctors</span>}
+                </Link>
 
                 <Link href="/admin/users" className={navLinkClass('/admin/users')} title="Users">
                     <Users className="h-5 w-5" />
