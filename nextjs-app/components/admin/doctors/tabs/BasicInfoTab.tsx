@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Phone, MessageCircle, Mail } from 'lucide-react';
 import { DoctorFormValues, DoctorImage } from '@/types/doctor';
 import DoctorImageUploader from '../DoctorImageUploader';
 import DynamicListInput from '@/components/admin/medicines/DynamicListInput';
@@ -124,6 +124,68 @@ export default function BasicInfoTab({ profilePhoto, onPhotoChange }: Props) {
                 <option value="other">Other / Prefer not to say</option>
               </select>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contact Details */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-6">
+          Contact Details
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              Mobile No.
+            </label>
+            <div className="relative">
+              <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                {...register('mobile')}
+                type="tel"
+                placeholder="+91 98765 43210"
+                className={`${field} pl-10`}
+              />
+            </div>
+            {errors.mobile && (
+              <p className="text-xs text-red-500 mt-1">{errors.mobile.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              WhatsApp No.
+            </label>
+            <div className="relative">
+              <MessageCircle className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                {...register('whatsapp')}
+                type="tel"
+                placeholder="+91 98765 43210"
+                className={`${field} pl-10`}
+              />
+            </div>
+            {errors.whatsapp && (
+              <p className="text-xs text-red-500 mt-1">{errors.whatsapp.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              Email Address
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                {...register('email')}
+                type="email"
+                placeholder="doctor@example.com"
+                className={`${field} pl-10`}
+              />
+            </div>
+            {errors.email && (
+              <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
+            )}
           </div>
         </div>
       </div>

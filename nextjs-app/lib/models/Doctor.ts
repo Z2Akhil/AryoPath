@@ -24,6 +24,11 @@ const DoctorSchema = new Schema<DoctorDocument>(
     about: { type: String, default: '' },
     languages: [{ type: String }],
 
+    // Contact
+    mobile: { type: String, default: '' },
+    whatsapp: { type: String, default: '' },
+    email: { type: String, default: '' },
+
     // Professional
     specialization: { type: String, required: true },
     experience: { type: Number, default: 0 },

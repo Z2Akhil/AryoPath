@@ -61,6 +61,9 @@ export interface Doctor {
   shortBio: string;
   about: string;
   languages: string[];
+  mobile: string;
+  whatsapp: string;
+  email: string;
   specialization: string;
   experience: number;
   qualifications: string[];
@@ -107,6 +110,9 @@ export const doctorSchema = z.object({
   shortBio: z.string().optional().default(''),
   about: z.string().optional().default(''),
   languages: z.array(z.string()).default([]),
+  mobile: z.string().optional().default(''),
+  whatsapp: z.string().optional().default(''),
+  email: z.string().email('Invalid email').optional().or(z.literal('')).default(''),
 
   specialization: z.string().min(1, 'Specialization is required'),
   experience: z.coerce.number().min(0).default(0),
@@ -159,6 +165,9 @@ export const DOCTOR_FORM_DEFAULTS: DoctorFormValues = {
   shortBio: '',
   about: '',
   languages: [],
+  mobile: '',
+  whatsapp: '',
+  email: '',
   specialization: '',
   experience: 0,
   qualifications: [],
