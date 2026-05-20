@@ -1,5 +1,13 @@
 import { axiosInstance } from './axiosInstance';
-import { MedicineOrder, MedicineCartItem, ShippingAddress } from '@/types/medicineOrder';
+import { MedicineOrder, ShippingAddress } from '@/types/medicineOrder';
+
+interface OrderItem {
+  slug: string;
+  name: string;
+  mrp: number;
+  offerPrice: number;
+  quantity: number;
+}
 
 const medicineOrderApi = {
   createRazorpayOrder: async (amount: number, receipt?: string) => {
@@ -18,9 +26,8 @@ const medicineOrderApi = {
   },
 
   createOrder: async (payload: {
-    items: MedicineCartItem[];
+    items: OrderItem[];
     shippingAddress: ShippingAddress;
-    razorpayOrderId: string;
     grandTotal: number;
   }) => {
     const res = await axiosInstance.post('/orders/medicine', payload);

@@ -2,6 +2,7 @@ import Admin from './Admin';
 import AdminActivity from './AdminActivity';
 import AdminSession from './AdminSession';
 import Cart from './Cart';
+import ConsultationAppointment from './ConsultationAppointment';
 import Notification from './Notification';
 import OTP from './OTP';
 import Offer from './Offer';
@@ -17,6 +18,7 @@ const models = {
     AdminActivity,
     AdminSession,
     Cart,
+    ConsultationAppointment,
     Notification,
     OTP,
     Offer,

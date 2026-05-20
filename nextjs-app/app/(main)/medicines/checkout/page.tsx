@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ShieldCheck, ArrowLeft, ShoppingCart } from 'lucide-react';
@@ -13,22 +13,21 @@ export default function MedicineCheckoutPage() {
   const router = useRouter();
   const { user, loading: userLoading } = useUser();
   const { medicineCart } = useCart();
+  const [mounted, setMounted] = useState(false);
 
-  // Redirect to login if not authenticated
+  useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => {
-    if (!userLoading && !user) {
-      router.push('/');
-    }
-  }, [user, userLoading, router]);
+    if (!mounted) return;
+    if (!userLoading && !user) router.push('/');
+  }, [mounted, user, userLoading, router]);
 
-  // Redirect if medicine cart is empty
   useEffect(() => {
-    if (!userLoading && user && medicineCart.length === 0) {
-      router.push('/medicines');
-    }
-  }, [medicineCart.length, user, userLoading, router]);
+    if (!mounted) return;
+    if (!userLoading && user && medicineCart.length === 0) router.push('/medicines');
+  }, [mounted, medicineCart.length, user, userLoading, router]);
 
-  if (userLoading) return null;
+  if (!mounted || userLoading) return null;
   if (!user) return null;
   if (medicineCart.length === 0) return null;
 
@@ -58,7 +57,7 @@ export default function MedicineCheckoutPage() {
           <div className="flex items-center gap-2 p-3 bg-green-50 rounded-2xl border border-green-100 mb-6">
             <ShieldCheck className="h-4 w-4 text-green-600 flex-shrink-0" />
             <p className="text-xs font-semibold text-green-700">
-              100% Secure Checkout · Powered by Razorpay · 256-bit SSL
+              100% Secure Checkout · Cash on Delivery · 256-bit SSL
             </p>
           </div>
 

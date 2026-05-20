@@ -21,7 +21,7 @@ const generateOrderId = () => {
   return `MED-${ts}-${rand}`;
 };
 
-// POST /api/orders/medicine — create a medicine order (pre-payment, status: pending_payment)
+// POST /api/orders/medicine — create a medicine order (COD, status: confirmed)
 export async function POST(req: NextRequest) {
   try {
     await connectToDatabase();
@@ -34,9 +34,9 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { items, shippingAddress, razorpayOrderId, grandTotal } = body;
+    const { items, shippingAddress, grandTotal } = body;
 
-    if (!items?.length || !shippingAddress || !razorpayOrderId || !grandTotal) {
+    if (!items?.length || !shippingAddress || !grandTotal) {
       return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
     }
 
@@ -78,13 +78,7 @@ export async function POST(req: NextRequest) {
       userId: (user as any)._id,
       items: enrichedItems,
       shippingAddress,
-      payment: {
-        razorpayOrderId,
-        amount: grandTotal,
-        currency: 'INR',
-        status: 'pending',
-      },
-      status: 'pending_payment',
+      status: 'confirmed',
       requiresPrescription,
       subtotal,
       totalDiscount,

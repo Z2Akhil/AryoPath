@@ -48,10 +48,10 @@ const PrescriptionSchema = new Schema(
 
 const PaymentSchema = new Schema(
   {
-    razorpayOrderId: { type: String, required: true },
+    razorpayOrderId: { type: String, default: '' },
     razorpayPaymentId: { type: String, default: '' },
     razorpaySignature: { type: String, default: '' },
-    amount: { type: Number, required: true },
+    amount: { type: Number, default: 0 },
     currency: { type: String, default: 'INR' },
     status: {
       type: String,
@@ -83,7 +83,7 @@ const MedicineOrderSchema = new Schema<MedicineOrderDocument>(
     userId: { type: Schema.Types.ObjectId as any, ref: 'User', required: true },
     items: { type: [OrderItemSchema], required: true },
     shippingAddress: { type: AddressSchema, required: true },
-    payment: { type: PaymentSchema, required: true },
+    payment: { type: PaymentSchema, default: () => ({}) },
     status: {
       type: String,
       enum: STATUS_VALUES,
@@ -106,9 +106,7 @@ const MedicineOrderSchema = new Schema<MedicineOrderDocument>(
 );
 
 MedicineOrderSchema.index({ userId: 1, createdAt: -1 });
-MedicineOrderSchema.index({ orderId: 1 });
 MedicineOrderSchema.index({ status: 1 });
-MedicineOrderSchema.index({ 'payment.razorpayOrderId': 1 });
 
 const MedicineOrder =
   (mongoose.models.MedicineOrder as Model<MedicineOrderDocument>) ||

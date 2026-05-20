@@ -17,7 +17,7 @@ const NAV_LINKS = [
   { label: 'Offers', href: '/offers' },
   { label: 'Lab Tests', href: '/tests' },
   { label: 'Medicines', href: '/medicines' },
-  { label: 'Doctor Consult', href: '#', comingSoon: true },
+  { label: 'Doctor Consult', href: '/consult' },
   { label: 'About Us', href: '/about' },
 ];
 
@@ -159,16 +159,8 @@ const MobileDrawer = ({ open, user, mounted, onLogin, onLogout, onClose }: Mobil
           <nav className="flex-1 p-5 overflow-y-auto">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Navigation</p>
             <div className="space-y-1">
-              {NAV_LINKS.map(({ label, href, comingSoon }) =>
-                comingSoon ? (
-                  <div
-                    key={label}
-                    className="flex items-center justify-between px-4 py-2.5 text-gray-400 rounded-lg font-medium text-sm"
-                  >
-                    {label}
-                    <span className="text-[10px] bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-semibold">Soon</span>
-                  </div>
-                ) : (
+              {NAV_LINKS.map(({ label, href }) =>
+                (
                   <Link
                     key={label}
                     href={href}
@@ -304,7 +296,7 @@ const Header = ({ children }: HeaderProps) => {
             )}
 
             <div className="flex items-center gap-2 ml-auto">
-              <CartIcon count={cartCount} />
+              <CartIcon count={mounted ? cartCount : 0} />
               {showUserNav && (
                 <DesktopNav user={user} onLogin={handleLogin} onLogout={handleLogout} />
               )}
@@ -322,13 +314,7 @@ const Header = ({ children }: HeaderProps) => {
           <nav className="hidden lg:block border-t border-gray-100">
             <div className="relative flex items-center justify-center py-2.5">
               <ul className="flex items-center gap-7">
-                {NAV_LINKS.map(({ label, href, comingSoon }) =>
-                  comingSoon ? (
-                    <li key={label} className="flex items-center gap-1.5 text-gray-400 text-sm font-medium cursor-default select-none">
-                      {label}
-                      <span className="text-[9px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full font-bold tracking-wide">Soon</span>
-                    </li>
-                  ) : (
+                {NAV_LINKS.map(({ label, href }) => (
                     <li key={label}>
                       <Link
                         href={href}
@@ -370,16 +356,7 @@ const Header = ({ children }: HeaderProps) => {
         }`}
       >
         <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 py-2.5">
-          {NAV_LINKS.map(({ label, href, comingSoon }) =>
-            comingSoon ? (
-              <span
-                key={label}
-                className="shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-400 cursor-default"
-              >
-                {label}
-                <span className="text-[9px] bg-gray-200 text-gray-400 px-1 py-0.5 rounded-full font-bold">Soon</span>
-              </span>
-            ) : (
+          {NAV_LINKS.map(({ label, href }) => (
               <Link
                 key={label}
                 href={href}

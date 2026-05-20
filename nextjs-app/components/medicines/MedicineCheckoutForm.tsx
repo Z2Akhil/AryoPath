@@ -4,18 +4,12 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { Lock, Loader2, MapPin, Phone, User, AlertTriangle, FileText, Truck, Tag } from 'lucide-react';
+import { ShoppingBag, Loader2, MapPin, Phone, User, AlertTriangle, FileText, Truck, Tag } from 'lucide-react';
 import { useCart } from '@/providers/CartProvider';
 import { useToast } from '@/providers/ToastProvider';
 import { checkoutAddressSchema, CheckoutAddressValues, UploadedPrescription as PrescriptionType } from '@/types/medicineOrder';
 import PrescriptionUpload from './PrescriptionUpload';
 import medicineOrderApi from '@/lib/api/medicineOrderApi';
-
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
 
 const field = 'w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-white transition-all';
 
@@ -46,15 +40,6 @@ export default function MedicineCheckoutForm() {
     resolver: zodResolver(checkoutAddressSchema) as any,
   });
 
-  const loadRazorpay = () => new Promise<boolean>((resolve) => {
-    if (window.Razorpay) { resolve(true); return; }
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-
   const onSubmit = async (addressData: CheckoutAddressValues) => {
     if (medicineItems.length === 0) {
       toast.error('Your cart is empty');
@@ -63,17 +48,6 @@ export default function MedicineCheckoutForm() {
 
     setProcessing(true);
     try {
-      // 1. Load Razorpay SDK
-      const loaded = await loadRazorpay();
-      if (!loaded) { toast.error('Failed to load payment gateway. Please try again.'); setProcessing(false); return; }
-
-      // 2. Create Razorpay order
-      const rzpRes = await medicineOrderApi.createRazorpayOrder(grandTotal, `rcpt_${Date.now()}`);
-      if (!rzpRes.success) throw new Error(rzpRes.data?.toString() || 'Failed to create payment');
-
-      const { orderId: rzpOrderId, amount, currency, keyId } = rzpRes.data;
-
-      // 3. Create medicine order in DB (pending_payment)
       const orderPayload = {
         items: medicineItems.map(i => ({
           slug: i.slug,
@@ -83,57 +57,17 @@ export default function MedicineCheckoutForm() {
           quantity: i.quantity,
         })),
         shippingAddress: addressData,
-        razorpayOrderId: rzpOrderId,
         grandTotal,
       };
-      const orderRes = await medicineOrderApi.createOrder(orderPayload as any);
-      if (!orderRes.success) throw new Error('Failed to create order');
 
-      const medicineOrderId = orderRes.data._id;
-      const displayOrderId  = orderRes.data.orderId;
+      const orderRes = await medicineOrderApi.createOrder(orderPayload);
+      if (!orderRes.success) throw new Error('Failed to place order. Please try again.');
 
-      // 4. Open Razorpay checkout
-      await new Promise<void>((resolve, reject) => {
-        const options = {
-          key: keyId,
-          amount,
-          currency,
-          name: 'AyroPath Medicines',
-          description: `Order ${displayOrderId}`,
-          order_id: rzpOrderId,
-          handler: async (response: any) => {
-            try {
-              // 5. Verify payment
-              const verifyRes = await medicineOrderApi.verifyPayment({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                medicineOrderId,
-              });
-              if (!verifyRes.success) { reject(new Error('Payment verification failed')); return; }
-
-              clearMedicineCart();
-              resolve();
-              router.push(`/medicines/order-success?orderId=${verifyRes.data.orderId}`);
-            } catch (e) {
-              reject(e);
-            }
-          },
-          modal: { ondismiss: () => reject(new Error('Payment cancelled')) },
-          prefill: {
-            name: addressData.fullName,
-            contact: addressData.mobile,
-          },
-          theme: { color: '#0d9488' },
-        };
-
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', (r: any) => reject(new Error(r.error?.description || 'Payment failed')));
-        rzp.open();
-      });
+      clearMedicineCart();
+      toast.success('Order placed successfully!');
+      router.push(`/medicines/order-success?orderId=${orderRes.data.orderId}`);
     } catch (error: any) {
-      const msg = error.message || 'Payment failed';
-      if (msg !== 'Payment cancelled') toast.error(msg);
+      toast.error(error.message || 'Something went wrong. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -288,18 +222,18 @@ export default function MedicineCheckoutForm() {
         </p>
       </div>
 
-      {/* Pay button */}
+      {/* Place Order button */}
       <button
         type="submit"
         disabled={processing || medicineItems.length === 0}
         className="w-full flex items-center justify-center gap-3 py-4 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-2xl text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-200"
       >
         {processing
-          ? <><Loader2 className="h-5 w-5 animate-spin" /> Processing...</>
-          : <><Lock className="h-5 w-5" /> Pay ₹{grandTotal.toFixed(0)} Securely</>
+          ? <><Loader2 className="h-5 w-5 animate-spin" /> Placing Order...</>
+          : <><ShoppingBag className="h-5 w-5" /> Place Order · ₹{grandTotal.toFixed(0)}</>
         }
       </button>
-      <p className="text-center text-xs text-gray-400">🔒 Secured by Razorpay · 256-bit SSL encryption</p>
+      <p className="text-center text-xs text-gray-400">Payment will be collected at delivery · 100% secure</p>
     </form>
   );
 }
