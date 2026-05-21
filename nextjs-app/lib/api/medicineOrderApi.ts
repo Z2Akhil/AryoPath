@@ -1,5 +1,5 @@
 import { axiosInstance } from './axiosInstance';
-import { MedicineOrder, ShippingAddress } from '@/types/medicineOrder';
+import { MedicineOrder, ShippingAddress, CourierEvent } from '@/types/medicineOrder';
 
 interface OrderItem {
   slug: string;
@@ -45,6 +45,24 @@ const medicineOrderApi = {
       success: boolean;
       data: MedicineOrder[];
       pagination: { total: number; page: number; limit: number; totalPages: number };
+    };
+  },
+
+  addPrescription: async (orderId: string, prescriptions: { url: string; publicId: string }[]) => {
+    const res = await axiosInstance.post(`/orders/medicine/${orderId}/prescription`, { prescriptions });
+    return res.data as { success: boolean; message: string; data?: { prescriptions: any[] } };
+  },
+
+  getTracking: async (orderId: string) => {
+    const res = await axiosInstance.get(`/orders/medicine/${orderId}/tracking`);
+    return res.data as {
+      success: boolean;
+      data: {
+        courierStatus: string;
+        courierStatusHistory: CourierEvent[];
+        courierStatusUpdatedAt: string | null;
+        trackingUrl: string;
+      };
     };
   },
 

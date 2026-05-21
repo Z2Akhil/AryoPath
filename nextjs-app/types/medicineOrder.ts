@@ -58,6 +58,15 @@ export interface ShippingAddress {
   landmark?: string;
 }
 
+// ─── Courier Tracking ─────────────────────────────────────────────────────────
+
+export interface CourierEvent {
+  status: string;
+  activity: string;
+  location: string;
+  timestamp: string;
+}
+
 // ─── Prescription ──────────────────────────────────────────────────────────────
 
 export interface Prescription {
@@ -100,6 +109,12 @@ export interface MedicineOrder {
   cancelledAt?: string;
   cancellationReason?: string;
   notes?: string;
+  awb?: string;
+  courierPartner?: string;
+  trackingUrl?: string;
+  courierStatus?: string;
+  courierStatusUpdatedAt?: string;
+  courierStatusHistory?: CourierEvent[];
   createdAt: string;
   updatedAt: string;
 }

@@ -226,12 +226,14 @@ function OrderSuccessContent() {
           >
             <ShoppingBag className="h-4 w-4" /> Continue Shopping
           </Link>
-          <Link
-            href="/orders"
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-white border-2 border-gray-200 hover:bg-gray-50 text-gray-700 font-bold rounded-2xl transition-colors text-sm"
-          >
-            My Orders <ArrowRight className="h-4 w-4" />
-          </Link>
+          {(order?.orderId || orderId) && (
+            <Link
+              href={`/medicines/orders/${order?.orderId || orderId}`}
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-white border-2 border-gray-200 hover:bg-gray-50 text-gray-700 font-bold rounded-2xl transition-colors text-sm"
+            >
+              <Truck className="h-4 w-4" /> Track Order <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
         </div>
       </div>
     </div>

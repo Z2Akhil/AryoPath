@@ -113,7 +113,6 @@ export async function POST(req: NextRequest) {
     const finalAmount = Math.max(0, consultationFee - couponDiscount);
     const appointmentDateTime = parseAppointmentDateTime(appointmentDate, appointmentTime);
     const doctorMobile = (doctor as any).mobile || '';
-    const meetLink = consultationMode === 'video' ? generateMeetLink() : '';
 
     const appointment = await ConsultationAppointment.create({
       doctorId: doctor._id,
@@ -130,7 +129,7 @@ export async function POST(req: NextRequest) {
       appointmentDate,
       appointmentTime,
       appointmentDateTime,
-      meetLink,
+      meetLink: '',
       consultationFee,
       platformDiscount,
       couponCode: appliedCoupon,
@@ -141,6 +140,13 @@ export async function POST(req: NextRequest) {
       reminderSent: false,
       ...(userId ? { userId } : {}),
     });
+
+    // Generate meet link now that we have the appointment _id
+    const meetLink = consultationMode === 'video' ? generateMeetLink(appointment._id.toString()) : '';
+    if (meetLink) {
+      appointment.meetLink = meetLink;
+      await appointment.save();
+    }
 
     const apptShortId = shortId(appointment._id);
 

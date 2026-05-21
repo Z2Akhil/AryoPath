@@ -46,6 +46,16 @@ const PrescriptionSchema = new Schema(
   { _id: false }
 );
 
+const CourierEventSchema = new Schema(
+  {
+    status:    { type: String, required: true },
+    activity:  { type: String, default: '' },
+    location:  { type: String, default: '' },
+    timestamp: { type: Date, required: true },
+  },
+  { _id: false }
+);
+
 const PaymentSchema = new Schema(
   {
     razorpayOrderId: { type: String, default: '' },
@@ -101,12 +111,19 @@ const MedicineOrderSchema = new Schema<MedicineOrderDocument>(
     cancelledAt: { type: Date },
     cancellationReason: { type: String, default: '' },
     notes: { type: String, default: '' },
+    awb:                    { type: String, default: '' },
+    courierPartner:         { type: String, default: '' },
+    trackingUrl:            { type: String, default: '' },
+    courierStatus:          { type: String, default: '' },
+    courierStatusUpdatedAt: { type: Date },
+    courierStatusHistory:   { type: [CourierEventSchema], default: [] },
   },
   { timestamps: true }
 );
 
 MedicineOrderSchema.index({ userId: 1, createdAt: -1 });
 MedicineOrderSchema.index({ status: 1 });
+MedicineOrderSchema.index({ awb: 1 }, { sparse: true });
 
 const MedicineOrder =
   (mongoose.models.MedicineOrder as Model<MedicineOrderDocument>) ||

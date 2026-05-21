@@ -25,6 +25,7 @@ const adminMedicineOrderApi = {
     status?: MedicineOrderStatus;
     notes?: string;
     cancellationReason?: string;
+    awb?: string;
   }): Promise<{ success: boolean; order: MedicineOrder }> => {
     const res = await adminAxios.patch(`/admin/orders/medicine/${orderId}`, data);
     return res.data;

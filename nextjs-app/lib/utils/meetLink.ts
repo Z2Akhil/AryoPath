@@ -1,9 +1,7 @@
-const CHARS = 'abcdefghijklmnopqrstuvwxyz';
-
-function randomSegment(len: number): string {
-  return Array.from({ length: len }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
-}
-
-export function generateMeetLink(): string {
-  return `https://meet.google.com/${randomSegment(3)}-${randomSegment(4)}-${randomSegment(3)}`;
+/**
+ * Generates a Jitsi Meet link tied to the appointment ID.
+ * No API, no credentials, no cost — anyone with the link can join as a guest.
+ */
+export function generateMeetLink(appointmentId: string): string {
+  return `https://meet.jit.si/AyroPath-${appointmentId}`;
 }

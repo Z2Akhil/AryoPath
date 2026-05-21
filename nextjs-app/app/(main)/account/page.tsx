@@ -7,9 +7,10 @@ import { useUser } from '@/providers/UserProvider';
 import {
     User, Edit3, Save, Phone, Loader,
     Mail, AlertCircle, CheckCircle, X,
-    TrendingUp, Activity, ChevronRight, FileText, Stethoscope,
+    TrendingUp, Activity, ChevronRight, FileText, Stethoscope, Pill, FlaskConical,
 } from 'lucide-react';
 import { fetchUserOrders, type Order } from '@/lib/api/ordersApi';
+import medicineOrderApi from '@/lib/api/medicineOrderApi';
 import dynamic from 'next/dynamic';
 
 const ManageAddresses = dynamic(() => import('@/components/account/ManageAddresses'), { ssr: false });
@@ -30,8 +31,9 @@ export default function AccountPage() {
     const [isSaving, setIsSaving] = useState(false);
 
     // Orders summary
-    const [orders, setOrders] = useState<Order[]>([]);
+    const [orders, setOrders]       = useState<Order[]>([]);
     const [ordersLoading, setOrdersLoading] = useState(true);
+    const [medOrderCount, setMedOrderCount] = useState<number | null>(null);
 
     useEffect(() => {
         if (user) {
@@ -50,8 +52,13 @@ export default function AccountPage() {
         const load = async () => {
             try {
                 setOrdersLoading(true);
-                const data = await fetchUserOrders();
-                setOrders(data || []);
+                const [labData, medData] = await Promise.allSettled([
+                    fetchUserOrders(),
+                    medicineOrderApi.getUserOrders(1, 1),
+                ]);
+                if (labData.status === 'fulfilled') setOrders(labData.value || []);
+                if (medData.status === 'fulfilled' && medData.value.success)
+                    setMedOrderCount(medData.value.pagination.total);
             } catch { /* summary only — silent fail */ }
             finally { setOrdersLoading(false); }
         };
@@ -110,70 +117,59 @@ export default function AccountPage() {
 
             <div className="max-w-2xl mx-auto px-4 sm:px-6 py-5 space-y-4">
 
-                {/* My Orders card — prominent CTA */}
-                <Link
-                    href="/orders"
-                    className="block bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-5 shadow-lg shadow-blue-100 text-white hover:from-blue-700 hover:to-blue-800 transition-all active:scale-[0.98]"
-                >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-xs font-bold text-blue-200 uppercase tracking-widest mb-1">Orders</p>
-                            <h2 className="text-xl font-black">My Orders</h2>
-                            <p className="text-sm text-blue-100 mt-0.5">View all your booked tests</p>
+                {/* Orders — two cards side by side */}
+                <div className="grid grid-cols-2 gap-3">
+                    {/* Lab Tests */}
+                    <Link
+                        href="/orders?type=tests"
+                        className="block bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-4 shadow-lg shadow-blue-100 text-white hover:from-blue-700 hover:to-blue-800 transition-all active:scale-[0.98]"
+                    >
+                        <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center mb-3">
+                            <FlaskConical className="w-5 h-5 text-white" />
                         </div>
-                        <div className="flex items-center gap-3">
-                            {ordersLoading ? (
-                                <Loader className="w-5 h-5 animate-spin text-blue-200" />
-                            ) : (
-                                <div className="text-right">
-                                    <p className="text-3xl font-black">{orders.length}</p>
-                                    <p className="text-xs text-blue-200">total</p>
-                                </div>
-                            )}
-                            <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
-                                <ChevronRight className="w-5 h-5" />
-                            </div>
+                        <p className="text-xs font-bold text-blue-200 uppercase tracking-widest mb-0.5">Lab Tests</p>
+                        <div className="flex items-end justify-between">
+                            <p className="text-2xl font-black">{ordersLoading ? '–' : orders.length}</p>
+                            <ChevronRight className="w-4 h-4 text-blue-300 mb-1" />
                         </div>
-                    </div>
+                        {!ordersLoading && (
+                            <p className="text-xs text-blue-200 mt-1">{activeCount} active</p>
+                        )}
+                    </Link>
 
-                    {/* Mini stats */}
-                    {!ordersLoading && orders.length > 0 && (
-                        <div className="flex gap-3 mt-4 pt-4 border-t border-white/20">
-                            <div className="flex items-center gap-1.5">
-                                <Activity className="w-3.5 h-3.5 text-amber-300" />
-                                <span className="text-xs font-bold text-blue-100">{activeCount} active</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <CheckCircle className="w-3.5 h-3.5 text-emerald-300" />
-                                <span className="text-xs font-bold text-blue-100">{completedCount} completed</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <TrendingUp className="w-3.5 h-3.5 text-blue-200" />
-                                <span className="text-xs font-bold text-blue-100">₹{totalSpent.toLocaleString()} spent</span>
-                            </div>
+                    {/* Medicines */}
+                    <Link
+                        href="/orders?type=medicines"
+                        className="block bg-gradient-to-br from-teal-600 to-teal-700 rounded-2xl p-4 shadow-lg shadow-teal-100 text-white hover:from-teal-700 hover:to-teal-800 transition-all active:scale-[0.98]"
+                    >
+                        <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center mb-3">
+                            <Pill className="w-5 h-5 text-white" />
                         </div>
-                    )}
-                </Link>
-
-                {/* Quick links */}
-                <div className="grid grid-cols-3 gap-3">
-                    {[
-                        { label: 'Active', count: activeCount, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', tab: 'active' },
-                        { label: 'Completed', count: completedCount, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', tab: 'completed' },
-                        { label: 'Cancelled', count: orders.filter(o => ['CANCELLED', 'FAILED'].includes((o.status || '').toUpperCase())).length, color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-100', tab: 'cancelled' },
-                    ].map(({ label, count, color, bg, border, tab }) => (
-                        <Link
-                            key={tab}
-                            href={`/orders?tab=${tab}`}
-                            className={`${bg} ${border} border rounded-2xl px-4 py-3.5 flex flex-col items-center text-center hover:opacity-80 transition-opacity active:scale-[0.97]`}
-                        >
-                            <p className={`text-2xl font-black ${color}`}>
-                                {ordersLoading ? '–' : count}
-                            </p>
-                            <p className={`text-xs font-semibold ${color} mt-0.5`}>{label}</p>
-                        </Link>
-                    ))}
+                        <p className="text-xs font-bold text-teal-200 uppercase tracking-widest mb-0.5">Medicines</p>
+                        <div className="flex items-end justify-between">
+                            <p className="text-2xl font-black">{ordersLoading ? '–' : (medOrderCount ?? 0)}</p>
+                            <ChevronRight className="w-4 h-4 text-teal-300 mb-1" />
+                        </div>
+                        <p className="text-xs text-teal-200 mt-1">orders placed</p>
+                    </Link>
                 </div>
+
+                {/* Lab test quick-filter links */}
+                {!ordersLoading && orders.length > 0 && (
+                    <div className="grid grid-cols-3 gap-3">
+                        {[
+                            { label: 'Active',    count: activeCount,    color: 'text-amber-600',   bg: 'bg-amber-50',   border: 'border-amber-100',   tab: 'active' },
+                            { label: 'Completed', count: completedCount, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', tab: 'completed' },
+                            { label: 'Cancelled', count: orders.filter(o => ['CANCELLED','FAILED'].includes((o.status||'').toUpperCase())).length, color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-100', tab: 'cancelled' },
+                        ].map(({ label, count, color, bg, border, tab }) => (
+                            <Link key={tab} href={`/orders?type=tests&tab=${tab}`}
+                                className={`${bg} ${border} border rounded-2xl px-4 py-3.5 flex flex-col items-center text-center hover:opacity-80 transition-opacity active:scale-[0.97]`}>
+                                <p className={`text-2xl font-black ${color}`}>{count}</p>
+                                <p className={`text-xs font-semibold ${color} mt-0.5`}>{label}</p>
+                            </Link>
+                        ))}
+                    </div>
+                )}
 
                 {/* Profile card */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -275,15 +271,6 @@ export default function AccountPage() {
                 {/* Addresses */}
                 <ManageAddresses />
 
-                {/* View all orders footer link */}
-                <Link
-                    href="/orders"
-                    className="flex items-center justify-center gap-2 py-3.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-blue-600 hover:bg-blue-50 transition-colors"
-                >
-                    <FileText className="w-4 h-4" />
-                    View All Orders
-                    <ChevronRight className="w-4 h-4" />
-                </Link>
 
             </div>
         </div>

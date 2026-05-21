@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/auth';
 import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
+import { trackShipment } from '@/lib/services/delhiveryService';
 import type { MedicineOrderStatus } from '@/types/medicineOrder';
 
 const VALID_STATUSES: MedicineOrderStatus[] = [
@@ -24,7 +25,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
 
     const { orderId } = await params;
     const body = await req.json();
-    const { status, notes, cancellationReason } = body;
+    const { status, notes, cancellationReason, awb } = body;
 
     const order = await MedicineOrder.findOne({ orderId });
     if (!order) {
@@ -42,6 +43,25 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
     }
     if (notes !== undefined)             order.notes = notes;
     if (cancellationReason !== undefined) order.cancellationReason = cancellationReason;
+
+    if (awb !== undefined && awb !== (order as any).awb) {
+      (order as any).awb = awb;
+      (order as any).courierPartner = 'delhivery';
+      (order as any).trackingUrl = awb ? `https://www.delhivery.com/track/package/${awb}` : '';
+
+      if (awb) {
+        const tracking = await trackShipment(awb);
+        if (tracking) {
+          (order as any).courierStatus = tracking.latestStatus;
+          (order as any).courierStatusHistory = tracking.events;
+          (order as any).courierStatusUpdatedAt = new Date();
+          if (tracking.latestStatus.toLowerCase().includes('delivered') && order.status !== 'delivered') {
+            order.status = 'delivered';
+            (order as any).deliveredAt = new Date();
+          }
+        }
+      }
+    }
 
     await order.save();
     await order.populate('userId', 'firstName lastName mobileNumber email');
