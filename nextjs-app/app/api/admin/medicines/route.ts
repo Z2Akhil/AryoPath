@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db/mongoose';
 import Medicine from '@/lib/models/Medicine';
-import { adminAuth } from '@/lib/auth';
+import { adminOrStaffAuth, getAdminContext } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 
 export const dynamic = 'force-dynamic';
 
 // ─── GET /api/admin/medicines ─────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const authResult = await adminAuth(request);
+  const authResult = await adminOrStaffAuth(request, PERMISSIONS.MEDICINES_VIEW);
   if (!authResult.authenticated) {
     return NextResponse.json({ success: false, message: authResult.error }, { status: authResult.status });
   }
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
 // ─── POST /api/admin/medicines ────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const authResult = await adminAuth(request);
+  const authResult = await adminOrStaffAuth(request, PERMISSIONS.MEDICINES_EDIT);
   if (!authResult.authenticated) {
     return NextResponse.json({ success: false, message: authResult.error }, { status: authResult.status });
   }
@@ -82,8 +83,8 @@ export async function POST(request: NextRequest) {
   const medicine = await Medicine.create({
     ...body,
     discountPercentage,
-    createdBy: authResult.admin._id,
-    updatedBy: authResult.admin._id,
+    createdBy: getAdminContext(authResult).adminId,
+    updatedBy: getAdminContext(authResult).adminId,
   });
 
   return NextResponse.json({ success: true, data: medicine }, { status: 201 });

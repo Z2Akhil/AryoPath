@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/auth';
+import { adminAuth, getAdminContext } from '@/lib/auth';
 import connectDB from '@/lib/db/mongoose';
 import Order from '@/lib/models/Order';
 import User from '@/lib/models/User';
@@ -25,7 +25,8 @@ export async function GET(req: NextRequest) {
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
 
-        console.log('Fetching analytics overview for admin:', auth.admin.name, { startDate, endDate });
+        const { adminId: _actorId } = getAdminContext(auth);
+        console.log('Fetching analytics overview', { startDate, endDate });
 
         // Date range filter
         const dateFilter: any = {};
@@ -86,11 +87,12 @@ export async function GET(req: NextRequest) {
         // Calculate average order value
         const avgOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : '0';
 
+        const { adminId: actorId, sessionId: actorSessionId } = getAdminContext(auth);
         await AdminActivity.logActivity({
-            adminId: auth.admin._id,
-            sessionId: auth.session._id,
+            adminId: actorId,
+            sessionId: actorSessionId,
             action: 'ANALYTICS_FETCH',
-            description: `Admin ${auth.admin.name} fetched analytics overview`,
+            description: `Fetched analytics overview`,
             resource: 'analytics',
             endpoint: '/api/admin/analytics/overview',
             method: 'GET',
@@ -133,9 +135,10 @@ export async function GET(req: NextRequest) {
         const responseTime = Date.now() - startTime;
         console.error('Analytics overview fetch error:', error);
 
+        const { adminId: errActorId, sessionId: errSessionId } = getAdminContext(auth);
         await AdminActivity.logActivity({
-            adminId: auth.admin._id,
-            sessionId: auth.session._id,
+            adminId: errActorId,
+            sessionId: errSessionId,
             action: 'ERROR',
             description: `Failed to fetch analytics overview: ${error.message}`,
             resource: 'analytics',

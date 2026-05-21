@@ -23,9 +23,12 @@ import Pagination from '@/components/common/Pagination';
 import UserViewModal from '@/components/admin/users/UserViewModal';
 import UserEditModal from '@/components/admin/users/UserEditModal';
 import BookOrderModal from '@/components/admin/orders/BookOrderModal';
-// import { toast } from 'react-hot-toast'; // Not installed, using fallback
+import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import { PERMISSIONS } from '@/lib/constants/permissions';
+import AccessDenied from '@/components/admin/AccessDenied';
 
 export default function UsersClient() {
+    const { isAdmin, hasPermission } = useAdminAuth();
     const [users, setUsers] = useState<CustomerUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -124,6 +127,10 @@ export default function UsersClient() {
             year: 'numeric'
         });
     };
+
+    if (!isAdmin && !hasPermission(PERMISSIONS.USERS_VIEW)) {
+        return <AccessDenied section="Users" />;
+    }
 
     return (
         <div className="space-y-6">

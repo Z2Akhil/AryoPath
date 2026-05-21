@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db/mongoose';
 import Doctor from '@/lib/models/Doctor';
-import { adminAuth } from '@/lib/auth';
+import { adminAuth, adminOrStaffAuth, getAdminContext } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  const authResult = await adminAuth(request);
+  const authResult = await adminOrStaffAuth(request, PERMISSIONS.DOCTORS_VIEW);
   if (!authResult.authenticated) {
     return NextResponse.json({ success: false, message: authResult.error }, { status: authResult.status });
   }

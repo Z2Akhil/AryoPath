@@ -19,8 +19,11 @@ import {
 import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn } from 'react-icons/fa';
 import { adminAxios } from '@/lib/api/adminAxios';
 import { fetchSiteSettings } from '@/lib/api/siteSettingsApi';
+import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import AccessDenied from '@/components/admin/AccessDenied';
 
 const SettingsPage = () => {
+    const { isAdmin } = useAdminAuth();
     const [form, setForm] = useState({
         helplineNumber: '',
         email: '',
@@ -143,6 +146,8 @@ const SettingsPage = () => {
             </div>
         );
     }
+
+    if (!isAdmin) return <AccessDenied section="Settings" />;
 
     return (
         <div className="max-w-5xl mx-auto pb-20 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">

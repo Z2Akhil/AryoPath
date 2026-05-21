@@ -11,6 +11,9 @@ import {
 import adminMedicineApi from '@/lib/api/adminMedicineApi';
 import { Medicine, MEDICINE_TYPES } from '@/types/medicine';
 import { useToast } from '@/providers/ToastProvider';
+import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import { PERMISSIONS } from '@/lib/constants/permissions';
+import AccessDenied from '@/components/admin/AccessDenied';
 
 const TYPE_COLORS: Record<string, string> = {
   tablet: 'bg-blue-50 text-blue-700',
@@ -24,6 +27,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export default function MedicinesPage() {
+  const { isAdmin, hasPermission } = useAdminAuth();
   const { success, error: toastError } = useToast();
 
   const [medicines, setMedicines] = useState<Medicine[]>([]);
@@ -100,6 +104,10 @@ export default function MedicinesPage() {
       setTogglingId(null);
     }
   };
+
+  if (!isAdmin && !hasPermission(PERMISSIONS.MEDICINES_VIEW)) {
+    return <AccessDenied section="Medicines" />;
+  }
 
   return (
     <div className="space-y-6">

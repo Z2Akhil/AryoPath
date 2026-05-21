@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import React from 'react';
 import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import AccessDenied from '@/components/admin/AccessDenied';
 import {
     User,
     Mail,
@@ -18,7 +19,7 @@ import {
 } from 'lucide-react';
 
 const AccountPage = () => {
-    const { user, logout } = useAdminAuth();
+    const { user, logout, isAdmin } = useAdminAuth();
 
     const adminProfile = {
         name: user?.adminProfile?.name || 'System Administrator',
@@ -49,6 +50,8 @@ const AccountPage = () => {
             </div>
         </div>
     );
+
+    if (!isAdmin) return <AccessDenied section="Account" />;
 
     return (
         <div className="max-w-6xl mx-auto space-y-10 pb-20 animate-in fade-in slide-in-from-bottom-6 duration-700">

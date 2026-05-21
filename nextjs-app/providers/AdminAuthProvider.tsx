@@ -3,14 +3,22 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import adminAuthService from '@/lib/api/adminAuthService';
+import { staffAuthService } from '@/lib/api/staffAuthService';
 import { AdminUser, AdminProfile } from '@/types/admin';
+import { StaffProfile } from '@/types/staff';
+import { Permission } from '@/lib/constants/permissions';
 
 interface AuthContextType {
     isAuthenticated: boolean;
     isLoading: boolean;
-    user: AdminUser | null;
+    isAdmin: boolean;
+    isStaff: boolean;
+    user: AdminUser | StaffProfile | null;
+    permissions: Permission[];
+    hasPermission: (p: Permission) => boolean;
     error: string | null;
     login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+    refreshAuth: () => void;
     logout: () => void;
     clearError: () => void;
 }
@@ -20,7 +28,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [user, setUser] = useState<AdminUser | null>(null);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isStaff, setIsStaff] = useState(false);
+    const [user, setUser] = useState<AdminUser | StaffProfile | null>(null);
+    const [permissions, setPermissions] = useState<Permission[]>([]);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const pathname = usePathname();
@@ -31,17 +42,39 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const checkAuthStatus = () => {
         try {
-            const authenticated = adminAuthService.isAuthenticated();
-            setIsAuthenticated(authenticated);
-
-            if (authenticated) {
+            // Admin auth takes priority
+            if (adminAuthService.isAuthenticated()) {
                 const authData = adminAuthService.getStoredAuthData();
+                setIsAuthenticated(true);
+                setIsAdmin(true);
+                setIsStaff(false);
+                setPermissions([]);
                 setUser({
                     username: authData?.username || 'Admin',
                     loginTime: authData?.timestamp || '',
-                    adminProfile: authData?.adminProfile as AdminProfile
+                    adminProfile: authData?.adminProfile as AdminProfile,
                 });
+                return;
             }
+
+            // Fall back to staff auth
+            if (staffAuthService.isAuthenticated()) {
+                const staffData = staffAuthService.getStoredAuthData();
+                if (staffData?.staff) {
+                    setIsAuthenticated(true);
+                    setIsAdmin(false);
+                    setIsStaff(true);
+                    setPermissions(staffData.staff.permissions ?? []);
+                    setUser(staffData.staff);
+                    return;
+                }
+            }
+
+            setIsAuthenticated(false);
+            setIsAdmin(false);
+            setIsStaff(false);
+            setUser(null);
+            setPermissions([]);
         } catch (err) {
             console.error('Auth status check failed:', err);
             setIsAuthenticated(false);
@@ -58,10 +91,13 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             const result = await adminAuthService.login(username, password);
             if (result.success) {
                 setIsAuthenticated(true);
+                setIsAdmin(true);
+                setIsStaff(false);
+                setPermissions([]);
                 setUser({
-                    username: username,
+                    username,
                     loginTime: result.timestamp || new Date().toISOString(),
-                    adminProfile: result.adminProfile as AdminProfile
+                    adminProfile: result.adminProfile as AdminProfile,
                 });
                 return { success: true };
             }
@@ -76,16 +112,30 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     const logout = () => {
-        adminAuthService.clearAuthData();
+        if (isAdmin) {
+            adminAuthService.clearAuthData();
+        } else if (isStaff) {
+            staffAuthService.clearAuthData();
+        }
         setIsAuthenticated(false);
+        setIsAdmin(false);
+        setIsStaff(false);
         setUser(null);
+        setPermissions([]);
         setError(null);
         router.push('/admin/login');
     };
 
+    const hasPermission = (p: Permission): boolean => {
+        if (isAdmin) return true;
+        return permissions.includes(p);
+    };
+
+    const refreshAuth = () => checkAuthStatus();
+
     const clearError = () => setError(null);
 
-    // Protection logic
+    // Route guard
     useEffect(() => {
         if (!isLoading) {
             if (!isAuthenticated && !pathname.includes('/admin/login')) {
@@ -96,14 +146,19 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
     }, [isAuthenticated, isLoading, pathname, router]);
 
-    const value = {
+    const value: AuthContextType = {
         isAuthenticated,
         isLoading,
+        isAdmin,
+        isStaff,
         user,
+        permissions,
+        hasPermission,
         error,
         login,
+        refreshAuth,
         logout,
-        clearError
+        clearError,
     };
 
     const isRedirectingToLogin = !isLoading && !isAuthenticated && !pathname.includes('/admin/login');

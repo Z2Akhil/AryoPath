@@ -1,13 +1,14 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/auth';
+import { adminAuth, adminOrStaffAuth } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 import connectDB from '@/lib/db/mongoose';
 import Notification from '@/lib/models/Notification';
 import User from '@/lib/models/User';
 import AdminActivity from '@/lib/models/AdminActivity';
 
 export async function GET(req: NextRequest) {
-    const auth = await adminAuth(req);
+    const auth = await adminOrStaffAuth(req, PERMISSIONS.NOTIFICATIONS_VIEW);
 
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });

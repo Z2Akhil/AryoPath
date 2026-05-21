@@ -17,8 +17,11 @@ import {
     IndianRupee,
     LayoutDashboard
 } from 'lucide-react';
+import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import AccessDenied from '@/components/admin/AccessDenied';
 
 const AnalyticsPage = () => {
+    const { isAdmin } = useAdminAuth();
     const [loading, setLoading] = useState(true);
     const [trendsLoading, setTrendsLoading] = useState(true); // true = show skeleton while initial fetch runs
     const [error, setError] = useState('');
@@ -186,6 +189,10 @@ const AnalyticsPage = () => {
             maximumFractionDigits: 0
         }).format(amount);
     };
+
+    if (!isAdmin) {
+        return <AccessDenied section="Analytics" />;
+    }
 
     return (
         <div className="space-y-8">

@@ -11,6 +11,9 @@ import {
 import adminMedicineOrderApi from '@/lib/api/adminMedicineOrderApi';
 import type { MedicineOrder, MedicineOrderStatus, CourierEvent } from '@/types/medicineOrder';
 import { useToast } from '@/providers/ToastProvider';
+import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import { PERMISSIONS } from '@/lib/constants/permissions';
+import AccessDenied from '@/components/admin/AccessDenied';
 
 type PopulatedOrder = MedicineOrder & {
   userId: { firstName: string; lastName: string; mobileNumber: string; email?: string };
@@ -551,6 +554,7 @@ function OrderModal({
 
 // ─── Main page ─────────────────────────────────────────────────────────────────
 export default function MedicineOrdersPage() {
+  const { isAdmin, hasPermission } = useAdminAuth();
   const toast = useToast();
 
   const [orders, setOrders]             = useState<PopulatedOrder[]>([]);
@@ -586,6 +590,8 @@ export default function MedicineOrdersPage() {
   }, [page, search, statusFilter]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  if (!isAdmin && !hasPermission(PERMISSIONS.ORDERS_VIEW)) return <AccessDenied section="Medicine Orders" />;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

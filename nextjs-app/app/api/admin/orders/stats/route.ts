@@ -1,13 +1,14 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/auth';
+import { adminOrStaffAuth, getAdminContext } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 import connectDB from '@/lib/db/mongoose';
 import Order from '@/lib/models/Order';
 import AdminActivity from '@/lib/models/AdminActivity';
 
 export async function GET(req: NextRequest) {
     const startTime = Date.now();
-    const auth = await adminAuth(req);
+    const auth = await adminOrStaffAuth(req, PERMISSIONS.ORDERS_VIEW);
 
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
@@ -16,7 +17,6 @@ export async function GET(req: NextRequest) {
     try {
         await connectDB();
 
-        // Get counts by status
         const [
             totalOrders,
             pendingOrders,
@@ -56,7 +56,6 @@ export async function GET(req: NextRequest) {
             FAILED: thyrocareFailed
         };
 
-        // Get today's orders
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
@@ -66,39 +65,34 @@ export async function GET(req: NextRequest) {
             createdAt: { $gte: today, $lt: tomorrow }
         });
 
-        // Get this week's orders
         const weekStart = new Date(today);
         weekStart.setDate(weekStart.getDate() - weekStart.getDay());
         const thisWeeksOrders = await Order.countDocuments({
             createdAt: { $gte: weekStart }
         });
 
-        // Get this month's orders
         const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
         const thisMonthsOrders = await Order.countDocuments({
             createdAt: { $gte: monthStart }
         });
 
-        // Log activity
-        await AdminActivity.logActivity({
-            adminId: auth.admin?._id,
-            sessionId: auth.session?._id,
-            action: 'ORDER_STATS_FETCH',
-            description: `Admin fetched order statistics`,
-            resource: 'orders',
-            endpoint: '/api/admin/orders/stats',
-            method: 'GET',
-            ipAddress: req.headers.get('x-forwarded-for') || '0.0.0.0',
-            userAgent: req.headers.get('user-agent') || 'unknown',
-            statusCode: 200,
-            responseTime: Date.now() - startTime,
-            metadata: {
-                totalOrders,
-                todaysOrders,
-                thisWeeksOrders,
-                thisMonthsOrders
-            }
-        });
+        const { adminId, sessionId } = getAdminContext(auth);
+        if (adminId) {
+            await AdminActivity.logActivity({
+                adminId,
+                sessionId,
+                action: 'ORDER_STATS_FETCH',
+                description: 'Fetched order statistics',
+                resource: 'orders',
+                endpoint: '/api/admin/orders/stats',
+                method: 'GET',
+                ipAddress: req.headers.get('x-forwarded-for') || '0.0.0.0',
+                userAgent: req.headers.get('user-agent') || 'unknown',
+                statusCode: 200,
+                responseTime: Date.now() - startTime,
+                metadata: { totalOrders, todaysOrders, thisWeeksOrders, thisMonthsOrders }
+            });
+        }
 
         return NextResponse.json({
             success: true,

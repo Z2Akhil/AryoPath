@@ -1,7 +1,11 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { Doctor as DoctorType } from '@/types/doctor';
 
-export interface DoctorDocument extends Omit<DoctorType, '_id'>, Document {}
+export interface DoctorDocument extends Omit<DoctorType, '_id'>, Document {
+  loginUsername?: string;
+  loginPasswordHash?: string;
+  hasLogin: boolean;
+}
 
 const PhotoSchema = new Schema(
   { url: { type: String, default: '' }, publicId: { type: String, default: '' } },
@@ -74,6 +78,11 @@ const DoctorSchema = new Schema<DoctorDocument>(
     // Audit
     createdBy: { type: Schema.Types.ObjectId, ref: 'Admin' },
     updatedBy: { type: Schema.Types.ObjectId, ref: 'Admin' },
+
+    // Login credentials (set by admin)
+    loginUsername:     { type: String, unique: true, sparse: true, lowercase: true, trim: true },
+    loginPasswordHash: { type: String, select: false },
+    hasLogin:          { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -12,6 +12,9 @@ import {
 import adminDoctorApi from '@/lib/api/adminDoctorApi';
 import { useToast } from '@/providers/ToastProvider';
 import { Doctor } from '@/types/doctor';
+import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import { PERMISSIONS } from '@/lib/constants/permissions';
+import AccessDenied from '@/components/admin/AccessDenied';
 
 const MODE_ICONS: Record<string, React.ReactNode> = {
   video: <Video className="h-3 w-3" />,
@@ -19,6 +22,7 @@ const MODE_ICONS: Record<string, React.ReactNode> = {
 };
 
 export default function DoctorsListPage() {
+  const { isAdmin, hasPermission } = useAdminAuth();
   const toast = useToast();
 
   const [doctors, setDoctors]     = useState<Doctor[]>([]);
@@ -83,6 +87,10 @@ export default function DoctorsListPage() {
       setTogglingId('');
     }
   };
+
+  if (!isAdmin && !hasPermission(PERMISSIONS.DOCTORS_VIEW)) {
+    return <AccessDenied section="Doctors" />;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">

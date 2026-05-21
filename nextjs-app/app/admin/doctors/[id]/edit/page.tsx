@@ -4,18 +4,25 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, UserCog, ClipboardList } from 'lucide-react';
 import DoctorForm from '@/components/admin/doctors/DoctorForm';
+import CredentialsCard from '@/components/admin/doctors/CredentialsCard';
 import adminDoctorApi from '@/lib/api/adminDoctorApi';
 import { Doctor, DoctorFormValues, ConsultationMode } from '@/types/doctor';
+import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import AccessDenied from '@/components/admin/AccessDenied';
+
+type Tab = 'profile' | 'access';
 
 export default function EditDoctorPage() {
+  const { isAdmin } = useAdminAuth();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState<Tab>('profile');
 
   useEffect(() => {
     if (!id) return;
@@ -30,6 +37,8 @@ export default function EditDoctorPage() {
       }
     })();
   }, [id]);
+
+  if (!isAdmin) return <AccessDenied section="Doctor Management" />;
 
   if (loading) {
     return (
@@ -88,11 +97,48 @@ export default function EditDoctorPage() {
     seoKeywords: rawFields.seoKeywords ?? '',
   };
 
+  const hasLogin = (doctor as any).hasLogin ?? false;
+  const loginUsername = (doctor as any).loginUsername ?? '';
+
+  const tabs: { id: Tab; label: string; Icon: React.ElementType }[] = [
+    { id: 'profile', label: 'Profile',       Icon: ClipboardList },
+    { id: 'access',  label: 'Portal Access', Icon: UserCog },
+  ];
+
   return (
-    <DoctorForm
-      doctorId={id}
-      initialData={formFields}
-      initialPhoto={profilePhoto ?? null}
-    />
+    <div className="space-y-4">
+      {/* Page-level tab bar */}
+      <div className="flex gap-1 p-1 bg-white border border-gray-200 rounded-xl w-fit">
+        {tabs.map(({ id: tabId, label, Icon }) => (
+          <button
+            key={tabId}
+            onClick={() => setActiveTab(tabId)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === tabId
+                ? 'bg-teal-600 text-white shadow-sm'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+            {tabId === 'access' && hasLogin && (
+              <span className="w-2 h-2 rounded-full bg-green-400" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'profile' && (
+        <DoctorForm
+          doctorId={id}
+          initialData={formFields}
+          initialPhoto={profilePhoto ?? null}
+        />
+      )}
+
+      {activeTab === 'access' && (
+        <CredentialsCard doctorId={id} hasLogin={hasLogin} loginUsername={loginUsername} />
+      )}
+    </div>
   );
 }

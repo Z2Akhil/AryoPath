@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 
 interface MobileDrawerProps {
     open: boolean;
@@ -18,12 +19,25 @@ const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
     productOpen,
     toggleProduct
 }) => {
-    const { user } = useAdminAuth();
+    const { isAdmin, isStaff, hasPermission, user } = useAdminAuth();
 
     if (!open) return null;
 
-    const initial = user?.adminProfile?.name?.split(" ")[0][0] || 'A';
-    const firstName = user?.adminProfile?.name?.split(" ")[0] || 'Admin';
+    const displayName = isStaff
+        ? ((user as any)?.name?.split(' ')[0] || 'Staff')
+        : ((user as any)?.adminProfile?.name?.split(' ')[0] || 'Admin');
+
+    const initial = displayName[0]?.toUpperCase() || 'A';
+    const roleLabel = isAdmin ? 'Admin Dashboard' : 'Staff Portal';
+
+    const showAnalytics     = isAdmin;
+    const showOrders        = isAdmin || hasPermission(PERMISSIONS.ORDERS_VIEW);
+    const showProducts      = isAdmin || hasPermission(PERMISSIONS.PRODUCTS_VIEW) || hasPermission(PERMISSIONS.MEDICINES_VIEW);
+    const showMedicines     = isAdmin || hasPermission(PERMISSIONS.MEDICINES_VIEW);
+    const showLabProducts   = isAdmin || hasPermission(PERMISSIONS.PRODUCTS_VIEW);
+    const showDoctors       = isAdmin || hasPermission(PERMISSIONS.DOCTORS_VIEW);
+    const showUsers         = isAdmin || hasPermission(PERMISSIONS.USERS_VIEW);
+    const showNotifications = isAdmin || hasPermission(PERMISSIONS.NOTIFICATIONS_VIEW);
 
     return (
         <>
@@ -37,20 +51,15 @@ const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
                     {/* Header */}
                     <div className="flex items-center justify-between p-6 bg-gradient-to-r from-blue-600 to-blue-700">
                         <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/30">
-                                    <span className="text-white font-bold text-lg">{initial}</span>
-                                </div>
+                            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/30">
+                                <span className="text-white font-bold text-lg">{initial}</span>
                             </div>
                             <div>
-                                <p className="font-semibold text-white">Welcome, {firstName}</p>
-                                <p className="text-sm text-blue-100">Admin Dashboard</p>
+                                <p className="font-semibold text-white">Welcome, {displayName}</p>
+                                <p className="text-sm text-blue-100">{roleLabel}</p>
                             </div>
                         </div>
-                        <button
-                            onClick={onClose}
-                            className="p-2 rounded-full hover:bg-blue-800 transition-colors"
-                        >
+                        <button onClick={onClose} className="p-2 rounded-full hover:bg-blue-800 transition-colors">
                             <X size={20} className="text-white" />
                         </button>
                     </div>
@@ -58,66 +67,92 @@ const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
                     <nav className="flex-1 p-6 overflow-y-auto">
                         <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-4">Navigation</p>
                         <div className="space-y-2">
+                            {/* Home — always */}
                             <Link href="/admin" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
                                 Home
                             </Link>
-                            <Link href="/admin/analytics" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
-                                Analytics
-                            </Link>
-                            <Link href="/admin/orders" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
-                                Orders
-                            </Link>
+
+                            {showAnalytics && (
+                                <Link href="/admin/analytics" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
+                                    Analytics
+                                </Link>
+                            )}
+
+                            {showOrders && (
+                                <Link href="/admin/orders" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
+                                    Orders
+                                </Link>
+                            )}
 
                             {/* Products Accordion */}
-                            <div className="space-y-2">
-                                <button
-                                    onClick={toggleProduct}
-                                    className="flex justify-between items-center w-full px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
-                                >
-                                    <span>Products</span>
-                                    {productOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                                </button>
+                            {showProducts && (
+                                <div className="space-y-2">
+                                    <button
+                                        onClick={toggleProduct}
+                                        className="flex justify-between items-center w-full px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+                                    >
+                                        <span>Products</span>
+                                        {productOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                                    </button>
 
-                                {productOpen && (
-                                    <div className="pl-6 space-y-2 border-l-2 border-gray-100 ml-4">
-                                        <Link href="/admin/offers" onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
-                                            Offers
-                                        </Link>
-                                        <Link href="/admin/packages" onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
-                                            Packages
-                                        </Link>
-                                        <Link href="/admin/tests" onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
-                                            Tests
-                                        </Link>
-                                        <Link href="/admin/medicines" onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
-                                            Medicines
-                                        </Link>
-                                    </div>
-                                )}
-                            </div>
+                                    {productOpen && (
+                                        <div className="pl-6 space-y-2 border-l-2 border-gray-100 ml-4">
+                                            {showLabProducts && (
+                                                <>
+                                                    <Link href="/admin/offers"   onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">Offers</Link>
+                                                    <Link href="/admin/packages" onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">Packages</Link>
+                                                    <Link href="/admin/tests"    onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">Tests</Link>
+                                                </>
+                                            )}
+                                            {showMedicines && (
+                                                <Link href="/admin/medicines" onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">Medicines</Link>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
-                            <Link href="/admin/doctors" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
-                                Doctors
-                            </Link>
+                            {showDoctors && (
+                                <Link href="/admin/doctors" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
+                                    Doctors
+                                </Link>
+                            )}
 
-                            <Link href="/admin/users" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
-                                Users
-                            </Link>
-                            <Link href="/admin/notifications" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
-                                Notifications
-                            </Link>
-                            <Link href="/admin/settings" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
-                                Settings
-                            </Link>
-                            <Link href="/admin/account" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
-                                Account
-                            </Link>
+                            {showUsers && (
+                                <Link href="/admin/users" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
+                                    Users
+                                </Link>
+                            )}
+
+                            {/* Staff — admin only */}
+                            {isAdmin && (
+                                <Link href="/admin/staff" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
+                                    Staff
+                                </Link>
+                            )}
+
+                            {showNotifications && (
+                                <Link href="/admin/notifications" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
+                                    Notifications
+                                </Link>
+                            )}
+
+                            {/* Settings / Account — admin only */}
+                            {isAdmin && (
+                                <>
+                                    <Link href="/admin/settings" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
+                                        Settings
+                                    </Link>
+                                    <Link href="/admin/account" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
+                                        Account
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     </nav>
 
-                    {/* Footer */}
                     <div className="p-6 border-t border-gray-100 bg-gray-50">
-                        <p className="text-xs text-gray-500 text-center">© 2024 Ayropath Admin</p>
+                        <p className="text-xs text-gray-500 text-center">© 2024 Ayropath</p>
                     </div>
                 </div>
             </div>

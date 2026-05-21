@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
-import { withAdminAuth } from '@/lib/auth';
+import { withAdminAuth, adminOrStaffAuth } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 import AdminActivity from '@/lib/models/AdminActivity';
 import Test from '@/lib/models/Test';
 import Profile from '@/lib/models/Profile';
@@ -18,8 +19,11 @@ interface ThyrocareProduct {
 const syncLocks: Record<string, boolean> = {};
 
 export async function GET(req: NextRequest) {
-    return withAdminAuth(req, async (req) => {
-        try {
+    const auth = await adminOrStaffAuth(req, PERMISSIONS.PRODUCTS_VIEW);
+    if (!auth.authenticated) {
+        return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
+    }
+    try {
             const { searchParams } = new URL(req.url);
             const typeParam = searchParams.get('type');
 
@@ -86,7 +90,6 @@ export async function GET(req: NextRequest) {
             const message = error instanceof Error ? error.message : 'Unknown error fetching products';
             return NextResponse.json({ success: false, error: message }, { status: 500 });
         }
-    });
 }
 
 export async function POST(req: NextRequest) {

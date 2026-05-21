@@ -3,62 +3,61 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db/mongoose';
 import User from '@/lib/models/User';
 import AdminActivity from '@/lib/models/AdminActivity';
-import { withAdminAuth } from '@/lib/auth';
+import { adminOrStaffAuth, getAdminContext } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 
 export async function GET(req: NextRequest) {
-    return withAdminAuth(req, async (req, session) => {
-        const startTime = Date.now();
-        const { searchParams } = new URL(req.url);
+    const startTime = Date.now();
+    const auth = await adminOrStaffAuth(req, PERMISSIONS.USERS_VIEW);
 
-        const search = searchParams.get('search') || '';
-        const status = searchParams.get('status');
-        const verified = searchParams.get('verified');
-        const page = parseInt(searchParams.get('page') || '1');
-        const limit = parseInt(searchParams.get('limit') || '20');
+    if (!auth.authenticated) {
+        return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
+    }
 
-        try {
-            await dbConnect();
+    const { searchParams } = new URL(req.url);
+    const search   = searchParams.get('search') || '';
+    const status   = searchParams.get('status');
+    const verified = searchParams.get('verified');
+    const page     = parseInt(searchParams.get('page') || '1');
+    const limit    = parseInt(searchParams.get('limit') || '20');
 
-            const query: any = {};
+    try {
+        await dbConnect();
 
-            if (search) {
-                query.$or = [
-                    { firstName: { $regex: search, $options: 'i' } },
-                    { lastName: { $regex: search, $options: 'i' } },
-                    { email: { $regex: search, $options: 'i' } },
-                    { mobileNumber: { $regex: search, $options: 'i' } }
-                ];
-            }
+        const query: any = {};
 
-            if (status === 'active') {
-                query.isActive = true;
-            } else if (status === 'inactive') {
-                query.isActive = false;
-            }
+        if (search) {
+            query.$or = [
+                { firstName:    { $regex: search, $options: 'i' } },
+                { lastName:     { $regex: search, $options: 'i' } },
+                { email:        { $regex: search, $options: 'i' } },
+                { mobileNumber: { $regex: search, $options: 'i' } }
+            ];
+        }
 
-            if (verified !== null && verified !== undefined) {
-                query.emailVerified = verified === 'true';
-            }
+        if (status === 'active')        query.isActive = true;
+        else if (status === 'inactive') query.isActive = false;
 
-            const skip = (page - 1) * limit;
+        if (verified !== null && verified !== undefined) {
+            query.emailVerified = verified === 'true';
+        }
 
-            const [users, totalCount] = await Promise.all([
-                User.find(query)
-                    .select('-password')
-                    .sort({ createdAt: -1 })
-                    .skip(skip)
-                    .limit(limit),
-                User.countDocuments(query)
-            ]);
+        const skip = (page - 1) * limit;
 
-            const responseTime = Date.now() - startTime;
+        const [users, totalCount] = await Promise.all([
+            User.find(query).select('-password').sort({ createdAt: -1 }).skip(skip).limit(limit),
+            User.countDocuments(query)
+        ]);
 
-            // Log activity (optional, but consistent with backend)
+        const responseTime = Date.now() - startTime;
+
+        const { adminId, sessionId } = getAdminContext(auth);
+        if (adminId) {
             await AdminActivity.logActivity({
-                adminId: session.adminId._id,
-                sessionId: session._id,
+                adminId,
+                sessionId,
                 action: 'USERS_SEARCH',
-                description: `Admin ${session.adminId.name} searched users with pattern: ${search}`,
+                description: `Searched users with pattern: ${search}`,
                 resource: 'users',
                 endpoint: '/api/admin/users/search',
                 method: 'GET',
@@ -66,25 +65,17 @@ export async function GET(req: NextRequest) {
                 responseTime,
                 metadata: { search, status, verified, page, limit, count: users.length }
             });
-
-            return NextResponse.json({
-                success: true,
-                users,
-                pagination: {
-                    page,
-                    limit,
-                    totalCount,
-                    totalPages: Math.ceil(totalCount / limit)
-                },
-                responseTime
-            });
-
-        } catch (error: any) {
-            console.error('Search users error:', error);
-            return NextResponse.json({
-                success: false,
-                error: 'Failed to search users'
-            }, { status: 500 });
         }
-    });
+
+        return NextResponse.json({
+            success: true,
+            users,
+            pagination: { page, limit, totalCount, totalPages: Math.ceil(totalCount / limit) },
+            responseTime
+        });
+
+    } catch (error: any) {
+        console.error('Search users error:', error);
+        return NextResponse.json({ success: false, error: 'Failed to search users' }, { status: 500 });
+    }
 }

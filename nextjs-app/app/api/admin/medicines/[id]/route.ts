@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db/mongoose';
 import Medicine from '@/lib/models/Medicine';
-import { adminAuth } from '@/lib/auth';
+import { adminOrStaffAuth } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 import { deleteFromCloudinary } from '@/lib/cloudinary';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +12,7 @@ type Context = { params: Promise<{ id: string }> };
 // ─── GET /api/admin/medicines/[id] ───────────────────────────────────────────
 
 export async function GET(request: NextRequest, context: Context) {
-  const authResult = await adminAuth(request);
+  const authResult = await adminOrStaffAuth(request, PERMISSIONS.MEDICINES_VIEW);
   if (!authResult.authenticated) {
     return NextResponse.json({ success: false, message: authResult.error }, { status: authResult.status });
   }
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest, context: Context) {
 // ─── PUT /api/admin/medicines/[id] ───────────────────────────────────────────
 
 export async function PUT(request: NextRequest, context: Context) {
-  const authResult = await adminAuth(request);
+  const authResult = await adminOrStaffAuth(request, PERMISSIONS.MEDICINES_EDIT);
   if (!authResult.authenticated) {
     return NextResponse.json({ success: false, message: authResult.error }, { status: authResult.status });
   }
@@ -54,7 +55,10 @@ export async function PUT(request: NextRequest, context: Context) {
   const mrp = body.mrp ?? medicine.mrp;
   const offerPrice = body.offerPrice ?? medicine.offerPrice;
   body.discountPercentage = mrp > 0 ? Math.round(((mrp - offerPrice) / mrp) * 100) : 0;
-  body.updatedBy = authResult.admin._id;
+
+  if (authResult.role === 'admin') {
+    body.updatedBy = authResult.admin._id;
+  }
 
   // Slug uniqueness check (only if slug changed)
   if (body.slug && body.slug !== medicine.slug) {
@@ -72,7 +76,7 @@ export async function PUT(request: NextRequest, context: Context) {
 // ─── DELETE /api/admin/medicines/[id] ────────────────────────────────────────
 
 export async function DELETE(request: NextRequest, context: Context) {
-  const authResult = await adminAuth(request);
+  const authResult = await adminOrStaffAuth(request, PERMISSIONS.MEDICINES_EDIT);
   if (!authResult.authenticated) {
     return NextResponse.json({ success: false, message: authResult.error }, { status: authResult.status });
   }
@@ -85,7 +89,6 @@ export async function DELETE(request: NextRequest, context: Context) {
     return NextResponse.json({ success: false, message: 'Medicine not found' }, { status: 404 });
   }
 
-  // Delete all Cloudinary images
   const deleteJobs = [
     ...(medicine.images ?? []).map((img) => deleteFromCloudinary(img.publicId)),
     ...(medicine.thumbnail ? [deleteFromCloudinary(medicine.thumbnail.publicId)] : []),

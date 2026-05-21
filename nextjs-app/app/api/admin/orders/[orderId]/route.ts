@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/auth';
+import { adminOrStaffAuth, getAdminContext } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 import connectDB from '@/lib/db/mongoose';
 import Order from '@/lib/models/Order';
 import AdminActivity from '@/lib/models/AdminActivity';
@@ -10,7 +11,7 @@ export async function GET(
     { params }: { params: Promise<{ orderId: string }> }
 ) {
     const startTime = Date.now();
-    const auth = await adminAuth(req);
+    const auth = await adminOrStaffAuth(req, PERMISSIONS.ORDERS_VIEW);
 
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
@@ -29,21 +30,23 @@ export async function GET(
             return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
         }
 
-        // Log activity
-        await AdminActivity.logActivity({
-            adminId: auth.admin?._id,
-            sessionId: auth.session?._id,
-            action: 'ORDER_DETAILS_FETCH',
-            description: `Admin fetched order details for ${orderId}`,
-            resource: 'orders',
-            endpoint: `/api/admin/orders/${orderId}`,
-            method: 'GET',
-            ipAddress: req.headers.get('x-forwarded-for') || '0.0.0.0',
-            userAgent: req.headers.get('user-agent') || 'unknown',
-            statusCode: 200,
-            responseTime: Date.now() - startTime,
-            metadata: { orderId }
-        });
+        const { adminId, sessionId } = getAdminContext(auth);
+        if (adminId) {
+            await AdminActivity.logActivity({
+                adminId,
+                sessionId,
+                action: 'ORDER_DETAILS_FETCH',
+                description: `Fetched order details for ${orderId}`,
+                resource: 'orders',
+                endpoint: `/api/admin/orders/${orderId}`,
+                method: 'GET',
+                ipAddress: req.headers.get('x-forwarded-for') || '0.0.0.0',
+                userAgent: req.headers.get('user-agent') || 'unknown',
+                statusCode: 200,
+                responseTime: Date.now() - startTime,
+                metadata: { orderId }
+            });
+        }
 
         return NextResponse.json({ success: true, order });
 
@@ -58,7 +61,7 @@ export async function PUT(
     { params }: { params: Promise<{ orderId: string }> }
 ) {
     const startTime = Date.now();
-    const auth = await adminAuth(req);
+    const auth = await adminOrStaffAuth(req, PERMISSIONS.ORDERS_EDIT);
 
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
@@ -75,12 +78,10 @@ export async function PUT(
             return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
         }
 
-        // Update thyrocare status if provided (using the model method to handle history and status transitions)
         if (updates.thyrocareStatus) {
             await (order as any).updateThyrocareStatus(updates.thyrocareStatus, updates.notes || 'Updated by admin');
         }
 
-        // Update regular status if explicitly provided (might override updateThyrocareStatus side effect)
         if (updates.status) {
             order.status = updates.status;
         }
@@ -91,26 +92,28 @@ export async function PUT(
 
         await order.save();
 
-        // Log activity
-        await AdminActivity.logActivity({
-            adminId: auth.admin?._id,
-            sessionId: auth.session?._id,
-            action: 'ORDER_UPDATE',
-            description: `Admin updated order ${orderId}`,
-            resource: 'orders',
-            endpoint: `/api/admin/orders/${orderId}`,
-            method: 'PUT',
-            ipAddress: req.headers.get('x-forwarded-for') || '0.0.0.0',
-            userAgent: req.headers.get('user-agent') || 'unknown',
-            statusCode: 200,
-            responseTime: Date.now() - startTime,
-            metadata: {
-                orderId,
-                updates: Object.keys(updates),
-                status: order.status,
-                thyrocareStatus: order.thyrocare.status
-            }
-        });
+        const { adminId, sessionId } = getAdminContext(auth);
+        if (adminId) {
+            await AdminActivity.logActivity({
+                adminId,
+                sessionId,
+                action: 'ORDER_UPDATE',
+                description: `Updated order ${orderId}`,
+                resource: 'orders',
+                endpoint: `/api/admin/orders/${orderId}`,
+                method: 'PUT',
+                ipAddress: req.headers.get('x-forwarded-for') || '0.0.0.0',
+                userAgent: req.headers.get('user-agent') || 'unknown',
+                statusCode: 200,
+                responseTime: Date.now() - startTime,
+                metadata: {
+                    orderId,
+                    updates: Object.keys(updates),
+                    status: order.status,
+                    thyrocareStatus: order.thyrocare.status
+                }
+            });
+        }
 
         return NextResponse.json({
             success: true,

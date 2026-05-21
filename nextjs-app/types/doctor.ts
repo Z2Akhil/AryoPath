@@ -196,3 +196,47 @@ export const DOCTOR_FORM_DEFAULTS: DoctorFormValues = {
   metaDescription: '',
   seoKeywords: '',
 };
+
+// ─── Doctor Portal Types (not used on public-facing pages) ────────────────────
+
+export interface DoctorPortalProfile {
+  _id: string;
+  name: string;
+  specialization: string;
+  profilePhoto: { url: string; publicId: string } | null;
+  loginUsername: string;
+  slug: string;
+}
+
+export interface DoctorPortalAppointment {
+  _id: string;
+  patientName: string;
+  patientMobile: string;
+  patientEmail: string;
+  patientAge: number;
+  patientGender: 'male' | 'female' | 'other';
+  symptoms: string;
+  consultationMode: 'video' | 'audio';
+  appointmentDate: string;
+  appointmentTime: string;
+  meetLink: string;
+  consultationFee: number;
+  finalAmount: number;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  reportUrls: { url: string; publicId: string }[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DoctorAuthData {
+  token: string;
+  expiresAt: number;
+  doctor: DoctorPortalProfile;
+}
+
+export interface DoctorLoginResponse {
+  success: boolean;
+  token?: string;
+  doctor?: DoctorPortalProfile;
+  error?: string;
+}

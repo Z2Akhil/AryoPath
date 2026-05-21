@@ -6,8 +6,11 @@ import React, { useState, useEffect } from 'react';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import DashboardCard from '@/components/dashboard/DashboardCard';
 import adminDashboardApi from '@/lib/api/adminDashboardApi';
+import StaffDashboard from '@/components/admin/StaffDashboard';
+import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import { StaffProfile } from '@/types/staff';
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
     const [dashboardData, setDashboardData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -85,7 +88,6 @@ export default function AdminDashboard() {
 
     return (
         <div className="space-y-8">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">Admin Dashboard</h1>
@@ -99,7 +101,6 @@ export default function AdminDashboard() {
                 </button>
             </div>
 
-            {/* Dashboard Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <DashboardCard
                     title={dashboardData.orders.title}
@@ -113,7 +114,6 @@ export default function AdminDashboard() {
                         today: dashboardData.orders.todays
                     }}
                 />
-
                 <DashboardCard
                     title={dashboardData.analytics.title}
                     description={dashboardData.analytics.description}
@@ -126,7 +126,6 @@ export default function AdminDashboard() {
                         conversion: dashboardData.analytics.data.conversionRate
                     }}
                 />
-
                 <DashboardCard
                     title={dashboardData.notifications.title}
                     description={dashboardData.notifications.description}
@@ -138,7 +137,6 @@ export default function AdminDashboard() {
                         recent: dashboardData.notifications.data?.length || 0
                     }}
                 />
-
                 <DashboardCard
                     title={dashboardData.users.title}
                     description={dashboardData.users.description}
@@ -150,7 +148,6 @@ export default function AdminDashboard() {
                         'new (30d)': dashboardData.users.newLast30Days
                     }}
                 />
-
                 <DashboardCard
                     title={dashboardData.products.title}
                     description={dashboardData.products.description}
@@ -182,7 +179,6 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                 </DashboardCard>
-
                 <DashboardCard
                     title={dashboardData.system.title}
                     description={dashboardData.system.description}
@@ -196,7 +192,6 @@ export default function AdminDashboard() {
                 />
             </div>
 
-            {/* Summary Section */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Summary</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -220,4 +215,14 @@ export default function AdminDashboard() {
             </div>
         </div>
     );
+}
+
+export default function AdminHome() {
+    const { isStaff, permissions, user } = useAdminAuth();
+
+    if (isStaff) {
+        return <StaffDashboard permissions={permissions} user={user as StaffProfile} />;
+    }
+
+    return <AdminDashboardContent />;
 }

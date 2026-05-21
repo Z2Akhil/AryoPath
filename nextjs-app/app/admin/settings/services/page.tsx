@@ -6,10 +6,13 @@ import React, { useState, useEffect } from 'react';
 import { Pill, FlaskConical, Stethoscope, Truck, Save, Loader2, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import { adminAxios } from '@/lib/api/adminAxios';
 import { fetchSiteSettings } from '@/lib/api/siteSettingsApi';
+import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import AccessDenied from '@/components/admin/AccessDenied';
 
 const inputClass = 'w-full pl-10 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 focus:bg-white transition-all font-bold text-gray-900';
 
 const ServiceSettingsPage = () => {
+  const { isAdmin } = useAdminAuth();
   const [courierCharge, setCourierCharge] = useState<number>(49);
   const [fetching, setFetching] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -24,6 +27,8 @@ const ServiceSettingsPage = () => {
       finally { setFetching(false); }
     })();
   }, []);
+
+  if (!isAdmin) return <AccessDenied section="Settings" />;
 
   const showNotification = (type: string, message: string) => {
     setNotification({ show: true, type, message });

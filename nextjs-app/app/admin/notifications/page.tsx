@@ -22,8 +22,12 @@ import UserSelector from '@/components/admin/notifications/UserSelector';
 import EmailPreview from '@/components/admin/notifications/EmailPreview';
 import NotificationHistory from '@/components/admin/notifications/NotificationHistory';
 import { adminNotificationApi } from '@/lib/api/adminNotificationApi';
+import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import { PERMISSIONS } from '@/lib/constants/permissions';
+import AccessDenied from '@/components/admin/AccessDenied';
 
 const NotificationsPage = () => {
+    const { isAdmin, hasPermission } = useAdminAuth();
     const [activeTab, setActiveTab] = useState<'compose' | 'history'>('compose');
     const [emailType, setEmailType] = useState('promotional');
     const [subject, setSubject] = useState('');
@@ -106,6 +110,10 @@ const NotificationsPage = () => {
             setSending(false);
         }
     };
+
+    if (!isAdmin && !hasPermission(PERMISSIONS.NOTIFICATIONS_VIEW)) {
+        return <AccessDenied section="Notifications" />;
+    }
 
     return (
         <div className="space-y-8 max-w-[1400px] mx-auto pb-20">

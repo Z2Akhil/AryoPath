@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db/mongoose';
 import Doctor from '@/lib/models/Doctor';
-import { adminAuth } from '@/lib/auth';
+import { adminAuth, adminOrStaffAuth } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 
 export const dynamic = 'force-dynamic';
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(request: NextRequest, { params }: Params) {
-  const authResult = await adminAuth(request);
+  const authResult = await adminOrStaffAuth(request, PERMISSIONS.DOCTORS_VIEW);
   if (!authResult.authenticated) {
     return NextResponse.json({ success: false, message: authResult.error }, { status: authResult.status });
   }
@@ -34,7 +35,6 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const { id } = await params;
   const body = await request.json();
 
-  // Check slug uniqueness if being changed
   if (body.slug) {
     const conflict = await Doctor.findOne({ slug: body.slug, _id: { $ne: id }, isDeleted: false });
     if (conflict) {

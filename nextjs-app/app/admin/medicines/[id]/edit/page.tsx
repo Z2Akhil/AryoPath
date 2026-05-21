@@ -8,8 +8,12 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import MedicineForm from '@/components/admin/medicines/MedicineForm';
 import adminMedicineApi from '@/lib/api/adminMedicineApi';
 import { Medicine, MedicineFormValues } from '@/types/medicine';
+import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import { PERMISSIONS } from '@/lib/constants/permissions';
+import AccessDenied from '@/components/admin/AccessDenied';
 
 export default function EditMedicinePage() {
+  const { isAdmin, hasPermission } = useAdminAuth();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
@@ -30,6 +34,8 @@ export default function EditMedicinePage() {
       }
     })();
   }, [id]);
+
+  if (!isAdmin && !hasPermission(PERMISSIONS.MEDICINES_EDIT)) return <AccessDenied section="Medicines" />;
 
   if (loading) {
     return (

@@ -10,8 +10,12 @@ import Pagination from '@/components/common/Pagination';
 import OrderStats from '@/components/admin/orders/OrderStats';
 import OrderFilters from '@/components/admin/orders/OrderFilters';
 import OrdersTable from '@/components/admin/orders/OrdersTable';
+import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import { PERMISSIONS } from '@/lib/constants/permissions';
+import AccessDenied from '@/components/admin/AccessDenied';
 
 export default function OrderPage() {
+    const { isAdmin, hasPermission } = useAdminAuth();
     const [orders, setOrders] = useState<AdminOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -141,6 +145,10 @@ export default function OrderPage() {
             setSyncLoading(false);
         }
     };
+
+    if (!isAdmin && !hasPermission(PERMISSIONS.ORDERS_VIEW)) {
+        return <AccessDenied section="Orders" />;
+    }
 
     return (
         <div className="min-h-screen bg-gray-50/50 p-6">
