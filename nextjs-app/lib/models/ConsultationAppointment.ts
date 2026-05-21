@@ -4,14 +4,18 @@ export interface ConsultationAppointmentDocument extends Document {
   doctorId: mongoose.Types.ObjectId;
   doctorSlug: string;
   doctorName: string;
+  doctorMobile: string;
   patientName: string;
   patientMobile: string;
+  patientEmail: string;
   patientAge: number;
   patientGender: 'male' | 'female' | 'other';
   symptoms: string;
   consultationMode: 'video' | 'audio';
   appointmentDate: string;
   appointmentTime: string;
+  appointmentDateTime: Date;
+  meetLink: string;
   consultationFee: number;
   platformDiscount: number;
   couponCode: string;
@@ -19,6 +23,7 @@ export interface ConsultationAppointmentDocument extends Document {
   finalAmount: number;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   reportUrls: { url: string; publicId: string }[];
+  reminderSent: boolean;
   userId?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -34,9 +39,11 @@ const ConsultationAppointmentSchema = new Schema<ConsultationAppointmentDocument
     doctorId: { type: Schema.Types.ObjectId, ref: 'Doctor', required: true },
     doctorSlug: { type: String, required: true },
     doctorName: { type: String, required: true },
+    doctorMobile: { type: String, default: '' },
 
     patientName: { type: String, required: true, trim: true },
     patientMobile: { type: String, required: true },
+    patientEmail: { type: String, default: '' },
     patientAge: { type: Number, required: true },
     patientGender: { type: String, enum: ['male', 'female', 'other'], required: true },
 
@@ -45,6 +52,8 @@ const ConsultationAppointmentSchema = new Schema<ConsultationAppointmentDocument
 
     appointmentDate: { type: String, required: true },
     appointmentTime: { type: String, required: true },
+    appointmentDateTime: { type: Date, required: true },
+    meetLink: { type: String, default: '' },
 
     consultationFee: { type: Number, required: true },
     platformDiscount: { type: Number, default: 0 },
@@ -59,6 +68,7 @@ const ConsultationAppointmentSchema = new Schema<ConsultationAppointmentDocument
     },
 
     reportUrls: { type: [ReportUrlSchema], default: [] },
+    reminderSent: { type: Boolean, default: false },
 
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: false },
   },
@@ -68,6 +78,7 @@ const ConsultationAppointmentSchema = new Schema<ConsultationAppointmentDocument
 ConsultationAppointmentSchema.index({ doctorSlug: 1 });
 ConsultationAppointmentSchema.index({ userId: 1 });
 ConsultationAppointmentSchema.index({ appointmentDate: 1, status: 1 });
+ConsultationAppointmentSchema.index({ appointmentDateTime: 1, reminderSent: 1, status: 1 });
 
 const ConsultationAppointment: Model<ConsultationAppointmentDocument> =
   (mongoose.models.ConsultationAppointment as Model<ConsultationAppointmentDocument>) ||
