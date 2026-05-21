@@ -37,6 +37,11 @@ const siteSettingsSchema = new Schema<SiteSettingsDocument>(
       instagram: { type: String, default: '' },
       linkedin: { type: String, default: '' },
     },
+    medicineCourierCharge: {
+      type: Number,
+      default: 49,
+      min: 0,
+    },
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Admin',

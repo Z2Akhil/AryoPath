@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag, Loader2, MapPin, Phone, User, AlertTriangle, FileText, Truck, Tag } from 'lucide-react';
 import { useCart } from '@/providers/CartProvider';
+import { useSiteSettings } from '@/providers/SiteSettingsProvider';
 import { useToast } from '@/providers/ToastProvider';
 import { checkoutAddressSchema, CheckoutAddressValues, UploadedPrescription as PrescriptionType } from '@/types/medicineOrder';
 import PrescriptionUpload from './PrescriptionUpload';
@@ -24,17 +25,19 @@ const INDIAN_STATES = [
 export default function MedicineCheckoutForm() {
   const router = useRouter();
   const { medicineCart, clearMedicineCart } = useCart();
+  const { settings } = useSiteSettings();
   const toast = useToast();
   const [prescriptions, setPrescriptions] = useState<PrescriptionType[]>([]);
   const [processing, setProcessing] = useState(false);
 
   const medicineItems = medicineCart;
 
-  const subtotal      = medicineItems.reduce((s, i) => s + i.mrp * i.quantity, 0);
-  const totalDiscount = medicineItems.reduce((s, i) => s + (i.mrp - i.offerPrice) * i.quantity, 0);
-  const totalAmount   = medicineItems.reduce((s, i) => s + i.offerPrice * i.quantity, 0);
-  const deliveryCharge = totalAmount >= 499 ? 0 : 49;
-  const grandTotal    = totalAmount + deliveryCharge;
+  const subtotal       = medicineItems.reduce((s, i) => s + i.mrp * i.quantity, 0);
+  const totalDiscount  = medicineItems.reduce((s, i) => s + (i.mrp - i.offerPrice) * i.quantity, 0);
+  const totalAmount    = medicineItems.reduce((s, i) => s + i.offerPrice * i.quantity, 0);
+  const courierCharge  = settings?.medicineCourierCharge ?? 49;
+  const deliveryCharge = totalAmount >= 1000 ? 0 : courierCharge;
+  const grandTotal     = totalAmount + deliveryCharge;
 
   const { register, handleSubmit, formState: { errors } } = useForm<CheckoutAddressValues>({
     resolver: zodResolver(checkoutAddressSchema) as any,
@@ -58,6 +61,7 @@ export default function MedicineCheckoutForm() {
         })),
         shippingAddress: addressData,
         grandTotal,
+        prescriptions: prescriptions.map(p => ({ url: p.url, publicId: p.publicId })),
       };
 
       const orderRes = await medicineOrderApi.createOrder(orderPayload);
@@ -205,7 +209,7 @@ export default function MedicineCheckoutForm() {
             </span>
           </div>
           {deliveryCharge > 0 && (
-            <p className="text-xs text-gray-400">Free delivery on orders above ₹499</p>
+            <p className="text-xs text-gray-400">Free delivery on orders above ₹1,000</p>
           )}
           <div className="flex justify-between text-base font-extrabold text-gray-900 pt-2 border-t border-gray-100">
             <span>Total</span>

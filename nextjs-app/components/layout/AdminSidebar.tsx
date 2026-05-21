@@ -1,22 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-    Home,
-    BarChart3,
-    ShoppingCart,
-    Package,
-    Users,
-    Bell,
-    Settings,
-    UserCircle,
-    ChevronLeft,
-    ChevronRight,
-    ChevronDown,
-    ChevronUp,
-    Stethoscope,
+    Home, BarChart3, ShoppingCart, Package, Users, Bell,
+    Settings, UserCircle, ChevronLeft, ChevronRight,
+    ChevronDown, ChevronUp, Stethoscope, Layers,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -26,111 +16,200 @@ interface SidebarProps {
     onToggleProduct: () => void;
 }
 
-const AdminSidebar: React.FC<SidebarProps> = ({
-    collapsed,
-    onToggle,
-    productOpen,
-    onToggleProduct
-}) => {
-    const pathname = usePathname();
+type FlyoutType = 'orders' | 'products' | null;
 
-    const isActive = (path: string) => {
-        if (path === '/admin' && pathname === '/admin') return true;
-        if (path !== '/admin' && pathname.startsWith(path)) return true;
-        return false;
+const AdminSidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, productOpen, onToggleProduct }) => {
+    const pathname = usePathname();
+    const [ordersOpen, setOrdersOpen] = useState(pathname.startsWith('/admin/orders'));
+    const [flyout, setFlyout] = useState<FlyoutType>(null);
+    const [flyoutY, setFlyoutY] = useState(0);
+    const flyoutRef = useRef<HTMLDivElement>(null);
+
+    // Close flyout on outside click
+    useEffect(() => {
+        if (!flyout) return;
+        const handler = (e: MouseEvent) => {
+            if (flyoutRef.current && !flyoutRef.current.contains(e.target as Node)) {
+                setFlyout(null);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [flyout]);
+
+    // Close flyout when sidebar expands
+    useEffect(() => { if (!collapsed) setFlyout(null); }, [collapsed]);
+
+    const openFlyout = (type: FlyoutType, e: React.MouseEvent<HTMLButtonElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setFlyoutY(rect.top);
+        setFlyout(prev => prev === type ? null : type);
     };
 
-    const navLinkClass = (path: string) => `
-    flex items-center ${collapsed ? 'justify-center px-2' : 'px-4'} py-3 
-    rounded-md hover:bg-blue-50 font-medium transition-all duration-200
-    ${isActive(path) ? 'bg-blue-50 text-blue-600' : 'text-gray-700'}
-  `;
+    const isActive = (path: string, exact = false) => {
+        if (path === '/admin') return pathname === '/admin';
+        if (exact) return pathname === path;
+        return pathname.startsWith(path);
+    };
+
+    const navLinkClass = (path: string, exact = false) => `
+        flex items-center ${collapsed ? 'justify-center px-2' : 'px-4'} py-3
+        rounded-md hover:bg-blue-50 font-medium transition-all duration-200
+        ${isActive(path, exact) ? 'bg-blue-50 text-blue-600' : 'text-gray-700'}
+    `;
+
+    const flyoutLinkClass = (path: string, exact = false) =>
+        `block px-4 py-2.5 text-sm font-medium transition-colors rounded-lg mx-1
+        ${isActive(path, exact) ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'}`;
 
     return (
-        <aside className={`hidden lg:block z-40 h-full bg-white shadow-md transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}>
-            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 to-blue-700">
-                {!collapsed && (
-                    <h1 className="text-xl font-semibold text-white">Admin Panel</h1>
-                )}
-                <button
-                    onClick={onToggle}
-                    className="p-1 rounded-md hover:bg-blue-800 transition-colors"
-                    title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                >
-                    {collapsed ? (
-                        <ChevronRight className="h-5 w-5 text-white" />
-                    ) : (
-                        <ChevronLeft className="h-5 w-5 text-white" />
+        <>
+            <aside className={`hidden lg:block z-40 h-full bg-white shadow-md transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}>
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 to-blue-700">
+                    {!collapsed && <h1 className="text-xl font-semibold text-white">Admin Panel</h1>}
+                    <button
+                        onClick={onToggle}
+                        className="p-1 rounded-md hover:bg-blue-800 transition-colors"
+                        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                    >
+                        {collapsed
+                            ? <ChevronRight className="h-5 w-5 text-white" />
+                            : <ChevronLeft  className="h-5 w-5 text-white" />}
+                    </button>
+                </div>
+
+                <nav className="p-4 space-y-2">
+                    {/* Home */}
+                    <Link href="/admin" className={navLinkClass('/admin')} title="Home">
+                        <Home className="h-5 w-5" />
+                        {!collapsed && <span className="ml-3">Home</span>}
+                    </Link>
+
+                    {/* Analytics */}
+                    <Link href="/admin/analytics" className={navLinkClass('/admin/analytics')} title="Analytics">
+                        <BarChart3 className="h-5 w-5" />
+                        {!collapsed && <span className="ml-3">Analytics</span>}
+                    </Link>
+
+                    {/* Orders — dropdown expanded / flyout collapsed */}
+                    <button
+                        onClick={collapsed
+                            ? (e) => openFlyout('orders', e)
+                            : () => setOrdersOpen(v => !v)}
+                        className={`flex ${collapsed ? 'justify-center' : 'justify-between'} items-center w-full ${collapsed ? 'px-2' : 'px-4'} py-3 rounded-md hover:bg-blue-50 font-medium transition-all duration-200 ${isActive('/admin/orders') ? 'text-blue-600' : 'text-gray-700'}`}
+                        title="Orders"
+                    >
+                        <div className="flex items-center">
+                            <ShoppingCart className="h-5 w-5" />
+                            {!collapsed && <span className="ml-3">Orders</span>}
+                        </div>
+                        {!collapsed && (ordersOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />)}
+                    </button>
+
+                    {ordersOpen && !collapsed && (
+                        <div className="pl-8 space-y-1 text-sm">
+                            <Link href="/admin/orders" className={`block px-3 py-2 rounded-md transition-colors font-medium ${isActive('/admin/orders', true) ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-blue-100'}`}>
+                                Lab Tests
+                            </Link>
+                            <Link href="/admin/orders/medicine" className={`block px-3 py-2 rounded-md transition-colors font-medium ${isActive('/admin/orders/medicine') ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-blue-100'}`}>
+                                Medicines
+                            </Link>
+                        </div>
                     )}
-                </button>
-            </div>
 
-            <nav className="p-4 space-y-2">
-                <Link href="/admin" className={navLinkClass('/admin')} title="Home">
-                    <Home className="h-5 w-5" />
-                    {!collapsed && <span className="ml-3">Home</span>}
-                </Link>
-                <Link href="/admin/analytics" className={navLinkClass('/admin/analytics')} title="Analytics">
-                    <BarChart3 className="h-5 w-5" />
-                    {!collapsed && <span className="ml-3">Analytics</span>}
-                </Link>
-                <Link href="/admin/orders" className={navLinkClass('/admin/orders')} title="Orders">
-                    <ShoppingCart className="h-5 w-5" />
-                    {!collapsed && <span className="ml-3">Orders</span>}
-                </Link>
+                    {/* Products — dropdown expanded / flyout collapsed */}
+                    <button
+                        onClick={collapsed
+                            ? (e) => openFlyout('products', e)
+                            : onToggleProduct}
+                        className={`flex ${collapsed ? 'justify-center' : 'justify-between'} items-center w-full ${collapsed ? 'px-2' : 'px-4'} py-3 rounded-md hover:bg-blue-50 font-medium transition-all duration-200 text-gray-700`}
+                        title="Products"
+                    >
+                        <div className="flex items-center">
+                            <Package className="h-5 w-5" />
+                            {!collapsed && <span className="ml-3">Products</span>}
+                        </div>
+                        {!collapsed && (productOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />)}
+                    </button>
 
-                <button
-                    onClick={onToggleProduct}
-                    className={`flex ${collapsed ? 'justify-center' : 'justify-between'} items-center w-full ${collapsed ? 'px-2' : 'px-4'} py-3 rounded-md hover:bg-blue-50 font-medium transition-all duration-200 text-gray-700`}
-                    title="Products"
+                    {productOpen && !collapsed && (
+                        <div className="pl-8 space-y-1 text-sm">
+                            <Link href="/admin/offers"    className="block px-3 py-2 rounded-md hover:bg-blue-100 transition-colors text-gray-600">Offers</Link>
+                            <Link href="/admin/packages"  className="block px-3 py-2 rounded-md hover:bg-blue-100 transition-colors text-gray-600">Packages</Link>
+                            <Link href="/admin/tests"     className="block px-3 py-2 rounded-md hover:bg-blue-100 transition-colors text-gray-600">Tests</Link>
+                            <Link href="/admin/medicines" className="block px-3 py-2 rounded-md hover:bg-blue-100 transition-colors text-gray-600">Medicines</Link>
+                        </div>
+                    )}
+
+                    {/* Doctors */}
+                    <Link href="/admin/doctors" className={navLinkClass('/admin/doctors')} title="Doctors">
+                        <Stethoscope className="h-5 w-5" />
+                        {!collapsed && <span className="ml-3">Doctors</span>}
+                    </Link>
+
+                    {/* Users */}
+                    <Link href="/admin/users" className={navLinkClass('/admin/users')} title="Users">
+                        <Users className="h-5 w-5" />
+                        {!collapsed && <span className="ml-3">Users</span>}
+                    </Link>
+
+                    {/* Notifications */}
+                    <Link href="/admin/notifications" className={navLinkClass('/admin/notifications')} title="Notifications">
+                        <Bell className="h-5 w-5" />
+                        {!collapsed && <span className="ml-3">Notifications</span>}
+                    </Link>
+
+                    {/* Settings */}
+                    <Link href="/admin/settings" className={navLinkClass('/admin/settings', true)} title="Settings">
+                        <Settings className="h-5 w-5" />
+                        {!collapsed && <span className="ml-3">Settings</span>}
+                    </Link>
+
+                    {/* Services */}
+                    <Link href="/admin/settings/services" className={navLinkClass('/admin/settings/services')} title="Service Settings">
+                        <Layers className="h-5 w-5" />
+                        {!collapsed && <span className="ml-3">Services</span>}
+                    </Link>
+
+                    {/* Account */}
+                    <Link href="/admin/account" className={navLinkClass('/admin/account')} title="Account">
+                        <UserCircle className="h-5 w-5" />
+                        {!collapsed && <span className="ml-3">Account</span>}
+                    </Link>
+                </nav>
+            </aside>
+
+            {/* Collapsed flyout panel */}
+            {collapsed && flyout && (
+                <div
+                    ref={flyoutRef}
+                    style={{ top: flyoutY, left: 80 }}
+                    className="fixed z-50 ml-2 w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-in fade-in slide-in-from-left-2 duration-150"
                 >
-                    <div className="flex items-center">
-                        <Package className="h-5 w-5" />
-                        {!collapsed && <span className="ml-3">Products</span>}
-                    </div>
-                    {!collapsed && (productOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />)}
-                </button>
+                    {/* Section label */}
+                    <p className="px-4 pb-1.5 pt-0.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        {flyout === 'orders' ? 'Orders' : 'Products'}
+                    </p>
 
-                {productOpen && !collapsed && (
-                    <div className="pl-8 space-y-2 text-sm">
-                        <Link href="/admin/offers" className="block px-3 py-2 rounded-md hover:bg-blue-100 transition-colors duration-200 text-gray-600">
-                            Offers
-                        </Link>
-                        <Link href="/admin/packages" className="block px-3 py-2 rounded-md hover:bg-blue-100 transition-colors duration-200 text-gray-600">
-                            Packages
-                        </Link>
-                        <Link href="/admin/tests" className="block px-3 py-2 rounded-md hover:bg-blue-100 transition-colors duration-200 text-gray-600">
-                            Tests
-                        </Link>
-                        <Link href="/admin/medicines" className="block px-3 py-2 rounded-md hover:bg-blue-100 transition-colors duration-200 text-gray-600">
-                            Medicines
-                        </Link>
-                    </div>
-                )}
+                    {flyout === 'orders' && (
+                        <>
+                            <Link href="/admin/orders"          onClick={() => setFlyout(null)} className={flyoutLinkClass('/admin/orders', true)}>Lab Tests</Link>
+                            <Link href="/admin/orders/medicine" onClick={() => setFlyout(null)} className={flyoutLinkClass('/admin/orders/medicine')}>Medicines</Link>
+                        </>
+                    )}
 
-                <Link href="/admin/doctors" className={navLinkClass('/admin/doctors')} title="Doctors">
-                    <Stethoscope className="h-5 w-5" />
-                    {!collapsed && <span className="ml-3">Doctors</span>}
-                </Link>
-
-                <Link href="/admin/users" className={navLinkClass('/admin/users')} title="Users">
-                    <Users className="h-5 w-5" />
-                    {!collapsed && <span className="ml-3">Users</span>}
-                </Link>
-                <Link href="/admin/notifications" className={navLinkClass('/admin/notifications')} title="Notifications">
-                    <Bell className="h-5 w-5" />
-                    {!collapsed && <span className="ml-3">Notifications</span>}
-                </Link>
-                <Link href="/admin/settings" className={navLinkClass('/admin/settings')} title="Settings">
-                    <Settings className="h-5 w-5" />
-                    {!collapsed && <span className="ml-3">Settings</span>}
-                </Link>
-                <Link href="/admin/account" className={navLinkClass('/admin/account')} title="Account">
-                    <UserCircle className="h-5 w-5" />
-                    {!collapsed && <span className="ml-3">Account</span>}
-                </Link>
-            </nav>
-        </aside>
+                    {flyout === 'products' && (
+                        <>
+                            <Link href="/admin/offers"    onClick={() => setFlyout(null)} className={flyoutLinkClass('/admin/offers')}>Offers</Link>
+                            <Link href="/admin/packages"  onClick={() => setFlyout(null)} className={flyoutLinkClass('/admin/packages')}>Packages</Link>
+                            <Link href="/admin/tests"     onClick={() => setFlyout(null)} className={flyoutLinkClass('/admin/tests')}>Tests</Link>
+                            <Link href="/admin/medicines" onClick={() => setFlyout(null)} className={flyoutLinkClass('/admin/medicines')}>Medicines</Link>
+                        </>
+                    )}
+                </div>
+            )}
+        </>
     );
 };
 

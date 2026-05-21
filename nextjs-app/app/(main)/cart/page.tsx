@@ -1,6 +1,7 @@
 "use client";
 
 import { useCart } from "@/providers/CartProvider";
+import { useSiteSettings } from "@/providers/SiteSettingsProvider";
 import { Trash2, ShoppingCart, ArrowRight, Plus, Minus, Pill, FlaskConical, AlertTriangle, FileText, Truck } from "lucide-react";
 import BookingForm from "@/components/booking/BookingForm";
 import { getCartPriceInfo } from "@/lib/cartUtils";
@@ -11,6 +12,7 @@ const CartPage = () => {
         cart, removeFromCart, updateQuantity,
         medicineCart, removeMedicineFromCart, updateMedicineQty, medicineCartTotal,
     } = useCart();
+    const { settings } = useSiteSettings();
 
     const thyrocareItems = cart.items;
     const priceInfo  = getCartPriceInfo(thyrocareItems);
@@ -18,10 +20,13 @@ const CartPage = () => {
     const pkgIds     = thyrocareItems.map(i => i.productCode);
 
     // Medicine totals
-    const medSubtotal   = medicineCart.reduce((s, i) => s + i.mrp * i.quantity, 0);
-    const medDiscount   = medicineCart.reduce((s, i) => s + (i.mrp - i.offerPrice) * i.quantity, 0);
-    const medDelivery   = medicineCartTotal >= 499 ? 0 : 49;
-    const medGrandTotal = medicineCartTotal + medDelivery;
+    const FREE_DELIVERY_THRESHOLD = 1000;
+    const courierCharge  = settings?.medicineCourierCharge ?? 49;
+    const medSubtotal    = medicineCart.reduce((s, i) => s + i.mrp * i.quantity, 0);
+    const medDiscount    = medicineCart.reduce((s, i) => s + (i.mrp - i.offerPrice) * i.quantity, 0);
+    const medDelivery    = medicineCartTotal >= FREE_DELIVERY_THRESHOLD ? 0 : courierCharge;
+    const medGrandTotal  = medicineCartTotal + medDelivery;
+    const amountToFree   = Math.max(0, FREE_DELIVERY_THRESHOLD - medicineCartTotal);
 
     const hasRxMedicine = medicineCart.some(i => i.prescriptionRequired);
 
@@ -174,7 +179,7 @@ const CartPage = () => {
                                             </span>
                                         </div>
                                         {medDelivery > 0 && (
-                                            <p className="text-xs text-gray-400">Add ₹{(499 - medicineCartTotal).toFixed(0)} more for free delivery</p>
+                                            <p className="text-xs text-teal-600 font-semibold">Add ₹{amountToFree.toFixed(0)} more for free delivery</p>
                                         )}
                                         <div className="border-t border-gray-100 pt-2 flex justify-between font-extrabold text-gray-900 text-base">
                                             <span>Total</span>

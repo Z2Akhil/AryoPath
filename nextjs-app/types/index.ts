@@ -14,6 +14,7 @@ export interface SiteSettings {
   helplineNumber: string;
   email: string;
   socialMedia: SocialMedia;
+  medicineCourierCharge: number;
   updatedBy?: string | null;
   createdAt?: string;
   updatedAt?: string;

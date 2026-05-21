@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { items, shippingAddress, grandTotal } = body;
+    const { items, shippingAddress, grandTotal, prescriptions: uploadedPrescriptions } = body;
 
     if (!items?.length || !shippingAddress || !grandTotal) {
       return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     // Validate items against DB
     const enrichedItems = await Promise.all(
       items.map(async (item: any) => {
-        const med = await Medicine.findOne({ slug: item.slug, isPublished: true, isDeleted: false }).lean();
+        const med = await Medicine.findOne({ slug: item.slug, isPublished: true }).lean();
         if (!med) throw new Error(`Medicine not found: ${item.slug}`);
         if (!(med as any).inStock) throw new Error(`${(med as any).name} is out of stock`);
 
@@ -73,13 +73,20 @@ export async function POST(req: NextRequest) {
     const estimatedDelivery = new Date();
     estimatedDelivery.setDate(estimatedDelivery.getDate() + 5);
 
+    const savedPrescriptions = Array.isArray(uploadedPrescriptions)
+      ? uploadedPrescriptions
+          .filter((p: any) => p?.url && p?.publicId)
+          .map((p: any) => ({ url: p.url, publicId: p.publicId, uploadedAt: new Date() }))
+      : [];
+
     const order = await MedicineOrder.create({
       orderId: generateOrderId(),
       userId: (user as any)._id,
       items: enrichedItems,
       shippingAddress,
-      status: 'confirmed',
+      status: requiresPrescription && savedPrescriptions.length === 0 ? 'prescription_required' : 'confirmed',
       requiresPrescription,
+      prescriptions: savedPrescriptions as any,
       subtotal,
       totalDiscount,
       totalAmount,

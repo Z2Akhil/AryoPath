@@ -46,6 +46,7 @@ export async function PUT(request: NextRequest) {
     const socialMediaStr = formData.get('socialMedia') as string | null;
     const logoFile = formData.get('logo') as File | null;
     const heroImageFile = formData.get('heroImage') as File | null;
+    const medicineCourierChargeStr = formData.get('medicineCourierCharge') as string | null;
 
     let settings = await SiteSettings.findOne();
     if (!settings) {
@@ -58,6 +59,7 @@ export async function PUT(request: NextRequest) {
 
     if (helplineNumber !== null) updates.helplineNumber = helplineNumber;
     if (email !== null) updates.email = email;
+    if (medicineCourierChargeStr !== null) updates.medicineCourierCharge = Math.max(0, parseFloat(medicineCourierChargeStr) || 0);
     
     if (socialMediaStr) {
       try {
