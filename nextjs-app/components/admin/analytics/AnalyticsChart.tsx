@@ -234,7 +234,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
     };
 
     return (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 min-w-0">
             {title && (
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-bold text-gray-900">{title}</h3>
@@ -262,7 +262,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
                         <p className="text-xs text-gray-300">Try selecting a wider date range</p>
                     </div>
                 ) : (
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" debounce={50}>
                         {renderChart()}
                     </ResponsiveContainer>
                 )}

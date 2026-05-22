@@ -115,10 +115,11 @@ export type AdminOrStaffAuthResult =
     | { authenticated: true; role: 'admin'; session: AdminSessionDocument; admin: AdminDocument }
     | { authenticated: true; role: 'staff'; staff: StaffDocument; permissions: Permission[] };
 
-export function getAdminContext(auth: AdminOrStaffAuthResult & { authenticated: true }) {
+export function getAdminContext(auth: (AdminOrStaffAuthResult | AdminAuthResult) & { authenticated: true }) {
+    const isAdmin = !('role' in auth) || (auth as any).role === 'admin';
     return {
-        adminId:   auth.role === 'admin' ? auth.admin._id   : undefined,
-        sessionId: auth.role === 'admin' ? auth.session._id : undefined,
+        adminId:   isAdmin ? (auth as any).admin._id   : undefined,
+        sessionId: isAdmin ? (auth as any).session._id : undefined,
     };
 }
 

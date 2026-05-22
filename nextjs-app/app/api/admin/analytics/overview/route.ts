@@ -25,7 +25,6 @@ export async function GET(req: NextRequest) {
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
 
-        const { adminId: _actorId } = getAdminContext(auth);
         console.log('Fetching analytics overview', { startDate, endDate });
 
         // Date range filter
@@ -88,25 +87,27 @@ export async function GET(req: NextRequest) {
         const avgOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : '0';
 
         const { adminId: actorId, sessionId: actorSessionId } = getAdminContext(auth);
-        await AdminActivity.logActivity({
-            adminId: actorId,
-            sessionId: actorSessionId,
-            action: 'ANALYTICS_FETCH',
-            description: `Fetched analytics overview`,
-            resource: 'analytics',
-            endpoint: '/api/admin/analytics/overview',
-            method: 'GET',
-            ipAddress: ipAddress,
-            userAgent: userAgent,
-            statusCode: 200,
-            responseTime: Date.now() - startTime,
-            metadata: {
-                startDate,
-                endDate,
-                totalOrders,
-                totalRevenue
-            }
-        });
+        if (actorId) {
+            await AdminActivity.logActivity({
+                adminId: actorId,
+                sessionId: actorSessionId,
+                action: 'ANALYTICS_FETCH',
+                description: `Fetched analytics overview`,
+                resource: 'analytics',
+                endpoint: '/api/admin/analytics/overview',
+                method: 'GET',
+                ipAddress: ipAddress,
+                userAgent: userAgent,
+                statusCode: 200,
+                responseTime: Date.now() - startTime,
+                metadata: {
+                    startDate,
+                    endDate,
+                    totalOrders,
+                    totalRevenue
+                }
+            }).catch(() => {});
+        }
 
         return NextResponse.json({
             success: true,
@@ -136,20 +137,22 @@ export async function GET(req: NextRequest) {
         console.error('Analytics overview fetch error:', error);
 
         const { adminId: errActorId, sessionId: errSessionId } = getAdminContext(auth);
-        await AdminActivity.logActivity({
-            adminId: errActorId,
-            sessionId: errSessionId,
-            action: 'ERROR',
-            description: `Failed to fetch analytics overview: ${error.message}`,
-            resource: 'analytics',
-            endpoint: '/api/admin/analytics/overview',
-            method: 'GET',
-            ipAddress: ipAddress,
-            userAgent: userAgent,
-            statusCode: 500,
-            responseTime: responseTime,
-            errorMessage: error.message
-        });
+        if (errActorId) {
+            await AdminActivity.logActivity({
+                adminId: errActorId,
+                sessionId: errSessionId,
+                action: 'ERROR',
+                description: `Failed to fetch analytics overview: ${error.message}`,
+                resource: 'analytics',
+                endpoint: '/api/admin/analytics/overview',
+                method: 'GET',
+                ipAddress: ipAddress,
+                userAgent: userAgent,
+                statusCode: 500,
+                responseTime: responseTime,
+                errorMessage: error.message
+            }).catch(() => {});
+        }
 
         return NextResponse.json({
             success: false,
