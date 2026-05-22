@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const token = req.headers.get('authorization')?.replace('Bearer', '').trim() ?? null;
     const user = await getUserFromToken(token);
 
-    if (!user || !user.isActive || !user.isVerified) {
+    if (!user || !user.isActive) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       publicId: `prescription_${(user as any)._id}_${Date.now()}`,
     });
 
-    return NextResponse.json({ success: true, data: result });
+    return NextResponse.json({ success: true, url: result.url, publicId: result.publicId });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Upload failed';
     return NextResponse.json({ success: false, message }, { status: 500 });

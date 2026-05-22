@@ -208,6 +208,20 @@ export interface DoctorPortalProfile {
   slug: string;
 }
 
+export interface PrescriptionMedicine {
+  name: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+  instructions: string;
+}
+
+export interface Prescription {
+  medicines: PrescriptionMedicine[];
+  notes: string;
+  issuedAt: string;
+}
+
 export interface DoctorPortalAppointment {
   _id: string;
   patientName: string;
@@ -224,6 +238,8 @@ export interface DoctorPortalAppointment {
   finalAmount: number;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   reportUrls: { url: string; publicId: string }[];
+  prescription?: Prescription;
+  doctorName?: string;
   createdAt: string;
   updatedAt: string;
 }

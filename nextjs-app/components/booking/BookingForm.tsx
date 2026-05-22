@@ -11,7 +11,7 @@ import CartApi, { CartCheckoutPricingResponse } from "@/lib/api/cartApi";
 import { checkPincode, getAppointmentSlots, SlotData } from "@/lib/api/clientApi";
 import { getInitialFormData, saveContactInfo } from "@/lib/utils/localStorage";
 import ConfirmationDialog from "../ui/ConfirmationDialog";
-import AuthModal from "../ui/AuthModal";
+import { useAuthModal } from "@/providers/AuthModalProvider";
 import { MapPin, Calendar, Clock, User as UserIcon, AlertCircle, CheckCircle2, Info, Plus, Trash2, ArrowRight, ShoppingCart, CheckCircle } from 'lucide-react';
 import { useCartValidation } from '@/hooks/useCartValidation';
 import Link from 'next/link';
@@ -65,8 +65,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
         }
     });
     const [saveContactForFuture, setSaveContactForFuture] = useState(false);
-    const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-    const [authOpen, setAuthOpen] = useState(false);
+    const { openAuth } = useAuthModal();
     const [checkoutPricing, setCheckoutPricing] = useState<CartCheckoutPricingResponse | null>(null);
     const [pricingLoading, setPricingLoading] = useState(false);
 
@@ -229,7 +228,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
         e.preventDefault();
 
         if (!user) {
-            setShowLoginPrompt(true);
+            openAuth();
             return;
         }
 
@@ -319,7 +318,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
         // Auth guard is inside CartProvider.addToCart — but we go through addToCartWithValidation
         // which calls CartApi directly (bypasses CartProvider). So we guard here.
         if (!user) {
-            setAuthOpen(true);
+            openAuth();
             return;
         }
         setCartLoading(true);
@@ -699,17 +698,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                 </div>
             </form>
 
-            <ConfirmationDialog
-                isOpen={showLoginPrompt}
-                onClose={() => setShowLoginPrompt(false)}
-                onConfirm={() => {
-                    setShowLoginPrompt(false);
-                    setAuthOpen(true);
-                }}
-                title="Sign In Required"
-                message="Please sign in to your account to securely place your order and manage your reports."
-                confirmText="Sign In"
-            />
             {/* Cart validation dialog (duplicate test checks etc.) */}
             <ConfirmationDialog
                 isOpen={validationDialog.isOpen}
@@ -732,7 +720,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                 confirmText={validationDialog.confirmText}
                 cancelText={validationDialog.cancelText}
             />
-            {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
         </div>
     );
 };

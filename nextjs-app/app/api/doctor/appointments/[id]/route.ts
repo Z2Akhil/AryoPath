@@ -35,12 +35,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     await connectToDatabase();
     const { id } = await params;
     const body = await req.json();
-    const { status } = body;
-
-    const ALLOWED_STATUSES = ['confirmed', 'completed', 'cancelled'];
-    if (!status || !ALLOWED_STATUSES.includes(status)) {
-        return NextResponse.json({ success: false, error: 'Invalid status. Allowed: confirmed, completed, cancelled' }, { status: 400 });
-    }
+    const { status, prescription } = body;
 
     const appointment = await ConsultationAppointment.findById(id);
     if (!appointment) {
@@ -51,8 +46,33 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 });
     }
 
-    appointment.status = status;
-    await appointment.save();
+    if (status !== undefined) {
+        const ALLOWED_STATUSES = ['confirmed', 'completed', 'cancelled'];
+        if (!ALLOWED_STATUSES.includes(status)) {
+            return NextResponse.json({ success: false, error: 'Invalid status' }, { status: 400 });
+        }
+        appointment.status = status;
+    }
 
-    return NextResponse.json({ success: true, appointment });
+    if (prescription !== undefined) {
+        if (!prescription.medicines || !Array.isArray(prescription.medicines)) {
+            return NextResponse.json({ success: false, error: 'Invalid prescription' }, { status: 400 });
+        }
+        appointment.set('prescription', {
+            medicines: prescription.medicines.map((m: any) => ({
+                name:         String(m.name || '').trim(),
+                dose:         String(m.dose || '').trim(),
+                frequency:    String(m.frequency || '').trim(),
+                duration:     String(m.duration || '').trim(),
+                instructions: String(m.instructions || '').trim(),
+            })),
+            notes:    String(prescription.notes || '').trim(),
+            issuedAt: new Date(),
+        });
+        appointment.markModified('prescription');
+    }
+
+    await appointment.save();
+    const updated = await ConsultationAppointment.findById(id).lean();
+    return NextResponse.json({ success: true, appointment: updated });
 }

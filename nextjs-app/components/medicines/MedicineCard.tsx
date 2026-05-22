@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { Plus, Minus } from 'lucide-react';
 import { useCart } from '@/providers/CartProvider';
 import { useToast } from '@/providers/ToastProvider';
+import { useUser } from '@/providers/UserProvider';
+import { useAuthModal } from '@/providers/AuthModalProvider';
 
 interface MedicineCardProps {
   medicine: {
@@ -28,12 +30,15 @@ interface MedicineCardProps {
 export default function MedicineCard({ medicine }: MedicineCardProps) {
   const { medicineCart, addMedicineToCart, removeMedicineFromCart, updateMedicineQty } = useCart();
   const toast = useToast();
+  const { user } = useUser();
+  const { openAuth } = useAuthModal();
 
   const cartItem = medicineCart.find(i => i.slug === medicine.slug);
   const qty = cartItem?.quantity ?? 0;
 
   const handleAdd = () => {
     if (!medicine.inStock) return;
+    if (!user) { openAuth(); return; }
     addMedicineToCart({
       slug: medicine.slug,
       name: medicine.name,

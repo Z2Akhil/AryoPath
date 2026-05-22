@@ -5,9 +5,23 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ChevronLeft, Video, Phone, Calendar, Clock,
-  ExternalLink, Loader2, AlertCircle,
+  ExternalLink, Loader2, AlertCircle, FileText, ChevronDown, ChevronUp, Printer,
 } from 'lucide-react';
 import { useUser } from '@/providers/UserProvider';
+
+interface PrescriptionMedicine {
+  name: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+  instructions: string;
+}
+
+interface Prescription {
+  medicines: PrescriptionMedicine[];
+  notes: string;
+  issuedAt: string;
+}
 
 interface Appointment {
   _id: string;
@@ -20,6 +34,7 @@ interface Appointment {
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   finalAmount: number;
   meetLink?: string;
+  prescription?: Prescription;
 }
 
 const STATUS_STYLES: Record<string, { label: string; className: string; bar: string }> = {
@@ -38,6 +53,131 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function PrescriptionCard({ prescription, doctorName, patientName, appointmentDate }: {
+  prescription: Prescription;
+  doctorName: string;
+  patientName: string;
+  appointmentDate: string;
+}) {
+  const issued = new Date(prescription.issuedAt).toLocaleDateString('en-IN', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
+
+  const handlePrint = () => {
+    const printContent = `
+      <html><head><title>Prescription - Dr. ${doctorName}</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 32px; color: #111; }
+        .header { border-bottom: 2px solid #0d9488; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .rx { font-size: 48px; font-weight: 900; font-style: italic; color: #0d9488; line-height: 1; }
+        .doctor { font-size: 20px; font-weight: bold; }
+        .subtitle { font-size: 13px; color: #555; margin-top: 4px; }
+        .patient-row { display: flex; gap: 40px; margin-bottom: 20px; font-size: 13px; }
+        .label { font-size: 10px; text-transform: uppercase; color: #888; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background: #f0fdfa; text-align: left; padding: 8px 12px; font-size: 11px; border: 1px solid #b2f5ea; color: #0d9488; }
+        td { padding: 8px 12px; font-size: 12px; border: 1px solid #e5e7eb; }
+        tr:nth-child(even) td { background: #f9fafb; }
+        .notes { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; font-size: 12px; margin-bottom: 20px; }
+        .notes-label { font-size: 10px; font-weight: bold; color: #d97706; text-transform: uppercase; margin-bottom: 6px; }
+        .footer { font-size: 10px; color: #999; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 20px; }
+      </style></head>
+      <body>
+        <div class="header">
+          <div><div class="rx">℞</div><div class="subtitle">Digital Prescription</div></div>
+          <div style="text-align:right"><div class="doctor">Dr. ${doctorName}</div><div class="subtitle">AyroPath Consultation</div><div class="subtitle">Date: ${issued}</div></div>
+        </div>
+        <div class="patient-row">
+          <div><div class="label">Patient</div><div>${patientName}</div></div>
+          <div><div class="label">Appointment Date</div><div>${appointmentDate}</div></div>
+        </div>
+        <table>
+          <thead><tr><th>#</th><th>Medicine</th><th>Dose</th><th>Frequency</th><th>Duration</th><th>Instructions</th></tr></thead>
+          <tbody>
+            ${prescription.medicines.map((m, i) => `<tr><td>${i+1}</td><td><strong>${m.name}</strong></td><td>${m.dose||'—'}</td><td>${m.frequency||'—'}</td><td>${m.duration||'—'}</td><td>${m.instructions||'—'}</td></tr>`).join('')}
+          </tbody>
+        </table>
+        ${prescription.notes ? `<div class="notes"><div class="notes-label">Doctor's Advice</div>${prescription.notes}</div>` : ''}
+        <div class="footer">This is a digital prescription issued via AyroPath. Take medicines as directed. Consult your doctor if symptoms persist.</div>
+      </body></html>
+    `;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(printContent);
+    win.document.close();
+    win.focus();
+    win.print();
+  };
+
+  return (
+    <div className="mt-3 rounded-xl border border-teal-100 overflow-hidden bg-teal-50/30">
+      {/* Rx header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-teal-600 text-white">
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-black italic">℞</span>
+          <div>
+            <p className="text-xs font-bold leading-none">Digital Prescription</p>
+            <p className="text-[10px] opacity-80 mt-0.5">Dr. {doctorName}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <p className="text-[10px] opacity-80 hidden sm:block">{issued}</p>
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="flex items-center gap-1.5 text-xs font-bold bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            Print / Save PDF
+          </button>
+        </div>
+      </div>
+
+      {/* Medicines table */}
+      <div className="p-4">
+        <div className="overflow-x-auto rounded-lg border border-teal-100">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-teal-100/60 text-teal-800">
+                <th className="text-left px-3 py-2 font-bold">#</th>
+                <th className="text-left px-3 py-2 font-bold">Medicine</th>
+                <th className="text-left px-3 py-2 font-bold">Dose</th>
+                <th className="text-left px-3 py-2 font-bold">Frequency</th>
+                <th className="text-left px-3 py-2 font-bold">Duration</th>
+                <th className="text-left px-3 py-2 font-bold">Instructions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {prescription.medicines.map((med, idx) => (
+                <tr key={idx} className="border-t border-teal-100 bg-white">
+                  <td className="px-3 py-2.5 text-gray-400 font-medium">{idx + 1}</td>
+                  <td className="px-3 py-2.5 font-semibold text-gray-900">{med.name}</td>
+                  <td className="px-3 py-2.5 text-gray-600">{med.dose || '—'}</td>
+                  <td className="px-3 py-2.5 text-gray-600">{med.frequency || '—'}</td>
+                  <td className="px-3 py-2.5 text-gray-600">{med.duration || '—'}</td>
+                  <td className="px-3 py-2.5 text-gray-500 italic">{med.instructions || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {prescription.notes && (
+          <div className="mt-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
+            <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wide mb-1">Doctor's Advice</p>
+            <p className="text-xs text-gray-700 whitespace-pre-wrap">{prescription.notes}</p>
+          </div>
+        )}
+
+        <p className="mt-3 text-[10px] text-gray-400 text-center">
+          Digital prescription issued by Dr. {doctorName} via AyroPath.
+          Take medicines as directed. Consult your doctor if symptoms persist.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function AppointmentsPage() {
   const { user, loading: userLoading } = useUser();
   const router = useRouter();
@@ -45,6 +185,7 @@ export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedRx, setExpandedRx] = useState<Record<string, boolean>>({});
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -67,6 +208,8 @@ export default function AppointmentsPage() {
       .catch(() => setError('Failed to load appointments'))
       .finally(() => setLoading(false));
   }, [mounted, user]);
+
+  const toggleRx = (id: string) => setExpandedRx(prev => ({ ...prev, [id]: !prev[id] }));
 
   if (!mounted || userLoading) {
     return (
@@ -102,10 +245,7 @@ export default function AppointmentsPage() {
           <div className="flex flex-col items-center gap-3 py-20 text-center">
             <AlertCircle className="w-10 h-10 text-red-400" />
             <p className="text-sm text-gray-500">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="text-sm font-bold text-blue-600"
-            >
+            <button onClick={() => window.location.reload()} className="text-sm font-bold text-blue-600">
               Retry
             </button>
           </div>
@@ -118,20 +258,20 @@ export default function AppointmentsPage() {
               <p className="font-bold text-gray-800 text-base mb-1">No appointments yet</p>
               <p className="text-sm text-gray-400">Book a consultation with one of our doctors</p>
             </div>
-            <Link
-              href="/consult"
-              className="bg-blue-600 text-white font-bold px-6 py-3 rounded-xl text-sm"
-            >
+            <Link href="/consult" className="bg-blue-600 text-white font-bold px-6 py-3 rounded-xl text-sm">
               Book Consultation
             </Link>
           </div>
         ) : (
           <div className="space-y-3">
             {appointments.map((appt) => {
-              const isVideo = appt.consultationMode === 'video';
-              const isActive = ['pending', 'confirmed'].includes(appt.status);
-              const shortId = appt._id.slice(-8).toUpperCase();
-              const barColor = STATUS_STYLES[appt.status]?.bar ?? 'bg-gray-300';
+              const isVideo         = appt.consultationMode === 'video';
+              const isActive        = ['pending', 'confirmed'].includes(appt.status);
+              const isCompleted     = appt.status === 'completed';
+              const shortId         = appt._id.slice(-8).toUpperCase();
+              const barColor        = STATUS_STYLES[appt.status]?.bar ?? 'bg-gray-300';
+              const hasPrescription = !!(appt.prescription && appt.prescription.medicines.length > 0);
+              const rxOpen          = !!expandedRx[appt._id];
 
               return (
                 <div key={appt._id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -180,7 +320,7 @@ export default function AppointmentsPage() {
                       <span className="text-sm font-black text-gray-900">₹{appt.finalAmount}</span>
                     </div>
 
-                    {/* Join meeting — only for active video appointments with a meet link */}
+                    {/* Join meeting */}
                     {isActive && isVideo && appt.meetLink && (
                       <div className="mt-3 pt-3 border-t border-gray-100">
                         <p className="text-[10px] text-gray-400 mb-2 font-medium">
@@ -196,6 +336,48 @@ export default function AppointmentsPage() {
                           Join Meeting
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
+                      </div>
+                    )}
+
+                    {/* Prescription section — always visible on completed appointments */}
+                    {(isCompleted || hasPrescription) && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        {hasPrescription ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => toggleRx(appt._id)}
+                              className="flex items-center justify-between w-full"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center">
+                                  <FileText className="w-3.5 h-3.5 text-teal-600" />
+                                </div>
+                                <span className="text-xs font-bold text-teal-700">View / Download Prescription</span>
+                              </div>
+                              {rxOpen
+                                ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                                : <ChevronDown className="w-4 h-4 text-gray-400" />
+                              }
+                            </button>
+
+                            {rxOpen && (
+                              <PrescriptionCard
+                                prescription={appt.prescription!}
+                                doctorName={appt.doctorName}
+                                patientName={appt.patientName}
+                                appointmentDate={appt.appointmentDate}
+                              />
+                            )}
+                          </>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                              <FileText className="w-3.5 h-3.5 text-gray-400" />
+                            </div>
+                            <span className="text-xs text-gray-400">Prescription not issued yet</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

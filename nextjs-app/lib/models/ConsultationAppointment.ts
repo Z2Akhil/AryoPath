@@ -1,5 +1,19 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export interface PrescriptionMedicine {
+  name: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+  instructions: string;
+}
+
+export interface Prescription {
+  medicines: PrescriptionMedicine[];
+  notes: string;
+  issuedAt: Date;
+}
+
 export interface ConsultationAppointmentDocument extends Document {
   doctorId: mongoose.Types.ObjectId;
   doctorSlug: string;
@@ -23,6 +37,7 @@ export interface ConsultationAppointmentDocument extends Document {
   finalAmount: number;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   reportUrls: { url: string; publicId: string }[];
+  prescription?: Prescription;
   reminderSent: boolean;
   userId?: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -31,6 +46,26 @@ export interface ConsultationAppointmentDocument extends Document {
 
 const ReportUrlSchema = new Schema(
   { url: { type: String, required: true }, publicId: { type: String, required: true } },
+  { _id: false }
+);
+
+const PrescriptionMedicineSchema = new Schema(
+  {
+    name:         { type: String, required: true, trim: true },
+    dose:         { type: String, default: '' },
+    frequency:    { type: String, default: '' },
+    duration:     { type: String, default: '' },
+    instructions: { type: String, default: '' },
+  },
+  { _id: false }
+);
+
+const PrescriptionSchema = new Schema(
+  {
+    medicines: { type: [PrescriptionMedicineSchema], default: [] },
+    notes:     { type: String, default: '' },
+    issuedAt:  { type: Date, default: Date.now },
+  },
   { _id: false }
 );
 
@@ -67,7 +102,8 @@ const ConsultationAppointmentSchema = new Schema<ConsultationAppointmentDocument
       default: 'pending',
     },
 
-    reportUrls: { type: [ReportUrlSchema], default: [] },
+    reportUrls:   { type: [ReportUrlSchema], default: [] },
+    prescription:  { type: PrescriptionSchema, default: undefined },
     reminderSent: { type: Boolean, default: false },
 
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: false },

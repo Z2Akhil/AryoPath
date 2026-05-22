@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   CheckCircle2, Package, MapPin, ArrowLeft, ExternalLink,
@@ -36,6 +36,7 @@ function getMilestoneIndex(status: string): number {
 
 export default function MedicineOrderTrackingPage() {
   const { orderId } = useParams<{ orderId: string }>();
+  const router = useRouter();
 
   const [order, setOrder]     = useState<MedicineOrder | null>(null);
   const [events, setEvents]   = useState<CourierEvent[]>([]);
@@ -111,7 +112,7 @@ export default function MedicineOrderTrackingPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-gray-500">
         <AlertCircle className="h-10 w-10 text-red-400" />
         <p className="text-sm">{error || 'Order not found.'}</p>
-        <Link href="/medicines" className="text-teal-600 text-sm font-semibold hover:underline">Back to Medicines</Link>
+        <button onClick={() => router.back()} className="text-teal-600 text-sm font-semibold hover:underline">Go Back</button>
       </div>
     );
   }
@@ -124,9 +125,9 @@ export default function MedicineOrderTrackingPage() {
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
 
         {/* Back link */}
-        <Link href="/medicines" className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-teal-600 mb-6 transition-colors">
-          <ArrowLeft className="h-4 w-4" /> Back to Medicines
-        </Link>
+        <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-teal-600 mb-6 transition-colors">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
 
         {/* Header */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5">

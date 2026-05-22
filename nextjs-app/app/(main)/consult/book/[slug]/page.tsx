@@ -9,6 +9,8 @@ import { z } from 'zod';
 import {
   BadgeCheck,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Video,
   Phone,
   Tag,
@@ -20,6 +22,8 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useToast } from '@/providers/ToastProvider';
+import { useUser } from '@/providers/UserProvider';
+import { useAuthModal } from '@/providers/AuthModalProvider';
 import { Doctor } from '@/types/doctor';
 
 // ─── Zod Schema ───────────────────────────────────────────────────────────────
@@ -79,35 +83,65 @@ function getNext7Days(): DatePill[] {
 
 // ─── Time slot helpers ────────────────────────────────────────────────────────
 
-const DEFAULT_SLOTS: Record<string, string[]> = {
-  Morning: ['07:00 AM','07:30 AM','08:00 AM','08:30 AM','09:00 AM','09:30 AM','10:00 AM','10:30 AM','11:00 AM'],
-  Afternoon: ['12:00 PM','12:30 PM','01:00 PM','01:30 PM','02:00 PM','02:30 PM','03:00 PM','03:30 PM'],
-  Evening: ['05:00 PM','05:30 PM','06:00 PM','06:30 PM','07:00 PM','07:30 PM','08:00 PM'],
-};
+const FALLBACK_SLOTS = [
+  '07:00 AM','07:30 AM','08:00 AM','08:30 AM','09:00 AM','09:30 AM','10:00 AM','10:30 AM','11:00 AM',
+  '11:30 AM','12:00 PM','12:30 PM','01:00 PM','01:30 PM','02:00 PM','02:30 PM','03:00 PM','03:30 PM',
+  '04:00 PM','05:00 PM','05:30 PM','06:00 PM','06:30 PM','07:00 PM','07:30 PM','08:00 PM',
+];
 
-function isSlotDisabled(slots: string[], idx: number): boolean {
-  return idx % 5 === 2;
+// Handles both "08:00" (24h from admin) and "08:00 AM" (12h legacy)
+function parseSlotMinutes(slot: string): number {
+  // 12-hour: "8:00 AM", "02:30 PM"
+  const m12 = slot.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (m12) {
+    let h = parseInt(m12[1], 10);
+    const min = parseInt(m12[2], 10);
+    const mer = m12[3].toUpperCase();
+    if (mer === 'PM' && h !== 12) h += 12;
+    if (mer === 'AM' && h === 12) h = 0;
+    return h * 60 + min;
+  }
+  // 24-hour: "08:00", "14:30"
+  const m24 = slot.match(/^(\d{1,2}):(\d{2})$/);
+  if (m24) return parseInt(m24[1], 10) * 60 + parseInt(m24[2], 10);
+  return -1;
+}
+
+// Convert any slot to a readable 12-hour label for display
+function formatSlotLabel(slot: string): string {
+  if (/AM|PM/i.test(slot)) return slot; // already 12h
+  const m = slot.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return slot;
+  let h = parseInt(m[1], 10);
+  const min = m[2];
+  const mer = h >= 12 ? 'PM' : 'AM';
+  if (h > 12) h -= 12;
+  if (h === 0) h = 12;
+  return `${h}:${min} ${mer}`;
 }
 
 function groupSlotsByPeriod(slots: string[]): Record<string, string[]> {
-  if (!slots || slots.length === 0) return DEFAULT_SLOTS;
-
+  const source = slots && slots.length > 0
+    ? [...slots].sort((a, b) => parseSlotMinutes(a) - parseSlotMinutes(b))
+    : FALLBACK_SLOTS;
   const groups: Record<string, string[]> = { Morning: [], Afternoon: [], Evening: [] };
-  slots.forEach((slot) => {
-    const lower = slot.toLowerCase();
-    if (lower.includes('pm')) {
-      const hour = parseInt(slot.split(':')[0]);
-      if (hour < 5 || (hour >= 12 && hour <= 4)) {
-        groups.Afternoon.push(slot);
-      } else {
-        groups.Evening.push(slot);
-      }
-    } else {
-      groups.Morning.push(slot);
-    }
+  source.forEach((slot) => {
+    const mins = parseSlotMinutes(slot);
+    if (mins < 0) return;
+    if (mins < 12 * 60) groups.Morning.push(slot);
+    else if (mins < 17 * 60) groups.Afternoon.push(slot);
+    else groups.Evening.push(slot);
   });
-
   return Object.fromEntries(Object.entries(groups).filter(([, v]) => v.length > 0));
+}
+
+function isSlotPast(slot: string, selectedDate: string): boolean {
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  if (selectedDate !== todayStr) return false;
+  const slotMins = parseSlotMinutes(slot);
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  return slotMins <= nowMins + 30;
 }
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
@@ -229,6 +263,8 @@ export default function BookingPage({
   const { slug } = use(params);
   const router = useRouter();
   const { error: toastError, success: toastSuccess } = useToast();
+  const { user } = useUser();
+  const { openAuth } = useAuthModal();
 
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [fetchLoading, setFetchLoading] = useState(true);
@@ -245,9 +281,11 @@ export default function BookingPage({
   const [couponError, setCouponError] = useState('');
   const [couponSuccess, setCouponSuccess] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [uploadedFiles, setUploadedFiles] = useState<{ url: string; publicId: string; name: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [successData, setSuccessData] = useState<SuccessData | null>(null);
+  const [openPeriods, setOpenPeriods] = useState<Record<string, boolean>>({ Morning: true, Afternoon: true, Evening: true });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dates = getNext7Days();
@@ -314,50 +352,70 @@ export default function BookingPage({
     setCouponSuccess('');
   }
 
-  // File upload
+  // File upload with XHR progress
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
 
     for (const file of files) {
-      const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
       if (!allowed.includes(file.type)) {
-        toastError('Only JPEG, PNG, and PDF files are allowed');
+        toastError(`${file.name}: Only JPEG, PNG, and PDF files are allowed`);
         continue;
       }
       if (file.size > 10 * 1024 * 1024) {
-        toastError('File size must be under 10MB');
+        toastError(`${file.name}: File size must be under 10MB`);
         continue;
       }
 
+      const key = `${file.name}-${Date.now()}`;
       setUploading(true);
+      setUploadProgress(prev => ({ ...prev, [key]: 0 }));
+
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
         const formData = new FormData();
         formData.append('file', file);
 
-        const res = await fetch('/api/user/prescriptions/upload', {
-          method: 'POST',
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          body: formData,
+        const result = await new Promise<{ url: string; publicId: string }>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', '/api/user/prescriptions/upload');
+          if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+          xhr.upload.onprogress = (ev) => {
+            if (ev.lengthComputable) {
+              const pct = Math.round((ev.loaded / ev.total) * 100);
+              setUploadProgress(prev => ({ ...prev, [key]: pct }));
+            }
+          };
+
+          xhr.onload = () => {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              if (data.success && data.url) resolve({ url: data.url, publicId: data.publicId || '' });
+              else reject(new Error(data.message || 'Upload failed'));
+            } catch {
+              reject(new Error('Upload failed'));
+            }
+          };
+          xhr.onerror = () => reject(new Error('Network error during upload'));
+          xhr.send(formData);
         });
-        const data = await res.json();
-        if (data.success && data.url) {
-          setUploadedFiles((prev) => [
-            ...prev,
-            { url: data.url, publicId: data.publicId || '', name: file.name },
-          ]);
-        } else {
-          toastError(data.message || 'Upload failed');
-        }
-      } catch {
-        toastError('Upload failed. Please try again.');
+
+        setUploadedFiles(prev => [...prev, { url: result.url, publicId: result.publicId, name: file.name }]);
+      } catch (err: any) {
+        toastError(err.message || 'Upload failed. Please try again.');
       } finally {
+        setUploadProgress(prev => {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
         setUploading(false);
       }
     }
-
-    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   function removeFile(idx: number) {
@@ -366,6 +424,10 @@ export default function BookingPage({
 
   // Submit
   const onSubmit: SubmitHandler<FormValues> = async (formData) => {
+    if (!user) {
+      openAuth();
+      return;
+    }
     if (!selectedDate) {
       toastError('Please select a date');
       return;
@@ -531,38 +593,74 @@ export default function BookingPage({
         </div>
 
         {/* ── SECTION 3: Select Time Slot ─────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
-            Select Time Slot
-          </p>
-          {Object.entries(slotGroups).map(([period, slots]) => (
-            <div key={period} className="mb-4 last:mb-0">
-              <p className="text-xs font-bold text-gray-600 mb-2">{period}</p>
-              <div className="flex flex-wrap gap-2">
-                {slots.map((slot, idx) => {
-                  const disabled = isSlotDisabled(slots, idx);
-                  const selected = selectedTime === slot;
-                  return (
-                    <button
-                      key={slot}
-                      disabled={disabled}
-                      onClick={() => !disabled && setSelectedTime(slot)}
-                      className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border min-h-[44px] ${
-                        disabled
-                          ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed line-through'
-                          : selected
-                          ? 'bg-blue-600 border-blue-600 text-white shadow-md'
-                          : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700'
-                      }`}
-                    >
-                      {slot}
-                      {disabled && <span className="block text-[9px] font-normal normal-case no-underline">Booked</span>}
-                    </button>
-                  );
-                })}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 pt-5 pb-2">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              Select Time Slot
+            </p>
+          </div>
+
+          {Object.entries(slotGroups).map(([period, slots], idx, arr) => {
+            const availableCount = slots.filter(s => !isSlotPast(s, selectedDate)).length;
+            const isOpen = !!openPeriods[period];
+            const isLast = idx === arr.length - 1;
+
+            return (
+              <div key={period} className={!isLast ? 'border-b border-gray-100' : ''}>
+                {/* Accordion header */}
+                <button
+                  type="button"
+                  onClick={() => setOpenPeriods(prev => ({ ...prev, [period]: !prev[period] }))}
+                  className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-sm font-bold text-gray-800">{period}</span>
+                    {availableCount === 0 ? (
+                      <span className="text-[10px] font-semibold text-red-400 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
+                        No slots
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                        {availableCount} available
+                      </span>
+                    )}
+                  </div>
+                  {isOpen
+                    ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" />
+                    : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+                  }
+                </button>
+
+                {/* Slot grid */}
+                {isOpen && (
+                  <div className="px-5 pb-4 flex flex-wrap gap-2">
+                    {slots.map((slot) => {
+                      const past     = isSlotPast(slot, selectedDate);
+                      const selected = selectedTime === slot;
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          disabled={past}
+                          onClick={() => setSelectedTime(slot)}
+                          className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border min-h-[44px] ${
+                            past
+                              ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                              : selected
+                              ? 'bg-blue-600 border-blue-600 text-white shadow-md scale-105'
+                              : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700'
+                          }`}
+                        >
+                          {formatSlotLabel(slot)}
+                          {past && <span className="block text-[9px] font-normal mt-0.5 text-gray-300">Passed</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* ── SECTION 4: Patient Details Form ─────────────────────────── */}
@@ -705,9 +803,13 @@ export default function BookingPage({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full border-2 border-dashed border-gray-200 rounded-xl p-5 flex flex-col items-center gap-2 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 text-gray-400 hover:text-blue-600"
+                disabled={uploading}
+                className="w-full border-2 border-dashed border-gray-200 rounded-xl p-5 flex flex-col items-center gap-2 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 text-gray-400 hover:text-blue-600 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Upload className="w-6 h-6" />
+                {uploading
+                  ? <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                  : <Upload className="w-6 h-6" />
+                }
                 <span className="text-xs font-semibold">
                   {uploading ? 'Uploading...' : 'Tap to upload images or PDF'}
                 </span>
@@ -722,6 +824,26 @@ export default function BookingPage({
                 onChange={handleFileChange}
               />
 
+              {/* In-progress uploads */}
+              {Object.entries(uploadProgress).map(([key, pct]) => {
+                const name = key.split('-').slice(0, -1).join('-');
+                return (
+                  <div key={key} className="mt-2 border border-blue-100 bg-blue-50 rounded-xl px-3 py-2.5">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs text-blue-700 font-medium truncate flex-1 mr-2">{name}</span>
+                      <span className="text-xs font-bold text-blue-600 shrink-0">{pct}%</span>
+                    </div>
+                    <div className="h-1.5 bg-blue-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full transition-all duration-200"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Uploaded files */}
               {uploadedFiles.length > 0 && (
                 <div className="mt-2 space-y-2">
                   {uploadedFiles.map((f, i) => (

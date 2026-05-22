@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { ShoppingCart, Menu, X, User, LogOut, ChevronDown, Settings, Package } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, LogOut, ChevronDown, Settings, Stethoscope } from 'lucide-react';
 import { useSiteSettings } from '@/providers/SiteSettingsProvider';
 import { useCart } from '@/providers/CartProvider';
 import { useAuthModal } from '@/providers/AuthModalProvider';
@@ -78,11 +78,11 @@ const DesktopNav = ({ user, onLogin, onLogout }: DesktopNavProps) => {
                   <Settings className="w-4 h-4" /> Account
                 </Link>
                 <Link
-                  href="/orders"
+                  href="/account/appointments"
                   onClick={() => setIsDropdownOpen(false)}
                   className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                 >
-                  <Package className="w-4 h-4" /> My Orders
+                  <Stethoscope className="w-4 h-4" /> My Appointments
                 </Link>
                 <div className="border-t border-gray-100 my-1" />
                 <button
@@ -177,8 +177,8 @@ const MobileDrawer = ({ open, user, mounted, onLogin, onLogout, onClose }: Mobil
                   <Link href="/account" onClick={onClose} className="block px-4 py-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium text-sm">
                     My Account
                   </Link>
-                  <Link href="/orders" onClick={onClose} className="block px-4 py-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium text-sm">
-                    My Orders
+                  <Link href="/account/appointments" onClick={onClose} className="block px-4 py-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium text-sm">
+                    My Appointments
                   </Link>
                   <button
                     onClick={() => { onLogout(); onClose(); }}

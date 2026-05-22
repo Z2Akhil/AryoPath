@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { useCartValidation } from '@/hooks/useCartValidation';
 import ConfirmationDialog from '../ui/ConfirmationDialog';
-import AuthModal from '../ui/AuthModal';
 import { useUser } from '@/providers/UserProvider';
 import { useCart } from '@/providers/CartProvider';
+import { useAuthModal } from '@/providers/AuthModalProvider';
 import Link from 'next/link';
 
 interface AddToCartWithValidationProps {
@@ -33,8 +33,8 @@ const AddToCartWithValidation: React.FC<AddToCartWithValidationProps> = ({
     onError = () => { }
 }) => {
     const [isLoading, setIsLoading] = useState(false);
-    const [authOpen, setAuthOpen] = useState(false);
     const { user } = useUser();
+    const { openAuth } = useAuthModal();
     const { cart, refreshCart } = useCart();
     const {
         validationDialog,
@@ -62,7 +62,7 @@ const AddToCartWithValidation: React.FC<AddToCartWithValidationProps> = ({
 
     const handleAddToCart = async () => {
         if (!user) {
-            setAuthOpen(true);
+            openAuth();
             return;
         }
 
@@ -134,7 +134,6 @@ const AddToCartWithValidation: React.FC<AddToCartWithValidationProps> = ({
                 cancelText={validationDialog.cancelText}
                 isLoading={isLoading}
             />
-            {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
         </>
     );
 };

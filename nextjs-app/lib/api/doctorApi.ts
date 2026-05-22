@@ -21,4 +21,9 @@ export const doctorApi = {
         const { data } = await doctorAxios.patch(`/doctor/appointments/${id}`, { status });
         return data as { success: boolean; appointment: DoctorPortalAppointment };
     },
+
+    savePrescription: async (id: string, prescription: { medicines: any[]; notes: string }) => {
+        const { data } = await doctorAxios.patch(`/doctor/appointments/${id}`, { prescription });
+        return data as { success: boolean; appointment: DoctorPortalAppointment };
+    },
 };

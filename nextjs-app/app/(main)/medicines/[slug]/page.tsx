@@ -1,17 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
-  Plus, Minus, ChevronLeft, FileText, CheckCircle,
+  Plus, Minus, ChevronLeft, ChevronRight, FileText, CheckCircle,
   AlertTriangle, ChevronDown, ChevronUp, Loader2, Info, ShoppingCart,
 } from 'lucide-react';
 import medicineApi from '@/lib/api/medicineApi';
 import { Medicine } from '@/types/medicine';
 import { useCart } from '@/providers/CartProvider';
 import { useToast } from '@/providers/ToastProvider';
+import { useUser } from '@/providers/UserProvider';
+import { useAuthModal } from '@/providers/AuthModalProvider';
 import MedicineCard from '@/components/medicines/MedicineCard';
 
 // ── Accordion section ──────────────────────────────────────────────────────────
@@ -36,14 +38,20 @@ export default function MedicineDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { medicineCart, addMedicineToCart, removeMedicineFromCart, updateMedicineQty } = useCart();
   const toast = useToast();
+  const { user } = useUser();
+  const { openAuth } = useAuthModal();
 
   const [medicine, setMedicine] = useState<Medicine | null>(null);
   const [related, setRelated] = useState<Medicine[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeImg, setActiveImg] = useState(0);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
+      setActiveImg(0);
       try {
         const res = await medicineApi.getBySlug(slug);
         if (res.success) { setMedicine(res.data); setRelated(res.related ?? []); }
@@ -52,11 +60,25 @@ export default function MedicineDetailPage() {
     })();
   }, [slug]);
 
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent, total: number) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    if (Math.abs(dx) < Math.abs(dy) || Math.abs(dx) < 40) return;
+    if (dx < 0) setActiveImg(i => (i + 1) % total);
+    else setActiveImg(i => (i - 1 + total) % total);
+  }, []);
+
   const cartItem = medicine ? medicineCart.find(i => i.slug === medicine.slug) : null;
   const qty = cartItem?.quantity ?? 0;
 
   const handleAdd = () => {
     if (!medicine?.inStock) return;
+    if (!user) { openAuth(); return; }
     addMedicineToCart({
       slug: medicine.slug, name: medicine.name,
       mrp: medicine.mrp, offerPrice: medicine.offerPrice, type: medicine.type,
@@ -151,15 +173,20 @@ export default function MedicineDetailPage() {
           <div className="bg-white lg:rounded-2xl lg:border lg:border-gray-100 lg:shadow-sm overflow-hidden lg:mb-4">
             <div className="lg:grid lg:grid-cols-2">
 
-              {/* Image */}
-              <div className="relative bg-white">
-                <div className="aspect-square relative overflow-hidden">
-                  {images.length > 0 && images[0]?.url ? (
+              {/* Image carousel */}
+              <div className="relative bg-white select-none">
+                {/* Main image with swipe */}
+                <div
+                  className="aspect-square relative overflow-hidden"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={(e) => handleTouchEnd(e, images.length)}
+                >
+                  {images.length > 0 && images[activeImg]?.url ? (
                     <Image
-                      src={images[0].url}
+                      src={images[activeImg].url}
                       alt={medicine.name}
                       fill
-                      className="object-contain p-8 lg:p-10"
+                      className="object-contain p-8 lg:p-10 transition-opacity duration-200"
                       sizes="(max-width: 1024px) 100vw, 50vw"
                       priority
                     />
@@ -179,12 +206,48 @@ export default function MedicineDetailPage() {
                       <FileText className="h-2.5 w-2.5" /> Rx
                     </span>
                   )}
+
+                  {/* Desktop prev/next arrows */}
+                  {images.length > 1 && (
+                    <>
+                      <button
+                        onClick={() => setActiveImg(i => (i - 1 + images.length) % images.length)}
+                        className="hidden lg:flex absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow border border-gray-200 items-center justify-center hover:bg-white transition-colors z-10"
+                      >
+                        <ChevronLeft className="h-4 w-4 text-gray-700" />
+                      </button>
+                      <button
+                        onClick={() => setActiveImg(i => (i + 1) % images.length)}
+                        className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow border border-gray-200 items-center justify-center hover:bg-white transition-colors z-10"
+                      >
+                        <ChevronRight className="h-4 w-4 text-gray-700" />
+                      </button>
+                    </>
+                  )}
+
+                  {/* Mobile dot indicators */}
+                  {images.length > 1 && (
+                    <div className="lg:hidden absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+                      {images.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setActiveImg(idx)}
+                          className={`h-1.5 rounded-full transition-all duration-200 ${idx === activeImg ? 'w-5 bg-teal-600' : 'w-1.5 bg-gray-300'}`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
+
                 {/* Thumbnail strip — desktop only */}
                 {images.length > 1 && (
-                  <div className="hidden lg:flex gap-2 px-6 pb-4">
+                  <div className="hidden lg:flex gap-2 px-6 pb-4 flex-wrap">
                     {images.map((img, idx) => (
-                      <button key={idx} className="w-12 h-12 rounded-lg border border-gray-200 overflow-hidden">
+                      <button
+                        key={idx}
+                        onClick={() => setActiveImg(idx)}
+                        className={`w-14 h-14 rounded-lg border-2 overflow-hidden transition-colors ${idx === activeImg ? 'border-teal-500' : 'border-gray-200 hover:border-gray-300'}`}
+                      >
                         <img src={img.url} alt="" className="w-full h-full object-contain p-1" />
                       </button>
                     ))}
