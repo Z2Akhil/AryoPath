@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     const token = req.headers.get('authorization')?.replace('Bearer', '').trim() ?? null;
     const user = await getUserFromToken(token);
 
-    if (!user || !user.isActive || !user.isVerified) {
+    if (!user || !user.isActive) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
@@ -79,19 +79,22 @@ export async function POST(req: NextRequest) {
           .map((p: any) => ({ url: p.url, publicId: p.publicId, uploadedAt: new Date() }))
       : [];
 
+    const computedGrandTotal = totalAmount + deliveryCharge;
+
     const order = await MedicineOrder.create({
       orderId: generateOrderId(),
       userId: (user as any)._id,
       items: enrichedItems,
       shippingAddress,
-      status: requiresPrescription && savedPrescriptions.length === 0 ? 'prescription_required' : 'confirmed',
+      status: 'pending_payment',
       requiresPrescription,
       prescriptions: savedPrescriptions as any,
       subtotal,
       totalDiscount,
       totalAmount,
       deliveryCharge,
-      grandTotal: totalAmount + deliveryCharge,
+      grandTotal: computedGrandTotal,
+      payment: { amount: computedGrandTotal, currency: 'INR', status: 'pending' },
       estimatedDelivery: estimatedDelivery as any,
     });
 
@@ -111,7 +114,7 @@ export async function GET(req: NextRequest) {
     const token = req.headers.get('authorization')?.replace('Bearer', '').trim() ?? null;
     const user = await getUserFromToken(token);
 
-    if (!user || !user.isActive || !user.isVerified) {
+    if (!user || !user.isActive) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 

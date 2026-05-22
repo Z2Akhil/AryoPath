@@ -1,16 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { ShoppingBag, Loader2, MapPin, Phone, User, AlertTriangle, FileText, Truck, Tag } from 'lucide-react';
+import { CreditCard, Loader2, MapPin, Phone, User, AlertTriangle, FileText, Truck, Tag, Lock } from 'lucide-react';
 import { useCart } from '@/providers/CartProvider';
 import { useSiteSettings } from '@/providers/SiteSettingsProvider';
 import { useToast } from '@/providers/ToastProvider';
 import { checkoutAddressSchema, CheckoutAddressValues, UploadedPrescription as PrescriptionType } from '@/types/medicineOrder';
 import PrescriptionUpload from './PrescriptionUpload';
 import medicineOrderApi from '@/lib/api/medicineOrderApi';
+
+function loadRazorpay(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).Razorpay) return resolve();
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load payment gateway'));
+    document.body.appendChild(script);
+  });
+}
 
 const field = 'w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-white transition-all';
 
@@ -51,6 +62,7 @@ export default function MedicineCheckoutForm() {
 
     setProcessing(true);
     try {
+      // Step 1: Create medicine order (pending_payment)
       const orderPayload = {
         items: medicineItems.map(i => ({
           slug: i.slug,
@@ -65,13 +77,81 @@ export default function MedicineCheckoutForm() {
       };
 
       const orderRes = await medicineOrderApi.createOrder(orderPayload);
-      if (!orderRes.success) throw new Error('Failed to place order. Please try again.');
+      if (!orderRes.success) throw new Error('Failed to create order. Please try again.');
 
-      clearMedicineCart();
-      toast.success('Order placed successfully!');
-      router.push(`/medicines/order-success?orderId=${orderRes.data.orderId}`);
+      const medicineOrderId = orderRes.data._id;
+      const internalOrderId = orderRes.data.orderId;
+
+      // Step 2: Create Razorpay order
+      const rzpRes = await medicineOrderApi.createRazorpayOrder(grandTotal, `rcpt_${internalOrderId}`);
+      if (!rzpRes.success) throw new Error('Payment initialization failed. Please try again.');
+
+      const { orderId: rzpOrderId, amount: rzpAmount, currency, keyId } = rzpRes.data;
+
+      // Step 3: Load Razorpay script
+      await loadRazorpay();
+
+      // Step 4: Open Razorpay modal
+      await new Promise<void>((resolve, reject) => {
+        const options = {
+          key: keyId,
+          amount: rzpAmount,
+          currency,
+          name: 'AyroPath',
+          description: 'Medicine Order',
+          order_id: rzpOrderId,
+          handler: async (response: any) => {
+            try {
+              // Step 5: Verify payment
+              const verifyRes = await medicineOrderApi.verifyPayment({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                medicineOrderId,
+              });
+              if (!verifyRes.success) throw new Error('Payment verification failed');
+              clearMedicineCart();
+              toast.success('Order placed successfully!');
+              router.push(`/medicines/order-success?orderId=${internalOrderId}`);
+              resolve();
+            } catch (err: any) {
+              reject(err);
+            }
+          },
+          modal: {
+            ondismiss: () => {
+              setProcessing(false);
+              toast.error('Payment cancelled. Your order has not been placed.');
+              reject(new Error('cancelled'));
+            },
+          },
+          prefill: {
+            name: addressData.fullName,
+            contact: addressData.mobile,
+          },
+          method: {
+            upi: true,
+            card: true,
+            netbanking: true,
+            wallet: false,
+            paylater: false,
+            emi: false,
+          },
+          theme: { color: '#0f766e' },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', () => {
+          setProcessing(false);
+          toast.error('Payment failed. Please try again.');
+          reject(new Error('failed'));
+        });
+        rzp.open();
+      });
     } catch (error: any) {
-      toast.error(error.message || 'Something went wrong. Please try again.');
+      if (error.message !== 'cancelled' && error.message !== 'failed') {
+        toast.error(error.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setProcessing(false);
     }
@@ -226,18 +306,20 @@ export default function MedicineCheckoutForm() {
         </p>
       </div>
 
-      {/* Place Order button */}
+      {/* Pay Now button */}
       <button
         type="submit"
         disabled={processing || medicineItems.length === 0}
         className="w-full flex items-center justify-center gap-3 py-4 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-2xl text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-200"
       >
         {processing
-          ? <><Loader2 className="h-5 w-5 animate-spin" /> Placing Order...</>
-          : <><ShoppingBag className="h-5 w-5" /> Place Order · ₹{grandTotal.toFixed(0)}</>
+          ? <><Loader2 className="h-5 w-5 animate-spin" /> Processing...</>
+          : <><CreditCard className="h-5 w-5" /> Pay ₹{grandTotal.toFixed(0)} · Secure Checkout</>
         }
       </button>
-      <p className="text-center text-xs text-gray-400">Payment will be collected at delivery · 100% secure</p>
+      <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1">
+        <Lock className="h-3 w-3" /> Secured by Razorpay · UPI, Cards, NetBanking accepted
+      </p>
     </form>
   );
 }

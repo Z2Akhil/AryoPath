@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import connectToDatabase from '@/lib/db/mongoose';
 import Doctor from '@/lib/models/Doctor';
 import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
@@ -79,6 +80,9 @@ export async function POST(req: NextRequest) {
       appointmentTime,
       couponCode,
       reportUrls,
+      razorpayOrderId,
+      razorpayPaymentId,
+      razorpaySignature,
     } = body;
 
     if (
@@ -115,6 +119,25 @@ export async function POST(req: NextRequest) {
     }
 
     const finalAmount = Math.max(0, consultationFee - couponDiscount);
+
+    // Verify Razorpay payment when amount > 0
+    if (finalAmount > 0) {
+      if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+        return NextResponse.json({ success: false, error: 'Payment required to book appointment' }, { status: 400 });
+      }
+      const keySecret = process.env.RAZORPAY_KEY_SECRET;
+      if (!keySecret) {
+        return NextResponse.json({ success: false, error: 'Payment gateway not configured' }, { status: 500 });
+      }
+      const expectedSig = crypto
+        .createHmac('sha256', keySecret)
+        .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+        .digest('hex');
+      if (expectedSig !== razorpaySignature) {
+        return NextResponse.json({ success: false, error: 'Payment verification failed' }, { status: 400 });
+      }
+    }
+
     const appointmentDateTime = parseAppointmentDateTime(appointmentDate, appointmentTime);
     const doctorMobile = (doctor as any).mobile || '';
 
@@ -141,6 +164,9 @@ export async function POST(req: NextRequest) {
       finalAmount,
       status: 'pending',
       reportUrls: reportUrls || [],
+      payment: finalAmount > 0
+        ? { razorpayOrderId, razorpayPaymentId, razorpaySignature, status: 'paid', amount: finalAmount, paidAt: new Date() }
+        : { status: 'not_required', amount: 0 },
       reminderSent: false,
       ...(userId ? { userId } : {}),
     });

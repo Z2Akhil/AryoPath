@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const token = req.headers.get('authorization')?.replace('Bearer', '').trim() ?? null;
     const user = await getUserFromToken(token);
 
-    if (!user || !user.isActive || !user.isVerified) {
+    if (!user || !user.isActive) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
@@ -58,24 +58,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'Payment verification failed' }, { status: 400 });
     }
 
+    // Fetch order to determine next status
+    const existingOrder = await MedicineOrder.findOne({ _id: medicineOrderId, userId: (user as any)._id }).lean();
+    if (!existingOrder) {
+      return NextResponse.json({ success: false, message: 'Order not found' }, { status: 404 });
+    }
+
     // Update order with payment details
-    const order = await MedicineOrder.findOneAndUpdate(
-      { _id: medicineOrderId, userId: (user as any)._id },
+    const order = await MedicineOrder.findByIdAndUpdate(
+      medicineOrderId,
       {
+        'payment.razorpayOrderId': razorpay_order_id,
         'payment.razorpayPaymentId': razorpay_payment_id,
         'payment.razorpaySignature': razorpay_signature,
         'payment.status': 'paid',
         'payment.paidAt': new Date(),
-        status: (await MedicineOrder.findById(medicineOrderId).lean())?.requiresPrescription
-          ? 'prescription_required'
-          : 'confirmed',
+        status: existingOrder.requiresPrescription ? 'prescription_required' : 'confirmed',
       },
       { new: true }
     ).lean();
-
-    if (!order) {
-      return NextResponse.json({ success: false, message: 'Order not found' }, { status: 404 });
-    }
 
     return NextResponse.json({
       success: true,

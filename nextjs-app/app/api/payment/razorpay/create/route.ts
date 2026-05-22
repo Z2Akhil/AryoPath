@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const token = req.headers.get('authorization')?.replace('Bearer', '').trim() ?? null;
     const user = await getUserFromToken(token);
 
-    if (!user || !user.isActive || !user.isVerified) {
+    if (!user || !user.isActive) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 

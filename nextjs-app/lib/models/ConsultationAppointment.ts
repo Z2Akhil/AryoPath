@@ -14,6 +14,15 @@ export interface Prescription {
   issuedAt: Date;
 }
 
+export interface ConsultPayment {
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+  status: 'pending' | 'paid' | 'failed' | 'not_required';
+  amount: number;
+  paidAt?: Date;
+}
+
 export interface ConsultationAppointmentDocument extends Document {
   doctorId: mongoose.Types.ObjectId;
   doctorSlug: string;
@@ -38,6 +47,7 @@ export interface ConsultationAppointmentDocument extends Document {
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   reportUrls: { url: string; publicId: string }[];
   prescription?: Prescription;
+  payment?: ConsultPayment;
   reminderSent: boolean;
   userId?: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -65,6 +75,22 @@ const PrescriptionSchema = new Schema(
     medicines: { type: [PrescriptionMedicineSchema], default: [] },
     notes:     { type: String, default: '' },
     issuedAt:  { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
+const ConsultPaymentSchema = new Schema(
+  {
+    razorpayOrderId:   { type: String, default: '' },
+    razorpayPaymentId: { type: String, default: '' },
+    razorpaySignature: { type: String, default: '' },
+    status: {
+      type: String,
+      enum: ['pending', 'paid', 'failed', 'not_required'],
+      default: 'pending',
+    },
+    amount: { type: Number, default: 0 },
+    paidAt: { type: Date },
   },
   { _id: false }
 );
@@ -104,6 +130,7 @@ const ConsultationAppointmentSchema = new Schema<ConsultationAppointmentDocument
 
     reportUrls:   { type: [ReportUrlSchema], default: [] },
     prescription:  { type: PrescriptionSchema, default: undefined },
+    payment:       { type: ConsultPaymentSchema, default: undefined },
     reminderSent: { type: Boolean, default: false },
 
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: false },

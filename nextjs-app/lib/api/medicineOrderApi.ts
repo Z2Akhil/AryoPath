@@ -29,6 +29,7 @@ const medicineOrderApi = {
     items: OrderItem[];
     shippingAddress: ShippingAddress;
     grandTotal: number;
+    prescriptions?: { url: string; publicId: string }[];
   }) => {
     const res = await axiosInstance.post('/orders/medicine', payload);
     return res.data as { success: boolean; data: { _id: string; orderId: string } };
