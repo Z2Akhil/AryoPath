@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
     Home, BarChart3, ShoppingCart, Package, Users, Bell,
     Settings, UserCircle, ChevronLeft, ChevronRight,
-    ChevronDown, ChevronUp, Stethoscope, Layers, UserCog,
+    ChevronDown, ChevronUp, Stethoscope, Layers, UserCog, Star,
 } from 'lucide-react';
 import { useAdminAuth } from '@/providers/AdminAuthProvider';
 import { PERMISSIONS } from '@/lib/constants/permissions';
@@ -101,6 +101,14 @@ const AdminSidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, productOpen
                         <Link href="/admin/analytics" className={navLinkClass('/admin/analytics')} title="Analytics">
                             <BarChart3 className="h-5 w-5" />
                             {!collapsed && <span className="ml-3">Analytics</span>}
+                        </Link>
+                    )}
+
+                    {/* Homepage Featured */}
+                    {(isAdmin || hasPermission(PERMISSIONS.HOMEPAGE_EDIT)) && (
+                        <Link href="/admin/homepage" className={navLinkClass('/admin/homepage')} title="Homepage Featured">
+                            <Star className="h-5 w-5" />
+                            {!collapsed && <span className="ml-3">Homepage</span>}
                         </Link>
                     )}
 

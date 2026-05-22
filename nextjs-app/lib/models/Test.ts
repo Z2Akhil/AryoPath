@@ -54,6 +54,8 @@ export interface ITest extends Document {
     isCustomized: boolean;
   };
   isActive: boolean;
+  isFeatured: boolean;
+  featuredOrder: number;
   lastSynced: Date;
   getCombinedData(): any;
 }
@@ -118,12 +120,15 @@ const TestSchema = new Schema<ITest, ITestModel>(
       isCustomized: { type: Boolean, default: false }
     },
     isActive: { type: Boolean, default: true },
+    isFeatured: { type: Boolean, default: false, index: true },
+    featuredOrder: { type: Number, default: 0 },
     lastSynced: { type: Date, default: Date.now }
   },
   { timestamps: true }
 );
 
 TestSchema.index({ type: 1, isActive: 1 });
+TestSchema.index({ isFeatured: 1, featuredOrder: 1 });
 TestSchema.index({ 'thyrocareData.category': 1 });
 
 // Pre-save hook to auto-calculate selling price

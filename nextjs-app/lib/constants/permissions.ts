@@ -8,6 +8,7 @@ export const PERMISSIONS = {
   USERS_VIEW:         'users.view',
   DOCTORS_VIEW:       'doctors.view',
   NOTIFICATIONS_VIEW: 'notifications.view',
+  HOMEPAGE_EDIT:      'homepage.edit',
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
@@ -22,6 +23,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'users.view':         'View Users',
   'doctors.view':       'View Doctors',
   'notifications.view': 'View Notifications',
+  'homepage.edit':      'Manage Homepage',
 };
 
 export const PERMISSION_GROUPS = [
@@ -31,6 +33,7 @@ export const PERMISSION_GROUPS = [
   { label: 'Users',         permissions: [PERMISSIONS.USERS_VIEW] },
   { label: 'Doctors',       permissions: [PERMISSIONS.DOCTORS_VIEW] },
   { label: 'Notifications', permissions: [PERMISSIONS.NOTIFICATIONS_VIEW] },
+  { label: 'Homepage',      permissions: [PERMISSIONS.HOMEPAGE_EDIT] },
 ] as const;
 
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);

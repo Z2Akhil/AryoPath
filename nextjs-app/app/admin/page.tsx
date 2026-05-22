@@ -218,11 +218,29 @@ function AdminDashboardContent() {
 }
 
 export default function AdminHome() {
-    const { isStaff, permissions, user } = useAdminAuth();
+    const { isStaff, isAdmin, isLoading, isAuthenticated, permissions, user } = useAdminAuth();
+
+    // Wait for auth to resolve — route guard in AdminAuthProvider handles redirect if not authenticated
+    if (isLoading || !isAuthenticated) {
+        return (
+            <div className="animate-pulse space-y-6">
+                <div className="h-8 bg-gray-200 rounded w-48" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3, 4, 5, 6].map(i => (
+                        <div key={i} className="bg-white rounded-xl p-6 shadow-sm h-48" />
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     if (isStaff) {
         return <StaffDashboard permissions={permissions} user={user as StaffProfile} />;
     }
 
-    return <AdminDashboardContent />;
+    if (isAdmin) {
+        return <AdminDashboardContent />;
+    }
+
+    return null;
 }

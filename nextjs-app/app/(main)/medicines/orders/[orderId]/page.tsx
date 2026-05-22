@@ -2,15 +2,15 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   CheckCircle2, Package, MapPin, ArrowLeft, ExternalLink,
-  RefreshCw, Truck, Loader2, Clock, AlertCircle, FileText, Upload,
+  Truck, Loader2, AlertCircle, FileText, Upload,
 } from 'lucide-react';
 import medicineOrderApi from '@/lib/api/medicineOrderApi';
-import { CourierEvent, MedicineOrder, UploadedPrescription } from '@/types/medicineOrder';
+import { MedicineOrder, UploadedPrescription } from '@/types/medicineOrder';
 import PrescriptionUpload from '@/components/medicines/PrescriptionUpload';
 
 const MILESTONE_STEPS: { status: MedicineOrder['status']; label: string; icon: React.ReactNode }[] = [
@@ -39,9 +39,7 @@ export default function MedicineOrderTrackingPage() {
   const router = useRouter();
 
   const [order, setOrder]     = useState<MedicineOrder | null>(null);
-  const [events, setEvents]   = useState<CourierEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError]     = useState('');
 
   // Prescription upload state (shown when status is prescription_required)
@@ -55,7 +53,6 @@ export default function MedicineOrderTrackingPage() {
         const res = await medicineOrderApi.getByOrderId(orderId);
         if (res.success) {
           setOrder(res.data);
-          setEvents(res.data.courierStatusHistory ?? []);
         } else {
           setError('Order not found.');
         }
@@ -86,18 +83,6 @@ export default function MedicineOrderTrackingPage() {
     finally { setSubmittingRx(false); }
   };
 
-  const refreshTracking = useCallback(async () => {
-    if (!order?.awb) return;
-    setRefreshing(true);
-    try {
-      const res = await medicineOrderApi.getTracking(orderId);
-      if (res.success) {
-        setEvents(res.data.courierStatusHistory);
-        setOrder(prev => prev ? { ...prev, courierStatus: res.data.courierStatus } : prev);
-      }
-    } catch { /* silent */ }
-    finally { setRefreshing(false); }
-  }, [order?.awb, orderId]);
 
   if (loading) {
     return (
@@ -259,68 +244,6 @@ export default function MedicineOrderTrackingPage() {
             )}
           </div>
         )}
-
-        {/* Delhivery scan timeline */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5">
-          <div className="flex items-center justify-between mb-4 gap-3">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-gray-500" />
-              <h2 className="text-sm font-extrabold text-gray-900">Shipment Timeline</h2>
-            </div>
-            {order.awb && (
-              <button
-                onClick={refreshTracking}
-                disabled={refreshing}
-                className="flex items-center gap-1.5 text-xs font-bold text-teal-600 hover:text-teal-800 disabled:opacity-50 transition-colors"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-            )}
-          </div>
-
-          {events.length > 0 ? (
-            <div className="relative">
-              <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gray-100" />
-              <div className="space-y-4">
-                {events.map((event, idx) => (
-                  <div key={idx} className="flex gap-4 relative">
-                    <div className={`w-6 h-6 rounded-full border-2 flex-shrink-0 z-10 flex items-center justify-center ${
-                      idx === 0 ? 'bg-teal-500 border-teal-500' : 'bg-white border-gray-200'
-                    }`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${idx === 0 ? 'bg-white' : 'bg-gray-300'}`} />
-                    </div>
-                    <div className="pb-1">
-                      <p className={`text-sm font-bold ${idx === 0 ? 'text-teal-700' : 'text-gray-800'}`}>{event.status}</p>
-                      {event.activity && <p className="text-xs text-gray-500 mt-0.5">{event.activity}</p>}
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        {event.location && (
-                          <span className="text-xs text-gray-400 flex items-center gap-0.5">
-                            <MapPin className="h-3 w-3" />{event.location}
-                          </span>
-                        )}
-                        <span className="text-xs text-gray-400">
-                          {new Date(event.timestamp).toLocaleString('en-IN', {
-                            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Truck className="h-8 w-8 text-gray-200 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-gray-400">
-                {order.awb
-                  ? 'No scan events yet — check back soon'
-                  : 'Tracking will appear once your order ships'}
-              </p>
-            </div>
-          )}
-        </div>
 
         {/* Items */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5">

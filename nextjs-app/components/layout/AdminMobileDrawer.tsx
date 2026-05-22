@@ -38,6 +38,7 @@ const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
     const showDoctors       = isAdmin || hasPermission(PERMISSIONS.DOCTORS_VIEW);
     const showUsers         = isAdmin || hasPermission(PERMISSIONS.USERS_VIEW);
     const showNotifications = isAdmin || hasPermission(PERMISSIONS.NOTIFICATIONS_VIEW);
+    const showHomepage      = isAdmin || hasPermission(PERMISSIONS.HOMEPAGE_EDIT);
 
     return (
         <>
@@ -75,6 +76,12 @@ const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
                             {showAnalytics && (
                                 <Link href="/admin/analytics" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
                                     Analytics
+                                </Link>
+                            )}
+
+                            {showHomepage && (
+                                <Link href="/admin/homepage" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
+                                    Homepage
                                 </Link>
                             )}
 

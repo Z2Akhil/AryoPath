@@ -39,13 +39,23 @@ export default async function OffersPage({ limit, showHeader, mobileScroll }: Of
 
     const fetchLimit = limit || 12;
 
-    const [offerDocs, totalCount] = await Promise.all([
-        Offer.find({ isActive: true })
-            .select('name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category thyrocareData.childs imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster')
-            .limit(fetchLimit)
-            .lean(),
-        Offer.countDocuments({ isActive: true }),
-    ]);
+    const isHomeWidget = !!limit;
+    const SELECT = 'name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category thyrocareData.childs imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster isFeatured featuredOrder';
+
+    let offerDocs: any[];
+    const totalCount = await Offer.countDocuments({ isActive: true });
+
+    if (isHomeWidget) {
+        offerDocs = await Offer.find({ isActive: true, isFeatured: true })
+            .select(SELECT).sort({ featuredOrder: 1 }).limit(fetchLimit).lean();
+        if (offerDocs.length === 0) {
+            offerDocs = await Offer.find({ isActive: true })
+                .select(SELECT).sort({ name: 1 }).limit(fetchLimit).lean();
+        }
+    } else {
+        offerDocs = await Offer.find({ isActive: true })
+            .select(SELECT).sort({ name: 1 }).limit(fetchLimit).lean();
+    }
 
     const initialData = offerDocs.map((o: any) => ({
         code: o.code,

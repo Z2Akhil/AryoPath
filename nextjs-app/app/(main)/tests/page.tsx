@@ -46,13 +46,23 @@ export default async function TestsPage({ limit, showHeader, mobileScroll }: Tes
 
     const fetchLimit = limit || 12;
 
-    const [testDocs, totalCount] = await Promise.all([
-        Test.find({ isActive: true })
-            .select('name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster')
-            .limit(fetchLimit)
-            .lean(),
-        Test.countDocuments({ isActive: true }),
-    ]);
+    const isHomeWidget = !!limit;
+    const SELECT = 'name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster isFeatured featuredOrder';
+
+    let testDocs: any[];
+    const totalCount = await Test.countDocuments({ isActive: true });
+
+    if (isHomeWidget) {
+        testDocs = await Test.find({ isActive: true, isFeatured: true })
+            .select(SELECT).sort({ featuredOrder: 1 }).limit(fetchLimit).lean();
+        if (testDocs.length === 0) {
+            testDocs = await Test.find({ isActive: true })
+                .select(SELECT).sort({ name: 1 }).limit(fetchLimit).lean();
+        }
+    } else {
+        testDocs = await Test.find({ isActive: true })
+            .select(SELECT).sort({ name: 1 }).limit(fetchLimit).lean();
+    }
 
     const initialData = testDocs.map((t: any) => ({
         code: t.code,

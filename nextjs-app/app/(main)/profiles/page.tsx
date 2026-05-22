@@ -49,14 +49,23 @@ export default async function ProfilesPage({ limit, showHeader, mobileScroll }: 
 
     const fetchLimit = limit || 12;
 
-    const [profileDocs, totalCount] = await Promise.all([
-        Profile.find({ isActive: true })
-            .select('name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster')
-            .sort({ 'thyrocareData.bookedCount': -1 })
-            .limit(fetchLimit)
-            .lean(),
-        Profile.countDocuments({ isActive: true }),
-    ]);
+    const isHomeWidget = !!limit;
+    const SELECT = 'name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster isFeatured featuredOrder';
+
+    let profileDocs: any[];
+    const totalCount = await Profile.countDocuments({ isActive: true });
+
+    if (isHomeWidget) {
+        profileDocs = await Profile.find({ isActive: true, isFeatured: true })
+            .select(SELECT).sort({ featuredOrder: 1 }).limit(fetchLimit).lean();
+        if (profileDocs.length === 0) {
+            profileDocs = await Profile.find({ isActive: true })
+                .select(SELECT).sort({ 'thyrocareData.bookedCount': -1 }).limit(fetchLimit).lean();
+        }
+    } else {
+        profileDocs = await Profile.find({ isActive: true })
+            .select(SELECT).sort({ 'thyrocareData.bookedCount': -1 }).limit(fetchLimit).lean();
+    }
 
     // Serialize to plain objects compatible with Product type
     const initialData = profileDocs.map((p: any) => ({

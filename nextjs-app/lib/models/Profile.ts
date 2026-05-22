@@ -60,6 +60,8 @@ export interface IProfile extends Document {
     isCustomized: boolean;
   };
   isActive: boolean;
+  isFeatured: boolean;
+  featuredOrder: number;
   lastSynced: Date;
   getCombinedData(): any;
 }
@@ -130,12 +132,15 @@ const ProfileSchema = new Schema<IProfile, IProfileModel>(
       isCustomized: { type: Boolean, default: false }
     },
     isActive: { type: Boolean, default: true },
+    isFeatured: { type: Boolean, default: false, index: true },
+    featuredOrder: { type: Number, default: 0 },
     lastSynced: { type: Date, default: Date.now }
   },
   { timestamps: true }
 );
 
 ProfileSchema.index({ type: 1, isActive: 1 });
+ProfileSchema.index({ isFeatured: 1, featuredOrder: 1 });
 ProfileSchema.index({ 'thyrocareData.category': 1 });
 
 // Pre-save hook to auto-calculate selling price
