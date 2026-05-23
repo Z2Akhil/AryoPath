@@ -10,18 +10,13 @@ interface OrderItem {
 }
 
 const medicineOrderApi = {
-  createRazorpayOrder: async (amount: number, receipt?: string) => {
-    const res = await axiosInstance.post('/payment/razorpay/create', { amount, currency: 'INR', receipt });
-    return res.data as { success: boolean; data: { orderId: string; amount: number; currency: string; keyId: string } };
+  createCashfreeOrder: async (amount: number, orderRef?: string, customerName?: string, customerPhone?: string) => {
+    const res = await axiosInstance.post('/payment/cashfree/create', { amount, currency: 'INR', orderRef, customerName, customerPhone });
+    return res.data as { success: boolean; data: { cfOrderId: string; paymentSessionId: string; amount: number; currency: string } };
   },
 
-  verifyPayment: async (payload: {
-    razorpay_order_id: string;
-    razorpay_payment_id: string;
-    razorpay_signature: string;
-    medicineOrderId: string;
-  }) => {
-    const res = await axiosInstance.post('/payment/razorpay/verify', payload);
+  verifyPayment: async (payload: { cfOrderId: string; medicineOrderId: string }) => {
+    const res = await axiosInstance.post('/payment/cashfree/verify', payload);
     return res.data as { success: boolean; data: { orderId: string; status: string } };
   },
 

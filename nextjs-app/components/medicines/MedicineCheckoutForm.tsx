@@ -12,14 +12,10 @@ import { checkoutAddressSchema, CheckoutAddressValues, UploadedPrescription as P
 import PrescriptionUpload from './PrescriptionUpload';
 import medicineOrderApi from '@/lib/api/medicineOrderApi';
 
-function loadRazorpay(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if ((window as any).Razorpay) return resolve();
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load payment gateway'));
-    document.body.appendChild(script);
+async function loadCashfree() {
+  const { load } = await import('@cashfreepayments/cashfree-js');
+  return load({
+    mode: (process.env.NEXT_PUBLIC_CASHFREE_MODE as 'sandbox' | 'production') || 'sandbox',
   });
 }
 
@@ -82,74 +78,42 @@ export default function MedicineCheckoutForm() {
       const medicineOrderId = orderRes.data._id;
       const internalOrderId = orderRes.data.orderId;
 
-      // Step 2: Create Razorpay order
-      const rzpRes = await medicineOrderApi.createRazorpayOrder(grandTotal, `rcpt_${internalOrderId}`);
-      if (!rzpRes.success) throw new Error('Payment initialization failed. Please try again.');
+      // Step 2: Create Cashfree order
+      const cfRes = await medicineOrderApi.createCashfreeOrder(
+        grandTotal,
+        internalOrderId,
+        addressData.fullName,
+        addressData.mobile
+      );
+      if (!cfRes.success) throw new Error('Payment initialization failed. Please try again.');
 
-      const { orderId: rzpOrderId, amount: rzpAmount, currency, keyId } = rzpRes.data;
+      const { cfOrderId, paymentSessionId } = cfRes.data;
 
-      // Step 3: Load Razorpay script
-      await loadRazorpay();
+      // Step 3: Load Cashfree SDK and open checkout
+      const cashfree = await loadCashfree();
 
-      // Step 4: Open Razorpay modal
-      await new Promise<void>((resolve, reject) => {
-        const options = {
-          key: keyId,
-          amount: rzpAmount,
-          currency,
-          name: 'AyroPath',
-          description: 'Medicine Order',
-          order_id: rzpOrderId,
-          handler: async (response: any) => {
-            try {
-              // Step 5: Verify payment
-              const verifyRes = await medicineOrderApi.verifyPayment({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                medicineOrderId,
-              });
-              if (!verifyRes.success) throw new Error('Payment verification failed');
-              clearMedicineCart();
-              toast.success('Order placed successfully!');
-              router.push(`/medicines/order-success?orderId=${internalOrderId}`);
-              resolve();
-            } catch (err: any) {
-              reject(err);
-            }
-          },
-          modal: {
-            ondismiss: () => {
-              setProcessing(false);
-              toast.error('Payment cancelled. Your order has not been placed.');
-              reject(new Error('cancelled'));
-            },
-          },
-          prefill: {
-            name: addressData.fullName,
-            contact: addressData.mobile,
-          },
-          method: {
-            upi: true,
-            card: true,
-            netbanking: true,
-            wallet: false,
-            paylater: false,
-            emi: false,
-          },
-          theme: { color: '#0f766e' },
-        };
-
-        const rzp = new (window as any).Razorpay(options);
-        rzp.on('payment.failed', () => {
-          setProcessing(false);
-          toast.error('Payment failed. Please try again.');
-          reject(new Error('failed'));
-        });
-        rzp.open();
+      const result = await cashfree.checkout({
+        paymentSessionId,
+        redirectTarget: '_modal',
       });
+
+      if ((result as any).error) {
+        const errMsg = (result as any).error?.message || 'Payment failed or was cancelled.';
+        if (errMsg !== 'cancelled') toast.error(errMsg);
+        return;
+      }
+
+      if ((result as any).paymentDetails || (result as any).redirect) {
+        // Step 4: Verify payment on server
+        const verifyRes = await medicineOrderApi.verifyPayment({ cfOrderId, medicineOrderId });
+        if (!verifyRes.success) throw new Error('Payment verification failed. Please contact support.');
+
+        clearMedicineCart();
+        toast.success('Order placed successfully!');
+        router.push(`/medicines/order-success?orderId=${internalOrderId}`);
+      }
     } catch (error: any) {
-      if (error.message !== 'cancelled' && error.message !== 'failed') {
+      if (error.message !== 'cancelled') {
         toast.error(error.message || 'Something went wrong. Please try again.');
       }
     } finally {
@@ -318,7 +282,7 @@ export default function MedicineCheckoutForm() {
         }
       </button>
       <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1">
-        <Lock className="h-3 w-3" /> Secured by Razorpay · UPI, Cards, NetBanking accepted
+        <Lock className="h-3 w-3" /> Secured by Cashfree · UPI, Cards, NetBanking accepted
       </p>
     </form>
   );

@@ -209,10 +209,10 @@ function OrderSuccessContent() {
                 {order.payment.status === 'paid' ? '✓ Paid' : order.payment.status}
               </span>
             </div>
-            {order.payment.razorpayPaymentId && (
+            {order.payment.cfPaymentId && (
               <div className="flex items-center justify-between text-sm mt-2">
                 <span className="text-gray-500">Payment ID</span>
-                <span className="font-mono text-xs text-gray-600">{order.payment.razorpayPaymentId}</span>
+                <span className="font-mono text-xs text-gray-600">{order.payment.cfPaymentId}</span>
               </div>
             )}
           </div>

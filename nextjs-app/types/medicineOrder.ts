@@ -78,11 +78,10 @@ export interface Prescription {
 // ─── Payment ───────────────────────────────────────────────────────────────────
 
 export interface MedicineOrderPayment {
-  razorpayOrderId: string;
-  razorpayPaymentId?: string;
-  razorpaySignature?: string;
-  amount: number;
-  currency: string;
+  cfOrderId:    string;
+  cfPaymentId?: string;
+  amount:    number;
+  currency:  string;
   status: 'pending' | 'paid' | 'failed' | 'refunded';
   paidAt?: string;
 }

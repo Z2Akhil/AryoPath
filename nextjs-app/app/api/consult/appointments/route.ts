@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import connectToDatabase from '@/lib/db/mongoose';
 import Doctor from '@/lib/models/Doctor';
 import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
@@ -80,9 +79,8 @@ export async function POST(req: NextRequest) {
       appointmentTime,
       couponCode,
       reportUrls,
-      razorpayOrderId,
-      razorpayPaymentId,
-      razorpaySignature,
+      cfOrderId,
+      cfPaymentId,
     } = body;
 
     if (
@@ -120,20 +118,23 @@ export async function POST(req: NextRequest) {
 
     const finalAmount = Math.max(0, consultationFee - couponDiscount);
 
-    // Verify Razorpay payment when amount > 0
+    // Verify Cashfree payment when amount > 0
     if (finalAmount > 0) {
-      if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+      if (!cfOrderId) {
         return NextResponse.json({ success: false, error: 'Payment required to book appointment' }, { status: 400 });
       }
-      const keySecret = process.env.RAZORPAY_KEY_SECRET;
-      if (!keySecret) {
-        return NextResponse.json({ success: false, error: 'Payment gateway not configured' }, { status: 500 });
-      }
-      const expectedSig = crypto
-        .createHmac('sha256', keySecret)
-        .update(`${razorpayOrderId}|${razorpayPaymentId}`)
-        .digest('hex');
-      if (expectedSig !== razorpaySignature) {
+      const cfBase = process.env.CASHFREE_ENV === 'production'
+        ? 'https://api.cashfree.com'
+        : 'https://sandbox.cashfree.com';
+      const cfVerifyRes = await fetch(`${cfBase}/pg/orders/${cfOrderId}`, {
+        headers: {
+          'x-client-id':     process.env.CASHFREE_APP_ID || '',
+          'x-client-secret': process.env.CASHFREE_SECRET_KEY || '',
+          'x-api-version':   '2023-08-01',
+        },
+      });
+      const cfOrder = await cfVerifyRes.json();
+      if (cfOrder.order_status !== 'PAID') {
         return NextResponse.json({ success: false, error: 'Payment verification failed' }, { status: 400 });
       }
     }
@@ -165,7 +166,7 @@ export async function POST(req: NextRequest) {
       status: 'pending',
       reportUrls: reportUrls || [],
       payment: finalAmount > 0
-        ? { razorpayOrderId, razorpayPaymentId, razorpaySignature, status: 'paid', amount: finalAmount, paidAt: new Date() }
+        ? { cfOrderId, cfPaymentId: cfPaymentId || '', status: 'paid', amount: finalAmount, paidAt: new Date() }
         : { status: 'not_required', amount: 0 },
       reminderSent: false,
       ...(userId ? { userId } : {}),

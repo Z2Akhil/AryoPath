@@ -58,10 +58,9 @@ const CourierEventSchema = new Schema(
 
 const PaymentSchema = new Schema(
   {
-    razorpayOrderId: { type: String, default: '' },
-    razorpayPaymentId: { type: String, default: '' },
-    razorpaySignature: { type: String, default: '' },
-    amount: { type: Number, default: 0 },
+    cfOrderId:   { type: String, default: '' },
+    cfPaymentId: { type: String, default: '' },
+    amount:   { type: Number, default: 0 },
     currency: { type: String, default: 'INR' },
     status: {
       type: String,

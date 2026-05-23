@@ -295,10 +295,10 @@ function OrderModal({
               <span className="text-sm text-gray-500">Amount</span>
               <span className="text-sm font-bold text-gray-900">₹{(payment?.amount || order.grandTotal).toFixed(0)}</span>
             </div>
-            {payment?.razorpayPaymentId && (
+            {(payment as any)?.cfPaymentId && (
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm text-gray-500">Payment ID</span>
-                <span className="text-xs font-mono text-gray-600 truncate">{payment.razorpayPaymentId}</span>
+                <span className="text-xs font-mono text-gray-600 truncate">{(payment as any).cfPaymentId}</span>
               </div>
             )}
             {payment?.paidAt && (

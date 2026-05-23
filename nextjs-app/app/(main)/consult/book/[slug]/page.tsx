@@ -144,16 +144,12 @@ function isSlotPast(slot: string, selectedDate: string): boolean {
   return slotMins <= nowMins + 30;
 }
 
-// ─── Razorpay loader ─────────────────────────────────────────────────────────
+// ─── Cashfree loader ──────────────────────────────────────────────────────────
 
-function loadRazorpay(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if ((window as any).Razorpay) return resolve();
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load payment gateway'));
-    document.body.appendChild(script);
+async function loadCashfree() {
+  const { load } = await import('@cashfreepayments/cashfree-js');
+  return load({
+    mode: (process.env.NEXT_PUBLIC_CASHFREE_MODE as 'sandbox' | 'production') || 'sandbox',
   });
 }
 
@@ -438,7 +434,7 @@ export default function BookingPage({
   // Submit appointment after payment (or free)
   const submitAppointment = async (
     formData: FormValues,
-    payment: { razorpayOrderId: string; razorpayPaymentId: string; razorpaySignature: string } | null
+    payment: { cfOrderId: string; cfPaymentId?: string } | null
   ) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     const body = {
@@ -499,79 +495,47 @@ export default function BookingPage({
       return;
     }
 
-    // Paid consultation — Razorpay flow
+    // Paid consultation — Cashfree flow
     setSubmitting(true);
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
 
-      // Create Razorpay order
-      const rzpRes = await fetch('/api/payment/razorpay/create', {
+      // Create Cashfree order
+      const cfRes = await fetch('/api/payment/cashfree/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ amount: finalAmount, receipt: `consult_${Date.now()}` }),
+        body: JSON.stringify({
+          amount: finalAmount,
+          orderRef: `consult_${Date.now()}`,
+          customerName: formData.patientName,
+          customerPhone: formData.mobile,
+        }),
       });
-      const rzpData = await rzpRes.json();
-      if (!rzpData.success) throw new Error(rzpData.message || 'Payment initialization failed');
+      const cfData = await cfRes.json();
+      if (!cfData.success) throw new Error(cfData.message || 'Payment initialization failed');
 
-      const { orderId: rzpOrderId, amount: rzpAmount, currency, keyId } = rzpData.data;
+      const { cfOrderId, paymentSessionId } = cfData.data;
 
-      await loadRazorpay();
-
-      await new Promise<void>((resolve, reject) => {
-        const options = {
-          key: keyId,
-          amount: rzpAmount,
-          currency,
-          name: 'AyroPath',
-          description: `Consultation with Dr. ${doctor?.name}`,
-          order_id: rzpOrderId,
-          handler: async (response: any) => {
-            try {
-              await submitAppointment(formData, {
-                razorpayOrderId: response.razorpay_order_id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpaySignature: response.razorpay_signature,
-              });
-              resolve();
-            } catch (err: any) {
-              reject(err);
-            }
-          },
-          modal: {
-            ondismiss: () => {
-              setSubmitting(false);
-              toastError('Payment cancelled.');
-              reject(new Error('cancelled'));
-            },
-          },
-          prefill: {
-            name: formData.patientName,
-            contact: formData.mobile,
-          },
-          method: {
-            upi: true,
-            card: true,
-            netbanking: true,
-            wallet: false,
-            paylater: false,
-            emi: false,
-          },
-          theme: { color: '#2563eb' },
-        };
-
-        const rzp = new (window as any).Razorpay(options);
-        rzp.on('payment.failed', () => {
-          setSubmitting(false);
-          toastError('Payment failed. Please try again.');
-          reject(new Error('failed'));
-        });
-        rzp.open();
+      const cashfree = await loadCashfree();
+      const result = await cashfree.checkout({
+        paymentSessionId,
+        redirectTarget: '_modal',
       });
+
+      if ((result as any).error) {
+        const errMsg = (result as any).error?.message || 'Payment cancelled.';
+        toastError(errMsg);
+        return;
+      }
+
+      if ((result as any).paymentDetails || (result as any).redirect) {
+        await submitAppointment(formData, { cfOrderId });
+      }
     } catch (err: any) {
-      if (err.message !== 'cancelled' && err.message !== 'failed') {
+      if (err.message !== 'cancelled') {
         toastError(err.message || 'Something went wrong. Please try again.');
       }
     } finally {

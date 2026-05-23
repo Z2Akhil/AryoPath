@@ -15,9 +15,8 @@ export interface Prescription {
 }
 
 export interface ConsultPayment {
-  razorpayOrderId: string;
-  razorpayPaymentId: string;
-  razorpaySignature: string;
+  cfOrderId:   string;
+  cfPaymentId: string;
   status: 'pending' | 'paid' | 'failed' | 'not_required';
   amount: number;
   paidAt?: Date;
@@ -81,9 +80,8 @@ const PrescriptionSchema = new Schema(
 
 const ConsultPaymentSchema = new Schema(
   {
-    razorpayOrderId:   { type: String, default: '' },
-    razorpayPaymentId: { type: String, default: '' },
-    razorpaySignature: { type: String, default: '' },
+    cfOrderId:   { type: String, default: '' },
+    cfPaymentId: { type: String, default: '' },
     status: {
       type: String,
       enum: ['pending', 'paid', 'failed', 'not_required'],
