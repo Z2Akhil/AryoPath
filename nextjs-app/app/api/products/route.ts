@@ -17,35 +17,40 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit');
     const skip = searchParams.get('skip');
 
+    const search = searchParams.get('search')?.trim() || '';
     const limitNum = limit ? parseInt(limit, 10) : null;
     const skipNum = skip ? parseInt(skip, 10) : 0;
+
+    const searchFilter = search
+      ? { isActive: true, name: { $regex: search, $options: 'i' } }
+      : { isActive: true };
 
     let products: Record<string, unknown>[] = [];
     let totalCount = 0;
 
     switch (type) {
       case 'TESTS':
-        totalCount = await Test.countDocuments({ isActive: true });
-        const testQuery = Test.find({ isActive: true }).skip(skipNum);
-        if (limitNum) testQuery.limit(limitNum);
+        totalCount = await Test.countDocuments(searchFilter);
+        const testQuery = Test.find(searchFilter).skip(search ? 0 : skipNum);
+        if (limitNum && !search) testQuery.limit(limitNum);
         const tests = await testQuery;
         products = tests.map((test) => test.getCombinedData());
         products = Array.from(new Map(products.map(p => [(p as any).code, p])).values());
         break;
 
       case 'PROFILE':
-        totalCount = await Profile.countDocuments({ isActive: true });
-        const profileQuery = Profile.find({ isActive: true }).skip(skipNum);
-        if (limitNum) profileQuery.limit(limitNum);
+        totalCount = await Profile.countDocuments(searchFilter);
+        const profileQuery = Profile.find(searchFilter).skip(search ? 0 : skipNum);
+        if (limitNum && !search) profileQuery.limit(limitNum);
         const profiles = await profileQuery;
         products = profiles.map((profile) => profile.getCombinedData());
         products = Array.from(new Map(products.map(p => [(p as any).code, p])).values());
         break;
 
       case 'OFFER':
-        totalCount = await Offer.countDocuments({ isActive: true });
-        const offerQuery = Offer.find({ isActive: true }).skip(skipNum);
-        if (limitNum) offerQuery.limit(limitNum);
+        totalCount = await Offer.countDocuments(searchFilter);
+        const offerQuery = Offer.find(searchFilter).skip(search ? 0 : skipNum);
+        if (limitNum && !search) offerQuery.limit(limitNum);
         const offers = await offerQuery;
         products = offers.map((offer) => offer.getCombinedData());
         products = Array.from(new Map(products.map(p => [(p as any).code, p])).values());

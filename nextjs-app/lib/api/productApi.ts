@@ -12,13 +12,14 @@ const getBaseUrl = () => {
     return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 };
 
-export const getProductsFromBackend = async (productType: string, options: { limit?: number; skip?: number } = {}): Promise<GetProductsResponse> => {
+export const getProductsFromBackend = async (productType: string, options: { limit?: number; skip?: number; search?: string } = {}): Promise<GetProductsResponse> => {
     try {
-        const { limit, skip } = options;
+        const { limit, skip, search } = options;
         let url = `${getBaseUrl()}/api/products?type=${productType}`;
 
         if (limit) url += `&limit=${limit}`;
-        if (skip) url += `&skip=${skip}`;
+        if (skip)  url += `&skip=${skip}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
 
         const response = await fetch(url);
         const data = await response.json();

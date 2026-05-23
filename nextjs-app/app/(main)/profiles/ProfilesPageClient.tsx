@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ProfileCard from '@/components/cards/ProfileCard';
 import SkeletonProfileCard from '@/components/skeletons/SkeletonProfileCard';
 import Pagination from '@/components/ui/Pagination';
@@ -25,17 +25,39 @@ export default function ProfilesPageClient({
     showHeader = true,
     mobileScroll = false,
 }: ProfilesPageClientProps) {
-    const [packages, setPackages]           = useState<Product[]>(initialData);
-    const [loading, setLoading]             = useState(false);
-    const [error, setError]                 = useState<string | null>(null);
-    const [currentPage, setCurrentPage]     = useState(1);
-    const [itemsPerPage, setItemsPerPage]   = useState(12);
-    const [totalItems, setTotalItems]       = useState(initialTotal);
-    const [search, setSearch]               = useState('');
-    const [sort, setSort]                   = useState<SortKey>('default');
+    const [packages, setPackages]             = useState<Product[]>(initialData);
+    const [loading, setLoading]               = useState(false);
+    const [error, setError]                   = useState<string | null>(null);
+    const [currentPage, setCurrentPage]       = useState(1);
+    const [itemsPerPage, setItemsPerPage]     = useState(12);
+    const [totalItems, setTotalItems]         = useState(initialTotal);
+    const [search, setSearch]                 = useState('');
+    const [sort, setSort]                     = useState<SortKey>('default');
     const [activeCategory, setActiveCategory] = useState('All');
+    const [searchResults, setSearchResults]   = useState<Product[] | null>(null);
+    const [searchLoading, setSearchLoading]   = useState(false);
+    const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const isWidget = !!limit;
+    const isWidget    = !!limit;
+    const isSearching = search.trim() !== '';
+
+    // Debounced server-side search
+    useEffect(() => {
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        if (!search.trim()) { setSearchResults(null); return; }
+        setSearchLoading(true);
+        searchTimerRef.current = setTimeout(async () => {
+            try {
+                const res = await getProductsFromBackend('PROFILE', { search: search.trim() });
+                setSearchResults(res.products);
+            } catch {
+                setSearchResults([]);
+            } finally {
+                setSearchLoading(false);
+            }
+        }, 350);
+        return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
+    }, [search]);
 
     const categories = useMemo(() => {
         const cats = new Set<string>();
@@ -44,18 +66,14 @@ export default function ProfilesPageClient({
     }, [packages]);
 
     const displayed = useMemo(() => {
-        let out = [...packages];
-        if (activeCategory !== 'All') out = out.filter((p) => (p.category as string) === activeCategory);
-        if (search.trim()) {
-            const q = search.toLowerCase();
-            out = out.filter((p) => p.name?.toLowerCase().includes(q));
-        }
+        let out = isSearching ? (searchResults ?? []) : [...packages];
+        if (!isSearching && activeCategory !== 'All') out = out.filter((p) => (p.category as string) === activeCategory);
         if (sort === 'name_asc')   out.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         if (sort === 'price_asc')  out.sort((a, b) => getProductDisplayPrice(a).displayPrice - getProductDisplayPrice(b).displayPrice);
         if (sort === 'price_desc') out.sort((a, b) => getProductDisplayPrice(b).displayPrice - getProductDisplayPrice(a).displayPrice);
         if (sort === 'tests_desc') out.sort((a, b) => (b.testCount || 0) - (a.testCount || 0));
         return out;
-    }, [packages, search, sort, activeCategory]);
+    }, [packages, searchResults, isSearching, sort, activeCategory]);
 
     const handlePageChange = async (page: number) => {
         if (page === currentPage) return;
@@ -95,9 +113,10 @@ export default function ProfilesPageClient({
         }
     };
 
-    const clearFilters = () => { setSearch(''); setActiveCategory('All'); };
-    const isFiltering  = search.trim() !== '' || activeCategory !== 'All';
+    const clearFilters = () => { setSearch(''); setSearchResults(null); setActiveCategory('All'); };
+    const isFiltering  = isSearching || activeCategory !== 'All';
     const totalPages   = Math.ceil(totalItems / itemsPerPage);
+    const showSkeleton = loading || (isSearching && searchLoading);
 
     /* ── Widget / home page embed ─────────────────────────────── */
     if (isWidget) {
@@ -197,9 +216,11 @@ export default function ProfilesPageClient({
             )}
 
             {/* Filter result count */}
-            {isFiltering && !loading && (
+            {isFiltering && !showSkeleton && (
                 <p className="text-sm text-gray-500 mb-4">
-                    {displayed.length === 0
+                    {isSearching && searchLoading
+                        ? 'Searching…'
+                        : displayed.length === 0
                         ? 'No packages match your filters'
                         : `${displayed.length} package${displayed.length !== 1 ? 's' : ''} found`}
                     <button onClick={clearFilters} className="ml-2 text-blue-500 hover:underline">
@@ -216,7 +237,7 @@ export default function ProfilesPageClient({
 
             {/* Card grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-                {loading
+                {showSkeleton
                     ? Array.from({ length: itemsPerPage }).map((_, i) => <SkeletonProfileCard key={i} />)
                     : displayed.length > 0
                     ? displayed.map((pkg) => <ProfileCard key={pkg.code} pkg={pkg} />)

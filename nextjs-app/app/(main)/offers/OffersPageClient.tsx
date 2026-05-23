@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import OfferCard from '@/components/cards/OfferCard';
 import SkeletonOfferCard from '@/components/skeletons/SkeletonOfferCard';
 import Pagination from '@/components/ui/Pagination';
@@ -25,16 +25,37 @@ export default function OffersPageClient({
     showHeader = true,
     mobileScroll = false,
 }: OffersPageClientProps) {
-    const [offers, setOffers]             = useState<Product[]>(initialData);
-    const [loading, setLoading]           = useState(false);
-    const [error, setError]               = useState<string | null>(null);
-    const [currentPage, setCurrentPage]   = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(12);
-    const [totalItems, setTotalItems]     = useState(initialTotal);
-    const [search, setSearch]             = useState('');
-    const [sort, setSort]                 = useState<SortKey>('default');
+    const [offers, setOffers]               = useState<Product[]>(initialData);
+    const [loading, setLoading]             = useState(false);
+    const [error, setError]                 = useState<string | null>(null);
+    const [currentPage, setCurrentPage]     = useState(1);
+    const [itemsPerPage, setItemsPerPage]   = useState(12);
+    const [totalItems, setTotalItems]       = useState(initialTotal);
+    const [search, setSearch]               = useState('');
+    const [sort, setSort]                   = useState<SortKey>('default');
+    const [searchResults, setSearchResults] = useState<Product[] | null>(null);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const isWidget = !!limit;
+    const isWidget    = !!limit;
+    const isSearching = search.trim() !== '';
+
+    useEffect(() => {
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        if (!search.trim()) { setSearchResults(null); return; }
+        setSearchLoading(true);
+        searchTimerRef.current = setTimeout(async () => {
+            try {
+                const res = await getProductsFromBackend('OFFER', { search: search.trim() });
+                setSearchResults(res.products);
+            } catch {
+                setSearchResults([]);
+            } finally {
+                setSearchLoading(false);
+            }
+        }, 350);
+        return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
+    }, [search]);
 
     const handlePageChange = async (page: number) => {
         if (page === currentPage) return;
@@ -75,21 +96,16 @@ export default function OffersPageClient({
     };
 
     const displayed = useMemo(() => {
-        let out = search.trim()
-            ? offers.filter((o) =>
-                  o.name.toLowerCase().includes(search.toLowerCase())
-              )
-            : [...offers];
-
+        let out = isSearching ? (searchResults ?? []) : [...offers];
         if (sort === 'name_asc')      out.sort((a, b) => a.name.localeCompare(b.name));
         if (sort === 'price_asc')     out.sort((a, b) => getProductDisplayPrice(a).originalPrice - getProductDisplayPrice(b).originalPrice);
         if (sort === 'price_desc')    out.sort((a, b) => getProductDisplayPrice(b).originalPrice - getProductDisplayPrice(a).originalPrice);
         if (sort === 'discount_desc') out.sort((a, b) => getProductDisplayPrice(b).discountPercentage - getProductDisplayPrice(a).discountPercentage);
-
         return out;
-    }, [offers, search, sort]);
+    }, [offers, searchResults, isSearching, sort]);
 
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const totalPages   = Math.ceil(totalItems / itemsPerPage);
+    const showSkeleton = loading || (isSearching && searchLoading);
 
     /* ── Widget / home page embed ─────────────────────────────── */
     if (isWidget) {
@@ -169,7 +185,7 @@ export default function OffersPageClient({
             </div>
 
             {/* Search results label */}
-            {search && !loading && (
+            {isSearching && !searchLoading && !loading && (
                 <p className="text-sm text-gray-500 mb-4">
                     {displayed.length === 0
                         ? `No results for "${search}"`
@@ -185,7 +201,7 @@ export default function OffersPageClient({
 
             {/* Card grid — 1 col mobile, 2 tablet, 3 desktop, 4 wide */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
-                {loading
+                {showSkeleton
                     ? Array.from({ length: itemsPerPage }).map((_, i) => (
                           <SkeletonOfferCard key={i} />
                       ))
@@ -201,9 +217,9 @@ export default function OffersPageClient({
                             <p className="text-sm font-medium">
                                 {search ? `No offers found for "${search}"` : 'No offers available'}
                             </p>
-                            {search && (
+                            {isSearching && (
                                 <button
-                                    onClick={() => setSearch('')}
+                                    onClick={() => { setSearch(''); setSearchResults(null); }}
                                     className="mt-2 text-sm text-blue-500 hover:underline"
                                 >
                                     Clear search
@@ -214,7 +230,7 @@ export default function OffersPageClient({
             </div>
 
             {/* Pagination */}
-            {!search && totalItems > itemsPerPage && totalPages > 1 && (
+            {!isSearching && totalItems > itemsPerPage && totalPages > 1 && (
                 <div className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                     <Pagination
                         currentPage={currentPage}
