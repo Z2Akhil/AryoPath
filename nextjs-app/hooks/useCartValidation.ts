@@ -230,45 +230,25 @@ export const useCartValidation = () => {
                 else if (validationResult.action === 'remove') {
                     const duplicateTests = validationResult.details?.duplicateTests || [];
                     const testCodes = duplicateTests.map((t: any) => t.testCode);
-
-                    showValidationDialog({
-                        title: 'Remove Duplicate Tests',
-                        message: validationResult.message + ` Remove duplicate test(s) and add ${validationResult.details?.profileOfferType || 'item'}?`,
-                        type: 'info',
-                        confirmText: `Remove tests & add ${validationResult.details?.profileOfferType || 'item'}`,
-                        cancelText: 'Cancel',
-                        onConfirm: async () => {
-                            try {
-                                const confirmResponse = await CartApi.addToCartWithConfirmation(
-                                    productCode,
-                                    productType,
-                                    quantity,
-                                    testCodes,
-                                    guestSessionId
-                                );
-
-                                if (confirmResponse.success) {
-                                    success(`${validationResult.details?.profileOfferType || 'Item'} added to cart${testCodes.length > 0 ? ` (${testCodes.length} duplicate test(s) removed)` : ''}`);
-                                    closeValidationDialog();
-                                    return { success: true, cart: confirmResponse.cart, removedTests: testCodes };
-                                } else {
-                                    showError('Failed to add item to cart');
-                                    closeValidationDialog();
-                                    return { success: false, error: 'Failed to add item to cart' };
-                                }
-                            } catch (err: any) {
-                                console.error('Error adding to cart with confirmation:', err);
-                                showError('Failed to add item to cart');
-                                closeValidationDialog();
-                                return { success: false, error: err.message };
-                            }
-                        },
-                        onCancel: () => {
-                            closeValidationDialog();
-                        },
-                        data: validationResult.details || {}
-                    });
-                    return { success: false, requiresConfirmation: true, validation: validationResult };
+                    try {
+                        const confirmResponse = await CartApi.addToCartWithConfirmation(
+                            productCode,
+                            productType,
+                            quantity,
+                            testCodes,
+                            guestSessionId
+                        );
+                        if (confirmResponse.success) {
+                            success(`${validationResult.details?.profileOfferType || 'Item'} added to cart`);
+                            return { success: true, cart: confirmResponse.cart, removedTests: testCodes };
+                        } else {
+                            showError('Failed to add item to cart');
+                            return { success: false, error: 'Failed to add item to cart' };
+                        }
+                    } catch (err: any) {
+                        showError('Failed to add item to cart');
+                        return { success: false, error: err.message };
+                    }
                 }
             }
 

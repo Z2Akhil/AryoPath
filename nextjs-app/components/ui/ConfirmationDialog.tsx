@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, AlertTriangle, Info, HelpCircle } from 'lucide-react';
 
 interface ConfirmationDialogProps {
@@ -26,6 +27,12 @@ const ConfirmationDialog = ({
     type = "warning",
     isLoading = false
 }: ConfirmationDialogProps) => {
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
@@ -38,7 +45,7 @@ const ConfirmationDialog = ({
         };
     }, [isOpen]);
 
-    if (!isOpen) return null;
+    if (!isOpen || !mounted) return null;
 
     const getIcon = () => {
         const iconClass = "w-6 h-6";
@@ -67,7 +74,7 @@ const ConfirmationDialog = ({
         }
     };
 
-    return (
+    return createPortal(
         <div
             className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
                 }`}
@@ -136,7 +143,8 @@ const ConfirmationDialog = ({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

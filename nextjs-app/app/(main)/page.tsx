@@ -3,7 +3,7 @@ import Link from "next/link";
 import Hero from "@/components/home/Hero";
 import CategoryGrid from "@/components/home/CategoryGrid";
 import HomeCarousel from "@/components/home/HomeCarousel";
-import HealthConcernCards from "@/components/home/HealthConcernCards";
+import HealthConcernSection from "@/components/home/HealthConcernSection";
 import HowItWorks from "@/components/home/HowItWorks";
 import TrustStats from "@/components/home/TrustStats";
 import ProfilePage from "./profiles/page";
@@ -168,8 +168,8 @@ export default function Home() {
           <HomeCarousel />
         </div>
 
-        {/* Health concern cards */}
-        <HealthConcernCards />
+        {/* Tests by Health Concern — dynamic, DB-backed */}
+        <HealthConcernSection />
 
         {/* Popular Health Packages */}
         <section className="mb-10">
