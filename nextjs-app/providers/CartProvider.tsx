@@ -1,9 +1,10 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useRef, ReactNode } from "react";
 import { useUser } from "./UserProvider";
 import { useAuthModal } from "./AuthModalProvider";
 import CartApi from "@/lib/api/cartApi";
+import { axiosInstance } from "@/lib/api/axiosInstance";
 import { Cart, CartContextType, MedicineCartItem } from "@/types";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -43,6 +44,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const [cart, setCart] = useState<Cart>(initialCartState);
     const [loading, setLoading] = useState(false);
     const [medicineCart, setMedicineCart] = useState<MedicineCartItem[]>(loadMedicineCartFromStorage);
+    const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => { loadCart(); }, [user]);
 
@@ -50,6 +52,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         if (typeof window === 'undefined') return;
         try { localStorage.setItem(MEDICINE_CART_KEY, JSON.stringify(medicineCart)); } catch { /* silent */ }
     }, [medicineCart]);
+
+    useEffect(() => {
+        if (!user) return;
+        if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+        syncTimerRef.current = setTimeout(async () => {
+            try { await axiosInstance.post('/user/medicine-cart/sync', { items: medicineCart }); } catch { /* silent */ }
+        }, 1500);
+        return () => { if (syncTimerRef.current) clearTimeout(syncTimerRef.current); };
+    }, [medicineCart, user]);
 
     const medicineCartTotal = useMemo(
         () => medicineCart.reduce((sum, i) => sum + i.offerPrice * i.quantity, 0),

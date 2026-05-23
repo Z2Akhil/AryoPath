@@ -12,6 +12,7 @@ import {
     RefreshCw,
     AlertCircle,
     ShoppingBag,
+    ShoppingCart,
     CheckCircle,
     XCircle,
     MoreVertical,
@@ -23,6 +24,7 @@ import Pagination from '@/components/common/Pagination';
 import UserViewModal from '@/components/admin/users/UserViewModal';
 import UserEditModal from '@/components/admin/users/UserEditModal';
 import BookOrderModal from '@/components/admin/orders/BookOrderModal';
+import UserCartModal from '@/components/admin/users/UserCartModal';
 import { useAdminAuth } from '@/providers/AdminAuthProvider';
 import { PERMISSIONS } from '@/lib/constants/permissions';
 import AccessDenied from '@/components/admin/AccessDenied';
@@ -46,6 +48,7 @@ export default function UsersClient() {
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isBookModalOpen, setIsBookModalOpen] = useState(false);
+    const [isCartModalOpen, setIsCartModalOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
 
     const fetchUsers = useCallback(async () => {
@@ -345,6 +348,13 @@ export default function UsersClient() {
                                                     <Eye className="h-4 w-4" />
                                                 </button>
                                                 <button
+                                                    onClick={() => { setSelectedUser(u); setIsCartModalOpen(true); }}
+                                                    className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors"
+                                                    title="View Cart"
+                                                >
+                                                    <ShoppingCart className="h-4 w-4" />
+                                                </button>
+                                                <button
                                                     onClick={() => { setSelectedUser(u); setIsEditModalOpen(true); }}
                                                     className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"
                                                     title="Edit User"
@@ -409,6 +419,13 @@ export default function UsersClient() {
                         setError(msg);
                         setTimeout(() => setError(null), 3000);
                     }}
+                />
+            )}
+
+            {isCartModalOpen && selectedUser && (
+                <UserCartModal
+                    user={selectedUser}
+                    onClose={() => { setIsCartModalOpen(false); setSelectedUser(null); }}
                 />
             )}
 

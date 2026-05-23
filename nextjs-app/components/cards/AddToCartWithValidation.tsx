@@ -17,6 +17,7 @@ interface AddToCartWithValidationProps {
     className?: string;
     buttonText?: string;
     showIcon?: boolean;
+    iconOnly?: boolean;
     onSuccess?: (result: any) => void;
     onError?: (error: string) => void;
 }
@@ -29,6 +30,7 @@ const AddToCartWithValidation: React.FC<AddToCartWithValidationProps> = ({
     className = '',
     buttonText = 'Add to Cart',
     showIcon = true,
+    iconOnly = false,
     onSuccess = () => { },
     onError = () => { }
 }) => {
@@ -47,7 +49,9 @@ const AddToCartWithValidation: React.FC<AddToCartWithValidationProps> = ({
         item => item.productCode === productCode && item.productType === productType
     );
 
-    const baseButtonClass = `inline-flex w-full min-w-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold transition-all duration-300 shadow-sm active:scale-95 ${className}`;
+    const baseButtonClass = iconOnly
+        ? `inline-flex items-center justify-center rounded-xl w-10 h-10 shrink-0 transition-all duration-300 shadow-sm active:scale-95 ${className}`
+        : `inline-flex w-full min-w-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold transition-all duration-300 shadow-sm active:scale-95 ${className}`;
 
     if (isInCart) {
         return (
@@ -55,7 +59,10 @@ const AddToCartWithValidation: React.FC<AddToCartWithValidationProps> = ({
                 href="/cart"
                 className={`${baseButtonClass} bg-green-600 text-white hover:bg-green-700 hover:shadow-md`}
             >
-                <span className="text-center whitespace-nowrap">✓ Go to Cart</span>
+                {iconOnly
+                    ? <ShoppingCart className="h-4 w-4" />
+                    : <span className="text-center whitespace-nowrap">✓ Go to Cart</span>
+                }
             </Link>
         );
     }
@@ -105,10 +112,9 @@ const AddToCartWithValidation: React.FC<AddToCartWithValidationProps> = ({
                 className={`${baseButtonClass} bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50`}
             >
                 {isLoading ? (
-                    <>
-                        <div className="h-4 w-4 shrink-0 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                        <span className="text-center whitespace-nowrap">Adding...</span>
-                    </>
+                    <div className="h-4 w-4 shrink-0 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                ) : iconOnly ? (
+                    <ShoppingCart className="h-4 w-4" />
                 ) : (
                     <>
                         {showIcon && <ShoppingCart className="h-5 w-5 shrink-0" />}

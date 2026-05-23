@@ -108,16 +108,6 @@ const PackageDetailClient = ({ product: pkg }: PackageDetailClientProps) => {
               )}
             </div>
 
-            {/* Add to cart — mobile only (desktop shows in sidebar) */}
-            <div className="lg:hidden">
-              <AddToCartWithValidation
-                productCode={pkg.code}
-                productType={pkg.type}
-                productName={pkg.name}
-                buttonText="Add to Cart"
-                showIcon={true}
-              />
-            </div>
           </div>
 
           {/* Stats bar */}

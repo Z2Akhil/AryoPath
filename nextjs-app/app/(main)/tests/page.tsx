@@ -53,8 +53,9 @@ export default async function TestsPage({ limit, showHeader, mobileScroll }: Tes
     const totalCount = await Test.countDocuments({ isActive: true });
 
     if (isHomeWidget) {
+        // Fetch ALL featured items (no limit) so the home page count matches admin
         testDocs = await Test.find({ isActive: true, isFeatured: true })
-            .select(SELECT).sort({ featuredOrder: 1 }).limit(fetchLimit).lean();
+            .select(SELECT).sort({ featuredOrder: 1 }).lean();
         if (testDocs.length === 0) {
             testDocs = await Test.find({ isActive: true })
                 .select(SELECT).sort({ name: 1 }).limit(fetchLimit).lean();

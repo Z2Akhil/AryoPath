@@ -215,7 +215,7 @@ const Header = ({ children }: HeaderProps) => {
   const { user, logout } = useUser();
   const { cart, medicineCartCount } = useCart();
   const pathname = usePathname();
-  const hideMedicineSearchBar = pathname?.startsWith('/medicines');
+  const showSearchBar = pathname === '/';
   const cartCount = (cart?.items?.length || 0) + (medicineCartCount || 0);
   const { settings, loading } = useSiteSettings();
   const { openAuth } = useAuthModal();
@@ -288,8 +288,8 @@ const Header = ({ children }: HeaderProps) => {
           <div className="flex items-center gap-4 h-16">
             <Logo logo={settings?.logo} loading={loading} />
 
-            {/* Search — desktop */}
-            {!hideMedicineSearchBar && (
+            {/* Search — desktop, home page only */}
+            {showSearchBar && (
               <div className="hidden lg:flex flex-1 max-w-xl">
                 <SearchBar />
               </div>
@@ -342,8 +342,8 @@ const Header = ({ children }: HeaderProps) => {
         </div>
       </header>
 
-      {/* ── MOBILE SEARCH BAR (below header, scrolls away) ─────────── */}
-      {!hideMedicineSearchBar && (
+      {/* ── MOBILE SEARCH BAR (below header, home page only) ──────── */}
+      {showSearchBar && (
         <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-2.5 z-30">
           <SearchBar />
         </div>

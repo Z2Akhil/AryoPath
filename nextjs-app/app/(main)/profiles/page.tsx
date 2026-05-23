@@ -56,8 +56,9 @@ export default async function ProfilesPage({ limit, showHeader, mobileScroll }: 
     const totalCount = await Profile.countDocuments({ isActive: true });
 
     if (isHomeWidget) {
+        // Fetch ALL featured items (no limit) so the home page count matches admin
         profileDocs = await Profile.find({ isActive: true, isFeatured: true })
-            .select(SELECT).sort({ featuredOrder: 1 }).limit(fetchLimit).lean();
+            .select(SELECT).sort({ featuredOrder: 1 }).lean();
         if (profileDocs.length === 0) {
             profileDocs = await Profile.find({ isActive: true })
                 .select(SELECT).sort({ 'thyrocareData.bookedCount': -1 }).limit(fetchLimit).lean();

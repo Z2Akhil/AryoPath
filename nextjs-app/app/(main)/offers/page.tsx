@@ -46,8 +46,9 @@ export default async function OffersPage({ limit, showHeader, mobileScroll }: Of
     const totalCount = await Offer.countDocuments({ isActive: true });
 
     if (isHomeWidget) {
+        // Fetch ALL featured items (no limit) so the home page count matches admin
         offerDocs = await Offer.find({ isActive: true, isFeatured: true })
-            .select(SELECT).sort({ featuredOrder: 1 }).limit(fetchLimit).lean();
+            .select(SELECT).sort({ featuredOrder: 1 }).lean();
         if (offerDocs.length === 0) {
             offerDocs = await Offer.find({ isActive: true })
                 .select(SELECT).sort({ name: 1 }).limit(fetchLimit).lean();

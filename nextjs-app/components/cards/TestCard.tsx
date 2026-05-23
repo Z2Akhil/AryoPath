@@ -3,10 +3,31 @@
 import React from "react";
 import Link from "next/link";
 import { getProductDisplayPrice } from "@/lib/productUtils";
+import { slugify } from "@/lib/slugify";
 import AddToCartWithValidation from "./AddToCartWithValidation";
 
 interface TestCardProps {
   test: any;
+}
+
+const CATEGORY_STYLES: Record<string, { border: string; chip: string }> = {
+  THYROID:  { border: "border-l-purple-400", chip: "bg-purple-50 text-purple-700" },
+  DIABETES: { border: "border-l-orange-400", chip: "bg-orange-50 text-orange-700" },
+  LIVER:    { border: "border-l-amber-400",  chip: "bg-amber-50 text-amber-700"  },
+  KIDNEY:   { border: "border-l-cyan-400",   chip: "bg-cyan-50 text-cyan-700"    },
+  CBC:      { border: "border-l-red-400",    chip: "bg-red-50 text-red-700"      },
+  LIPID:    { border: "border-l-emerald-400",chip: "bg-emerald-50 text-emerald-700" },
+  VITAMIN:  { border: "border-l-yellow-400", chip: "bg-yellow-50 text-yellow-700" },
+  HORMONE:  { border: "border-l-pink-400",   chip: "bg-pink-50 text-pink-700"    },
+};
+
+function getCategoryStyle(category: string) {
+  const key = Object.keys(CATEGORY_STYLES).find((k) =>
+    (category || "").toUpperCase().includes(k)
+  );
+  return key
+    ? CATEGORY_STYLES[key]
+    : { border: "border-l-blue-400", chip: "bg-blue-50 text-blue-700" };
 }
 
 const TestCard: React.FC<TestCardProps> = ({ test }) => {
@@ -14,85 +35,68 @@ const TestCard: React.FC<TestCardProps> = ({ test }) => {
     name = "Unknown Test",
     code = "",
     category = "",
-    specimenType = "N/A",
-    units = "",
-    fasting = "N/A",
+    fasting = "",
     bookedCount = "0",
   } = test;
 
   const priceInfo = getProductDisplayPrice(test);
+  const { border, chip } = getCategoryStyle(category);
+  const detailPath = `/profiles/${slugify(name)}/${test.type || "TEST"}/${code}`;
 
   return (
-    <div className="bg-white rounded-xl p-4 sm:p-5 w-full flex flex-col h-full border border-gray-200 shadow-sm hover:shadow-lg transition-shadow duration-300">
-      {/* Header: Name + Price */}
-      <div className="flex flex-row justify-between items-start gap-3 mb-4 flex-wrap">
-        <div className="flex-1 min-w-0">
-          <span className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider block">
-            {category || "General"}
-          </span>
-          <h2 className="text-base sm:text-lg font-bold text-gray-900 mt-1 line-clamp-2">
+    <div
+      className={`bg-white rounded-xl border border-gray-100 border-l-4 ${border} shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col h-full`}
+    >
+      <div className="p-3 flex flex-col flex-1 gap-2">
+        {/* Category chip */}
+        <span
+          className={`self-start text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${chip}`}
+        >
+          {category || "General"}
+        </span>
+
+        {/* Name */}
+        <Link href={detailPath} className="block flex-1">
+          <h3 className="text-xs sm:text-sm font-bold text-gray-900 leading-snug line-clamp-3 hover:text-blue-600 transition-colors">
             {name}
-          </h2>
-        </div>
+          </h3>
+        </Link>
 
-        {/* Price Section */}
-        <div className="flex flex-col items-end shrink-0 text-right">
-          <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
-            <span className="text-lg sm:text-xl font-bold text-blue-700 whitespace-nowrap">
+        {/* Price row */}
+        <div className="flex items-end justify-between gap-1 mt-auto">
+          <div>
+            <p className="text-base sm:text-lg font-extrabold text-gray-900 leading-none">
               ₹{priceInfo.originalPrice}
-            </span>
-          </div>
-
-          {priceInfo.hasDiscount && (
-            <span className="mt-1 inline-block bg-red-500 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded">
-              Up to {priceInfo.discountPercentage}% OFF
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Pills */}
-      <div className="flex flex-wrap gap-2 mb-4 sm:mb-5 -mx-1">
-        <span className="px-3 py-1 bg-gray-100 text-gray-700 text-[11px] sm:text-xs font-medium rounded-full border border-gray-300 whitespace-nowrap">
-          {code || "—"}
-        </span>
-
-        <span className="px-3 py-1 bg-blue-50 text-blue-700 text-[11px] sm:text-xs font-medium rounded-full border border-blue-200 whitespace-nowrap">
-          {specimenType}
-        </span>
-
-        {units && (
-          <span className="px-3 py-1 bg-orange-50 text-orange-700 text-[11px] sm:text-xs font-medium rounded-full border border-orange-200 whitespace-nowrap">
-            {units}
-          </span>
-        )}
-
-        {fasting && fasting !== "N/A" && (
-          <span className="px-3 py-1 bg-purple-50 text-purple-700 text-[11px] sm:text-xs font-medium rounded-full border border-purple-200 whitespace-nowrap">
-            Fasting: {fasting}
-          </span>
-        )}
-      </div>
-
-      {/* Action Section */}
-      <div className="mt-auto pt-4 border-t border-gray-100">
-        <div className="flex flex-col items-end gap-2 sm:gap-3 w-full">
-          <AddToCartWithValidation
-            productCode={code}
-            productType={test.type || "TEST"}
-            productName={name}
-            className="w-full sm:w-auto"
-            buttonText="Add to Cart"
-            showIcon={false}
-          />
-
-          {/* Booked Count */}
-          {bookedCount && parseInt(bookedCount) > 0 && (
-            <p className="text-center w-full text-[10px] sm:text-xs text-gray-500 leading-tight">
-              ✓ Booked by <strong>{bookedCount}</strong> patients
             </p>
+            {priceInfo.hasDiscount && (
+              <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">
+                {priceInfo.discountPercentage}% OFF
+              </span>
+            )}
+          </div>
+          {fasting && fasting !== "N/A" && (
+            <span className="text-[9px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full shrink-0">
+              Fasting
+            </span>
           )}
         </div>
+
+        {/* Add to cart */}
+        <AddToCartWithValidation
+          productCode={code}
+          productType={test.type || "TEST"}
+          productName={name}
+          className="w-full !text-xs !py-2"
+          buttonText="Add to Cart"
+          showIcon={false}
+        />
+
+        {/* Booked count */}
+        {bookedCount && parseInt(bookedCount) > 0 && (
+          <p className="text-[10px] text-gray-400 text-center">
+            ✓ {parseInt(bookedCount).toLocaleString()} patients booked
+          </p>
+        )}
       </div>
     </div>
   );

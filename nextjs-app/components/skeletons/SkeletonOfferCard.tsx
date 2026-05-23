@@ -1,36 +1,38 @@
-import React from "react";
-import SkeletonText from "./SkeletonText";
-
-const SkeletonOfferCard = () => {
-  return (
-    <div className="bg-white shadow-lg rounded-xl p-5 max-w-sm w-full flex flex-col justify-between">
-      {/* Package Name */}
-      <div className="mb-2">
-        <SkeletonText width="80%" height="1.25rem" className="mb-1" />
-      </div>
-
-      {/* Test List */}
-      <div className="mb-6">
-        <SkeletonText width="100%" height="0.875rem" className="mb-1" />
-        <SkeletonText width="60%" height="0.875rem" />
-      </div>
-
-      {/* Price + Book Section */}
-      <div className="flex items-center justify-between mt-auto">
-        {/* Left side: Price & discount */}
-        <div className="flex flex-col">
-          <div className="flex items-baseline gap-2 mb-2">
-            <SkeletonText width="4rem" height="1.5rem" />
-            <SkeletonText width="3rem" height="0.875rem" />
-          </div>
-          <SkeletonText width="3.5rem" height="1.5rem" />
+const SkeletonOfferCard = () => (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col h-full overflow-hidden">
+        <div className="h-1.5 w-full bg-gradient-to-r from-gray-200 to-gray-300" />
+        <div className="p-4 sm:p-5 flex flex-col flex-1 gap-3 animate-pulse">
+            {/* Badge + link row */}
+            <div className="flex items-center justify-between">
+                <div className="h-7 w-24 bg-gray-200 rounded-lg" />
+                <div className="h-4 w-14 bg-gray-100 rounded" />
+            </div>
+            {/* Name */}
+            <div className="space-y-1.5">
+                <div className="h-4 w-full bg-gray-200 rounded" />
+                <div className="h-4 w-4/5 bg-gray-200 rounded" />
+            </div>
+            {/* Tests block */}
+            <div className="bg-gray-50 rounded-xl p-3 space-y-2">
+                <div className="h-4 w-28 bg-gray-200 rounded" />
+                <div className="h-3 w-full bg-gray-100 rounded" />
+                <div className="h-3 w-3/4 bg-gray-100 rounded" />
+            </div>
+            {/* Price + buttons */}
+            <div className="mt-auto space-y-3">
+                <div className="h-8 w-24 bg-gray-200 rounded" />
+                <div className="flex gap-2">
+                    <div className="flex-1 h-10 bg-gray-200 rounded-xl" />
+                    <div className="w-20 h-10 bg-gray-100 rounded-xl" />
+                </div>
+            </div>
+            {/* Trust row */}
+            <div className="flex gap-3 pt-2 border-t border-gray-100">
+                <div className="h-3 w-28 bg-gray-100 rounded" />
+                <div className="h-3 w-24 bg-gray-100 rounded" />
+            </div>
         </div>
-
-        {/* Right side: Book button */}
-        <SkeletonText width="5rem" height="2.5rem" rounded="rounded-md" />
-      </div>
     </div>
-  );
-};
+);
 
 export default SkeletonOfferCard;
