@@ -33,9 +33,9 @@ export async function GET(req: NextRequest) {
         ] = await Promise.all([
             MedicineOrder.countDocuments({}),
 
-            MedicineOrder.countDocuments({ createdAt: { $gte: today } }),
+            MedicineOrder.countDocuments({ createdAt: { $gte: today } } as any),
 
-            MedicineOrder.countDocuments({ createdAt: { $gte: monthStart } }),
+            MedicineOrder.countDocuments({ createdAt: { $gte: monthStart } } as any),
 
             MedicineOrder.aggregate([
                 { $group: { _id: '$status', count: { $sum: 1 } } },
@@ -70,10 +70,10 @@ export async function GET(req: NextRequest) {
 
             // Low stock medicines
             Medicine.find({
-                stockQuantity: { $lte: '$lowStockThreshold' },
+                $expr: { $lte: ['$stockQuantity', '$lowStockThreshold'] },
                 inStock: true,
                 isPublished: true,
-            })
+            } as any)
                 .select('name slug stockQuantity lowStockThreshold')
                 .limit(10)
                 .lean()

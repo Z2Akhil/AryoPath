@@ -32,7 +32,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, title }) => {
                 {user && (
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                         <User size={16} />
-                        <span>{user.adminProfile?.name || user.username}</span>
+                        <span>{(user as any).adminProfile?.name || (user as any).name || user.username}</span>
                     </div>
                 )}
                 <button
