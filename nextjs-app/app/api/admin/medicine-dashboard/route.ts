@@ -110,7 +110,7 @@ export async function GET(req: NextRequest) {
 
         // Fill missing days in trend
         const trendMap = Object.fromEntries(trend.map((t: any) => [t._id, t]));
-        const trendFilled = [];
+        const trendFilled: { date: string; revenue: number; orders: number }[] = [];
         for (let i = 0; i < 7; i++) {
             const d = new Date(sevenDaysAgo);
             d.setDate(sevenDaysAgo.getDate() + i);

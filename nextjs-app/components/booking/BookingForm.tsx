@@ -188,7 +188,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                 Age: parseInt(b.age),
             }));
 
-            let payloadItems = [];
+            let payloadItems: any[] = [];
             if (Array.isArray(pkgId)) {
                 payloadItems = pkgId.map((id) => ({
                     Id: id,

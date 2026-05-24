@@ -66,8 +66,8 @@ const AnalyticsPage = () => {
             }
         };
 
-        const mockOrderTrends = [];
-        const mockUserTrends = [];
+        const mockOrderTrends: { date: string; orderCount: number; revenue: number }[] = [];
+        const mockUserTrends: { date: string; userCount: number }[] = [];
         const today = new Date();
 
         for (let i = 29; i >= 0; i--) {

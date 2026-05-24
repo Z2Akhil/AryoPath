@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
             const type = typeParam.toUpperCase();
 
-            let rawProducts = [];
+            let rawProducts: any[] = [];
 
             if (type === 'ALL') {
                 const tests = await Test.find({}).lean();
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
 
             const allProductCodes = new Set(uniqueThyrocareProducts.map((p) => p.code).filter(Boolean));
 
-            const combinedProducts = [];
+            const combinedProducts: any[] = [];
             for (const tp of uniqueThyrocareProducts) {
                 try {
                     let model: typeof Test | typeof Profile | typeof Offer = Test;

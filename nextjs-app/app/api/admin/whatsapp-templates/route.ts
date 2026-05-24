@@ -56,7 +56,7 @@ const TEMPLATES = [
 ];
 
 export async function GET() {
-  const results = [];
+  const results: any[] = [];
 
   for (const tpl of TEMPLATES) {
     const result = await WhatsAppService.createTemplate({
