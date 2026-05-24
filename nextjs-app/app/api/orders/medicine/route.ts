@@ -4,6 +4,9 @@ import connectToDatabase from '@/lib/db/mongoose';
 import User from '@/lib/models/User';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import Medicine from '@/lib/models/Medicine';
+import SiteSettings from '@/lib/models/SiteSettings';
+
+const FREE_DELIVERY_THRESHOLD = 1000; // must match MedicineCheckoutForm
 
 const getUserFromToken = async (token: string | null) => {
   if (!token) return null;
@@ -66,7 +69,9 @@ export async function POST(req: NextRequest) {
     const subtotal = enrichedItems.reduce((s: number, i: any) => s + i.mrp * i.quantity, 0);
     const totalAmount = enrichedItems.reduce((s: number, i: any) => s + i.offerPrice * i.quantity, 0);
     const totalDiscount = subtotal - totalAmount;
-    const deliveryCharge = totalAmount >= 499 ? 0 : 49;
+    const siteSettings = await SiteSettings.findOne().lean() as any;
+    const courierCharge: number = siteSettings?.medicineCourierCharge ?? 49;
+    const deliveryCharge = totalAmount >= FREE_DELIVERY_THRESHOLD ? 0 : courierCharge;
     const requiresPrescription = enrichedItems.some((i: any) => i.prescriptionRequired);
 
     // Estimated delivery: 3-5 business days

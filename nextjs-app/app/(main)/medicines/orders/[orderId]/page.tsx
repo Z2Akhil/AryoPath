@@ -270,9 +270,29 @@ export default function MedicineOrderTrackingPage() {
                 <p className="text-sm font-bold text-gray-900 flex-shrink-0">₹{(item.offerPrice * item.quantity).toFixed(0)}</p>
               </div>
             ))}
-            <div className="border-t border-gray-100 pt-3 flex justify-between font-extrabold text-gray-900">
-              <span>Grand Total</span>
-              <span className="text-teal-700">₹{order.grandTotal.toFixed(0)}</span>
+
+            {/* Pricing breakdown */}
+            <div className="border-t border-gray-100 pt-3 space-y-1.5">
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Subtotal</span>
+                <span>₹{order.subtotal.toFixed(0)}</span>
+              </div>
+              {order.totalDiscount > 0 && (
+                <div className="flex justify-between text-sm text-green-600 font-semibold">
+                  <span>Discount</span>
+                  <span>−₹{order.totalDiscount.toFixed(0)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Delivery</span>
+                <span className={order.deliveryCharge === 0 ? 'text-green-600 font-semibold' : ''}>
+                  {order.deliveryCharge === 0 ? 'FREE' : `₹${order.deliveryCharge.toFixed(0)}`}
+                </span>
+              </div>
+              <div className="flex justify-between font-extrabold text-gray-900 pt-1 border-t border-gray-100">
+                <span>Grand Total</span>
+                <span className="text-teal-700">₹{order.grandTotal.toFixed(0)}</span>
+              </div>
             </div>
           </div>
 

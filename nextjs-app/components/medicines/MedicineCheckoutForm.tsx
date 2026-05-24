@@ -43,7 +43,8 @@ export default function MedicineCheckoutForm() {
   const totalDiscount  = medicineItems.reduce((s, i) => s + (i.mrp - i.offerPrice) * i.quantity, 0);
   const totalAmount    = medicineItems.reduce((s, i) => s + i.offerPrice * i.quantity, 0);
   const courierCharge  = settings?.medicineCourierCharge ?? 49;
-  const deliveryCharge = totalAmount >= 1000 ? 0 : courierCharge;
+  const FREE_DELIVERY_THRESHOLD = 1000;
+  const deliveryCharge = totalAmount >= FREE_DELIVERY_THRESHOLD ? 0 : courierCharge;
   const grandTotal     = totalAmount + deliveryCharge;
 
   const { register, handleSubmit, formState: { errors } } = useForm<CheckoutAddressValues>({
