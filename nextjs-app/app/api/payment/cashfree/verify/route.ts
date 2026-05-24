@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import connectToDatabase from '@/lib/db/mongoose';
 import User from '@/lib/models/User';
 import MedicineOrder from '@/lib/models/MedicineOrder';
+import Medicine from '@/lib/models/Medicine';
 
 const CF_BASE = process.env.CASHFREE_ENV === 'production'
     ? 'https://api.cashfree.com'
@@ -78,6 +79,23 @@ export async function POST(req: NextRequest) {
             },
             { new: true }
         ).lean();
+
+        // Decrement stock for each ordered item
+        await Promise.all(
+            ((existingOrder as any).items ?? []).map(async (item: any) => {
+                const updated = await Medicine.findByIdAndUpdate(
+                    item.medicineId,
+                    { $inc: { stockQuantity: -item.quantity } },
+                    { new: true }
+                ).select('stockQuantity').lean();
+                if (updated && (updated as any).stockQuantity <= 0) {
+                    await Medicine.findByIdAndUpdate(item.medicineId, {
+                        stockQuantity: 0,
+                        inStock: false,
+                    });
+                }
+            })
+        );
 
         return NextResponse.json({
             success: true,

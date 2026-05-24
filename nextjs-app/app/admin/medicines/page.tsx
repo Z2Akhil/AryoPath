@@ -248,11 +248,13 @@ export default function MedicinesPage() {
                           {med.inStock ? 'In Stock' : 'Out of Stock'}
                         </span>
                         {med.inStock && (
-                          <span className={`text-xs mt-0.5 font-medium ${
-                            med.stockQuantity <= (10) ? 'text-amber-500' : 'text-gray-400'
-                          }`}>
-                            {med.stockQuantity <= 10 && <AlertTriangle className="inline h-3 w-3 mr-0.5" />}
+                          <span className="text-xs mt-0.5 font-medium text-gray-400">
                             {med.stockQuantity} units
+                          </span>
+                        )}
+                        {med.inStock && med.stockQuantity <= (med.lowStockThreshold ?? 10) && med.stockQuantity > 0 && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200 mt-0.5">
+                            <AlertTriangle className="h-2.5 w-2.5" /> Low Stock
                           </span>
                         )}
                       </div>
