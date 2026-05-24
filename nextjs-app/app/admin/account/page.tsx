@@ -21,16 +21,20 @@ import {
 const AccountPage = () => {
     const { user, logout, isAdmin } = useAdminAuth();
 
+    const src = isAdmin
+        ? (user as any)?.adminProfile ?? {}
+        : (user as any) ?? {};
+
     const adminProfile = {
-        name: user?.adminProfile?.name || 'System Administrator',
-        email: user?.adminProfile?.email || 'admin@ayropath.com',
-        mobile: user?.adminProfile?.mobile || 'Not provided',
-        userType: user?.adminProfile?.userType || 'NSA',
-        role: user?.adminProfile?.role || 'admin',
-        lastLogin: user?.adminProfile?.lastLogin || new Date().toISOString(),
-        loginCount: user?.adminProfile?.loginCount || 1,
-        status: user?.adminProfile?.status || 'Active',
-        accountCreated: user?.adminProfile?.createdAt || new Date().toISOString()
+        name:           src.name         || 'System Administrator',
+        email:          src.email        || 'admin@ayropath.com',
+        mobile:         src.mobile       || 'Not provided',
+        userType:       src.userType     || 'NSA',
+        role:           src.role         || (isAdmin ? 'admin' : 'staff'),
+        lastLogin:      src.lastLogin    || new Date().toISOString(),
+        loginCount:     src.loginCount   || 1,
+        status:         src.status       || 'Active',
+        accountCreated: src.createdAt    || new Date().toISOString(),
     };
 
     const handleLogout = () => {
