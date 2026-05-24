@@ -281,7 +281,7 @@ const Header = ({ children }: HeaderProps) => {
       `}</style>
 
       {/* ── MAIN HEADER ────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-xl border-b border-gray-200/80 shadow-sm">
+      <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-xl border-b border-gray-200/80 shadow-sm print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Top bar: logo | search | user+cart */}
@@ -344,28 +344,29 @@ const Header = ({ children }: HeaderProps) => {
 
       {/* ── MOBILE SEARCH BAR (below header, home page only) ──────── */}
       {showSearchBar && (
-        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-2.5 z-30">
+        <div className="lg:hidden print:hidden bg-white border-b border-gray-200 px-4 py-2.5 z-30">
           <SearchBar />
         </div>
       )}
 
       {/* ── MOBILE PILL QUICK-LINKS (fixed, appears on scroll-up) ─── */}
       <div
-        className={`lg:hidden fixed top-16 left-0 right-0 z-30 bg-white/95 backdrop-blur-xl border-b border-gray-100 transition-transform duration-300 ${
-          showPillBar ? 'translate-y-0 shadow-sm' : '-translate-y-full'
+        className={`lg:hidden print:hidden fixed left-0 right-0 z-30 bg-white border-b border-gray-100 transition-all duration-300 ${
+          showPillBar
+            ? 'top-[65px] opacity-100 pointer-events-auto shadow-sm'
+            : 'top-[65px] opacity-0 pointer-events-none -translate-y-2'
         }`}
       >
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 py-2.5">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 py-2.5" style={{ WebkitOverflowScrolling: 'touch' }}>
           {NAV_LINKS.map(({ label, href }) => (
-              <Link
-                key={label}
-                href={href}
-                className="shrink-0 px-3.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100 transition-colors whitespace-nowrap"
-              >
-                {label}
-              </Link>
-            )
-          )}
+            <Link
+              key={label}
+              href={href}
+              className="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 active:bg-blue-100 whitespace-nowrap"
+            >
+              {label}
+            </Link>
+          ))}
         </div>
       </div>
 

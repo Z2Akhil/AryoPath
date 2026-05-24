@@ -7,18 +7,19 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   CheckCircle2, Package, MapPin, ArrowLeft, ExternalLink,
-  Truck, Loader2, AlertCircle, FileText, Upload,
+  Truck, Loader2, AlertCircle, FileText, Upload, Printer,
 } from 'lucide-react';
 import medicineOrderApi from '@/lib/api/medicineOrderApi';
 import { MedicineOrder, UploadedPrescription } from '@/types/medicineOrder';
 import PrescriptionUpload from '@/components/medicines/PrescriptionUpload';
+import MedicineOrderReceipt from '@/components/orders/MedicineOrderReceipt';
 
 const MILESTONE_STEPS: { status: MedicineOrder['status']; label: string; icon: React.ReactNode }[] = [
-  { status: 'confirmed',          label: 'Confirmed',        icon: <CheckCircle2 className="h-4 w-4" /> },
-  { status: 'packed',             label: 'Packed',           icon: <Package className="h-4 w-4" /> },
-  { status: 'shipped',            label: 'Shipped',          icon: <Truck className="h-4 w-4" /> },
-  { status: 'out_for_delivery',   label: 'Out for Delivery', icon: <MapPin className="h-4 w-4" /> },
-  { status: 'delivered',          label: 'Delivered',        icon: <CheckCircle2 className="h-4 w-4" /> },
+  { status: 'confirmed',          label: 'Confirmed',        icon: <CheckCircle2 className="h-3 w-3" /> },
+  { status: 'packed',             label: 'Packed',           icon: <Package className="h-3 w-3" /> },
+  { status: 'shipped',            label: 'Shipped',          icon: <Truck className="h-3 w-3" /> },
+  { status: 'out_for_delivery',   label: 'Out for Delivery', icon: <MapPin className="h-3 w-3" /> },
+  { status: 'delivered',          label: 'Delivered',        icon: <CheckCircle2 className="h-3 w-3" /> },
 ];
 
 const STATUS_RANK: Record<string, number> = {
@@ -107,7 +108,7 @@ export default function MedicineOrderTrackingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 print:hidden">
 
         {/* Back link */}
         <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-teal-600 mb-6 transition-colors">
@@ -154,28 +155,36 @@ export default function MedicineOrderTrackingPage() {
               <h2 className="text-sm font-extrabold text-gray-900">Order Progress</h2>
             </div>
 
-            <div className="relative">
-              <div className="absolute left-3.5 top-0 bottom-0 w-0.5 bg-gray-100" />
-              <div className="space-y-5">
-                {MILESTONE_STEPS.map((step, idx) => {
-                  const isDone    = milestoneIdx >= idx;
-                  const isCurrent = milestoneIdx === idx;
-                  return (
-                    <div key={step.status} className="flex items-center gap-4 relative">
-                      <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 z-10 transition-all ${
-                        isDone    ? 'bg-teal-500 border-teal-500 text-white'
-                        : isCurrent ? 'bg-white border-teal-300'
-                        : 'bg-white border-gray-200'
-                      }`}>
-                        {isDone ? step.icon : <div className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-teal-400' : 'bg-gray-200'}`} />}
-                      </div>
-                      <p className={`text-sm ${isDone ? 'font-bold text-gray-900' : 'text-gray-400'}`}>
-                        {step.label}
-                      </p>
+            <div className="relative flex items-start justify-between">
+              {/* Track background */}
+              <div className="absolute top-3 left-3 right-3 h-0.5 bg-gray-100 z-0" />
+              {/* Track fill */}
+              <div
+                className="absolute top-3 left-3 h-0.5 bg-teal-400 z-0 transition-all"
+                style={{ width: milestoneIdx >= 0 ? `calc(${(milestoneIdx / (MILESTONE_STEPS.length - 1)) * 100}% - 6px)` : '0%' }}
+              />
+              {MILESTONE_STEPS.map((step, idx) => {
+                const isDone    = milestoneIdx >= idx;
+                const isCurrent = milestoneIdx === idx;
+                return (
+                  <div key={step.status} className="flex flex-col items-center z-10 flex-1 first:items-start last:items-end">
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                      isDone    ? 'bg-teal-500 border-teal-500 text-white'
+                      : isCurrent ? 'bg-white border-teal-400'
+                      : 'bg-white border-gray-200'
+                    }`}>
+                      {isDone
+                        ? step.icon
+                        : <div className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-teal-400' : 'bg-gray-200'}`} />}
                     </div>
-                  );
-                })}
-              </div>
+                    <p className={`mt-1.5 text-[9px] font-semibold text-center leading-tight max-w-[52px] ${
+                      isDone || isCurrent ? 'text-gray-700' : 'text-gray-400'
+                    }`}>
+                      {step.label}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -266,6 +275,15 @@ export default function MedicineOrderTrackingPage() {
               <span className="text-teal-700">₹{order.grandTotal.toFixed(0)}</span>
             </div>
           </div>
+
+          {order.status === 'delivered' && (
+            <button
+              onClick={() => window.print()}
+              className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 text-teal-700 font-bold text-sm rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 transition-colors"
+            >
+              <Printer className="h-3.5 w-3.5" /> Print Receipt
+            </button>
+          )}
         </div>
 
         {/* Address */}
@@ -286,6 +304,8 @@ export default function MedicineOrderTrackingPage() {
         )}
 
       </div>
+
+      <MedicineOrderReceipt order={order} />
     </div>
   );
 }

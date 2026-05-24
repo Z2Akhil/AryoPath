@@ -6,6 +6,7 @@ import {
     Phone, Mail, Download,
 } from 'lucide-react';
 import { downloadReport, type Order } from '@/lib/api/ordersApi';
+import LabTestProgress from './LabTestProgress';
 
 export function StatusBadge({ status }: { status: string }) {
     const s = (status || '').toUpperCase();
@@ -141,11 +142,11 @@ export function OrderListItem({ order }: { order: Order }) {
                     {/* Lab status */}
                     {order.thyrocare?.status && (
                         <div>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Lab Status</p>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">{order.thyrocare.status}</span>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Lab Status</p>
+                            <LabTestProgress status={order.thyrocare.status} />
+                            <div className="flex items-center gap-3 mt-2 flex-wrap">
                                 {order.thyrocare.orderNo && (
-                                    <span className="text-xs text-gray-500 font-mono">Ref: {order.thyrocare.orderNo}</span>
+                                    <span className="text-[10px] text-gray-500 font-mono">Ref: {order.thyrocare.orderNo}</span>
                                 )}
                                 {order.thyrocare.lastSyncedAt && (
                                     <span className="text-[10px] text-gray-400">

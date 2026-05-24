@@ -18,7 +18,7 @@ const Footer = () => {
 
   if (loading) {
     return (
-      <footer className="bg-gray-900 text-white">
+      <footer className="bg-gray-900 text-white print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-pulse">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[1, 2, 3, 4].map((i) => (
@@ -57,7 +57,7 @@ const Footer = () => {
   const logoImage = !imgError && logo ? logo : '/logo-120.webp';
 
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-gray-900 text-white print:hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div className="space-y-6">
