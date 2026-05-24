@@ -8,6 +8,7 @@ import { useSiteSettings } from '@/providers/SiteSettingsProvider';
 import { useCart } from '@/providers/CartProvider';
 import { useAuthModal } from '@/providers/AuthModalProvider';
 import { useUser } from '@/providers/UserProvider';
+import { useToast } from '@/providers/ToastProvider';
 import { Logo } from '@/components/ui';
 import SearchBar from '@/components/search/SearchBar';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
@@ -16,8 +17,8 @@ const NAV_LINKS = [
   { label: 'Packages', href: '/profiles' },
   { label: 'Offers', href: '/offers' },
   { label: 'Lab Tests', href: '/tests' },
-  { label: 'Medicines', href: '/medicines' },
-  { label: 'Doctor Consult', href: '/consult' },
+  { label: 'Medicines', href: '/medicines', comingSoon: true },
+  { label: 'Doctor Consult', href: '/consult', comingSoon: true },
   { label: 'About Us', href: '/about' },
 ];
 
@@ -117,6 +118,8 @@ interface MobileDrawerProps {
 }
 
 const MobileDrawer = ({ open, user, mounted, onLogin, onLogout, onClose }: MobileDrawerProps) => {
+  const toast = useToast();
+  const handleComingSoon = (label: string) => { toast.info(`${label} is coming soon — stay tuned!`, 3000); onClose(); };
   // Defer user-dependent rendering until client is mounted to avoid hydration mismatch
   const resolvedUser = mounted ? user : null;
   return (
@@ -159,8 +162,17 @@ const MobileDrawer = ({ open, user, mounted, onLogin, onLogout, onClose }: Mobil
           <nav className="flex-1 p-5 overflow-y-auto">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Navigation</p>
             <div className="space-y-1">
-              {NAV_LINKS.map(({ label, href }) =>
-                (
+              {NAV_LINKS.map(({ label, href, comingSoon }) =>
+                comingSoon ? (
+                  <button
+                    key={label}
+                    onClick={() => { handleComingSoon(label); onClose(); }}
+                    className="w-full text-left flex items-center justify-between px-4 py-2.5 text-gray-400 rounded-lg font-medium text-sm"
+                  >
+                    {label}
+                    <span className="text-[9px] font-black bg-amber-100 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full leading-none">Soon</span>
+                  </button>
+                ) : (
                   <Link
                     key={label}
                     href={href}
@@ -214,7 +226,12 @@ const Header = ({ children }: HeaderProps) => {
 
   const { user, logout } = useUser();
   const { cart, medicineCartCount } = useCart();
+  const toast = useToast();
   const pathname = usePathname();
+
+  const handleComingSoon = (label: string) => {
+    toast.info(`${label} is coming soon — stay tuned!`, 3000);
+  };
   const showSearchBar = pathname === '/';
   const cartCount = (cart?.items?.length || 0) + (medicineCartCount || 0);
   const { settings, loading } = useSiteSettings();
@@ -314,15 +331,25 @@ const Header = ({ children }: HeaderProps) => {
           <nav className="hidden lg:block border-t border-gray-100">
             <div className="relative flex items-center justify-center py-2.5">
               <ul className="flex items-center gap-7">
-                {NAV_LINKS.map(({ label, href }) => (
+                {NAV_LINKS.map(({ label, href, comingSoon }) => (
                     <li key={label}>
-                      <Link
-                        href={href}
-                        className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors relative group py-1"
-                      >
-                        {label}
-                        <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300" />
-                      </Link>
+                      {comingSoon ? (
+                        <button
+                          onClick={() => handleComingSoon(label)}
+                          className="flex items-center gap-1.5 text-sm font-medium text-gray-400 cursor-pointer py-1"
+                        >
+                          {label}
+                          <span className="text-[9px] font-black bg-amber-100 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full leading-none">Soon</span>
+                        </button>
+                      ) : (
+                        <Link
+                          href={href}
+                          className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors relative group py-1"
+                        >
+                          {label}
+                          <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300" />
+                        </Link>
+                      )}
                     </li>
                   )
                 )}
@@ -358,14 +385,25 @@ const Header = ({ children }: HeaderProps) => {
         }`}
       >
         <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 py-2.5" style={{ WebkitOverflowScrolling: 'touch' }}>
-          {NAV_LINKS.map(({ label, href }) => (
-            <Link
-              key={label}
-              href={href}
-              className="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 active:bg-blue-100 whitespace-nowrap"
-            >
-              {label}
-            </Link>
+          {NAV_LINKS.map(({ label, href, comingSoon }) => (
+            comingSoon ? (
+              <button
+                key={label}
+                onClick={() => handleComingSoon(label)}
+                className="shrink-0 flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-400 border border-gray-200 whitespace-nowrap"
+              >
+                {label}
+                <span className="text-[8px] font-black bg-amber-100 text-amber-600 border border-amber-200 px-1 py-px rounded-full leading-none">Soon</span>
+              </button>
+            ) : (
+              <Link
+                key={label}
+                href={href}
+                className="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 active:bg-blue-100 whitespace-nowrap"
+              >
+                {label}
+              </Link>
+            )
           ))}
         </div>
       </div>
