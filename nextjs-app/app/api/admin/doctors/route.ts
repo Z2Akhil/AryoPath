@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const doctor = await Doctor.create({ ...body, createdBy: authResult.admin._id });
+  const doctor = await Doctor.create({ ...body, createdBy: getAdminContext(authResult).adminId });
 
   return NextResponse.json({ success: true, data: doctor }, { status: 201 });
 }

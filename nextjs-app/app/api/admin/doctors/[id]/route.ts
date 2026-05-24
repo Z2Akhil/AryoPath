@@ -67,7 +67,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
   const doctor = await Doctor.findOneAndUpdate(
     { _id: id, isDeleted: false },
-    { isDeleted: true, updatedBy: authResult.admin._id },
+    { isDeleted: true, updatedBy: getAdminContext(authResult).adminId },
     { new: true }
   );
 

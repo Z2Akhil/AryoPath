@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db/mongoose';
 import Medicine from '@/lib/models/Medicine';
-import { adminOrStaffAuth } from '@/lib/auth';
+import { adminOrStaffAuth, getAdminContext } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/constants/permissions';
 import { deleteFromCloudinary } from '@/lib/cloudinary';
 
@@ -57,7 +57,7 @@ export async function PUT(request: NextRequest, context: Context) {
   body.discountPercentage = mrp > 0 ? Math.round(((mrp - offerPrice) / mrp) * 100) : 0;
 
   if (authResult.role === 'admin') {
-    body.updatedBy = authResult.admin._id;
+    body.updatedBy = getAdminContext(authResult).adminId;
   }
 
   // Slug uniqueness check (only if slug changed)
