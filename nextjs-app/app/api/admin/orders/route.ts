@@ -8,7 +8,7 @@ import AdminActivity from '@/lib/models/AdminActivity';
 
 export async function GET(req: NextRequest) {
     const startTime = Date.now();
-    const auth = await adminOrStaffAuth(req, PERMISSIONS.ORDERS_VIEW);
+    const auth = await adminOrStaffAuth(req, PERMISSIONS.LAB_ORDERS_VIEW);
 
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });

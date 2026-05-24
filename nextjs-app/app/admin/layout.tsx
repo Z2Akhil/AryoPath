@@ -18,6 +18,12 @@ export default function AdminLayout({
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [productOpen, setProductOpen] = useState(false);
+    const [bookingsOpen, setBookingsOpen] = useState(
+        pathname.startsWith('/admin/orders') || pathname.startsWith('/admin/appointments')
+    );
+    const [analyticsOpen, setAnalyticsOpen] = useState(
+        pathname.startsWith('/admin/analytics') || pathname.startsWith('/admin/medicine-dashboard') || pathname.startsWith('/admin/appointments/dashboard')
+    );
 
     // Load sidebar state from localStorage on component mount
     useEffect(() => {
@@ -47,6 +53,7 @@ export default function AdminLayout({
     const getTitle = () => {
         if (pathname === '/admin') return 'Home';
         if (pathname.includes('/analytics')) return 'Analytics';
+        if (pathname.includes('/appointments')) return 'Appointments';
         if (pathname.includes('/orders')) return 'Orders';
         if (pathname.includes('/packages')) return 'Packages';
         if (pathname.includes('/offers')) return 'Offers';
@@ -67,6 +74,10 @@ export default function AdminLayout({
                 <AdminSidebar
                     collapsed={sidebarCollapsed}
                     onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    analyticsOpen={analyticsOpen}
+                    onToggleAnalytics={() => setAnalyticsOpen(!analyticsOpen)}
+                    bookingsOpen={bookingsOpen}
+                    onToggleBookings={() => setBookingsOpen(!bookingsOpen)}
                     productOpen={productOpen}
                     onToggleProduct={() => setProductOpen(!productOpen)}
                 />
@@ -85,6 +96,10 @@ export default function AdminLayout({
                 <AdminMobileDrawer
                     open={sidebarOpen}
                     onClose={() => setSidebarOpen(false)}
+                    analyticsOpen={analyticsOpen}
+                    toggleAnalytics={() => setAnalyticsOpen(!analyticsOpen)}
+                    bookingsOpen={bookingsOpen}
+                    toggleBookings={() => setBookingsOpen(!bookingsOpen)}
                     productOpen={productOpen}
                     toggleProduct={() => setProductOpen(!productOpen)}
                 />

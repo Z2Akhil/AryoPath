@@ -7,12 +7,13 @@ import { Pill, FlaskConical, Stethoscope, Truck, Save, Loader2, CheckCircle2, Al
 import { adminAxios } from '@/lib/api/adminAxios';
 import { fetchSiteSettings } from '@/lib/api/siteSettingsApi';
 import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 import AccessDenied from '@/components/admin/AccessDenied';
 
 const inputClass = 'w-full pl-10 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 focus:bg-white transition-all font-bold text-gray-900';
 
 const ServiceSettingsPage = () => {
-  const { isAdmin } = useAdminAuth();
+  const { isAdmin, hasPermission } = useAdminAuth();
   const [courierCharge, setCourierCharge] = useState<number>(49);
   const [fetching, setFetching] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -28,7 +29,7 @@ const ServiceSettingsPage = () => {
     })();
   }, []);
 
-  if (!isAdmin) return <AccessDenied section="Settings" />;
+  if (!isAdmin && !hasPermission(PERMISSIONS.SERVICES_VIEW)) return <AccessDenied section="Services" />;
 
   const showNotification = (type: string, message: string) => {
     setNotification({ show: true, type, message });

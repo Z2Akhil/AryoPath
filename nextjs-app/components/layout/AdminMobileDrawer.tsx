@@ -9,6 +9,10 @@ import { PERMISSIONS } from '@/lib/constants/permissions';
 interface MobileDrawerProps {
     open: boolean;
     onClose: () => void;
+    analyticsOpen: boolean;
+    toggleAnalytics: () => void;
+    bookingsOpen: boolean;
+    toggleBookings: () => void;
     productOpen: boolean;
     toggleProduct: () => void;
 }
@@ -16,6 +20,10 @@ interface MobileDrawerProps {
 const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
     open,
     onClose,
+    analyticsOpen,
+    toggleAnalytics,
+    bookingsOpen,
+    toggleBookings,
     productOpen,
     toggleProduct
 }) => {
@@ -31,7 +39,9 @@ const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
     const roleLabel = isAdmin ? 'Admin Dashboard' : 'Staff Portal';
 
     const showAnalytics     = isAdmin;
-    const showOrders        = isAdmin || hasPermission(PERMISSIONS.ORDERS_VIEW);
+    const showLabOrders     = isAdmin || hasPermission(PERMISSIONS.LAB_ORDERS_VIEW);
+    const showMedOrders     = isAdmin || hasPermission(PERMISSIONS.MED_ORDERS_VIEW);
+    const showAppointments  = isAdmin || hasPermission(PERMISSIONS.APPOINTMENTS_VIEW);
     const showProducts      = isAdmin || hasPermission(PERMISSIONS.PRODUCTS_VIEW) || hasPermission(PERMISSIONS.MEDICINES_VIEW);
     const showMedicines     = isAdmin || hasPermission(PERMISSIONS.MEDICINES_VIEW);
     const showLabProducts   = isAdmin || hasPermission(PERMISSIONS.PRODUCTS_VIEW);
@@ -39,6 +49,7 @@ const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
     const showUsers         = isAdmin || hasPermission(PERMISSIONS.USERS_VIEW);
     const showNotifications = isAdmin || hasPermission(PERMISSIONS.NOTIFICATIONS_VIEW);
     const showHomepage      = isAdmin || hasPermission(PERMISSIONS.HOMEPAGE_EDIT);
+    const showServices      = isAdmin || hasPermission(PERMISSIONS.SERVICES_VIEW);
 
     return (
         <>
@@ -73,10 +84,31 @@ const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
                                 Home
                             </Link>
 
-                            {showAnalytics && (
-                                <Link href="/admin/analytics" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
-                                    Analytics
-                                </Link>
+                            {/* Analytics Accordion */}
+                            {(showAnalytics || showMedicines || showAppointments) && (
+                                <div className="space-y-2">
+                                    <button
+                                        onClick={toggleAnalytics}
+                                        className="flex justify-between items-center w-full px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+                                    >
+                                        <span>Analytics</span>
+                                        {analyticsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                                    </button>
+
+                                    {analyticsOpen && (
+                                        <div className="pl-6 space-y-2 border-l-2 border-gray-100 ml-4">
+                                            {showAnalytics && (
+                                                <Link href="/admin/analytics" onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">Overview</Link>
+                                            )}
+                                            {showMedicines && (
+                                                <Link href="/admin/medicine-dashboard" onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">Meds Sales</Link>
+                                            )}
+                                            {showAppointments && (
+                                                <Link href="/admin/appointments/dashboard" onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">Consultations</Link>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             )}
 
                             {showHomepage && (
@@ -85,10 +117,31 @@ const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
                                 </Link>
                             )}
 
-                            {showOrders && (
-                                <Link href="/admin/orders" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
-                                    Orders
-                                </Link>
+                            {/* Bookings Accordion */}
+                            {(showLabOrders || showMedOrders || showAppointments) && (
+                                <div className="space-y-2">
+                                    <button
+                                        onClick={toggleBookings}
+                                        className="flex justify-between items-center w-full px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+                                    >
+                                        <span>Bookings</span>
+                                        {bookingsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                                    </button>
+
+                                    {bookingsOpen && (
+                                        <div className="pl-6 space-y-2 border-l-2 border-gray-100 ml-4">
+                                            {showLabOrders && (
+                                                <Link href="/admin/orders" onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">Lab Orders</Link>
+                                            )}
+                                            {showMedOrders && (
+                                                <Link href="/admin/orders/medicine" onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">Meds Orders</Link>
+                                            )}
+                                            {showAppointments && (
+                                                <Link href="/admin/appointments" onClick={onClose} className="block px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">Appointments</Link>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             )}
 
                             {/* Products Accordion */}
@@ -141,6 +194,13 @@ const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
                             {showNotifications && (
                                 <Link href="/admin/notifications" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
                                     Notifications
+                                </Link>
+                            )}
+
+                            {/* Services — admin + staff with SERVICES_VIEW */}
+                            {showServices && (
+                                <Link href="/admin/settings/services" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
+                                    Services
                                 </Link>
                             )}
 

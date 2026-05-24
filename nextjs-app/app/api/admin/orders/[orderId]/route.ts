@@ -11,7 +11,7 @@ export async function GET(
     { params }: { params: Promise<{ orderId: string }> }
 ) {
     const startTime = Date.now();
-    const auth = await adminOrStaffAuth(req, PERMISSIONS.ORDERS_VIEW);
+    const auth = await adminOrStaffAuth(req, PERMISSIONS.LAB_ORDERS_VIEW);
 
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
@@ -61,7 +61,7 @@ export async function PUT(
     { params }: { params: Promise<{ orderId: string }> }
 ) {
     const startTime = Date.now();
-    const auth = await adminOrStaffAuth(req, PERMISSIONS.ORDERS_EDIT);
+    const auth = await adminOrStaffAuth(req, PERMISSIONS.LAB_ORDERS_EDIT);
 
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });

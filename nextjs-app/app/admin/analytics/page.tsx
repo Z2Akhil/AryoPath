@@ -18,6 +18,7 @@ import {
     LayoutDashboard
 } from 'lucide-react';
 import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 import AccessDenied from '@/components/admin/AccessDenied';
 
 const AnalyticsPage = () => {

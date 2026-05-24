@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const authResult = await adminAuth(request);
+  const authResult = await adminOrStaffAuth(request, PERMISSIONS.DOCTORS_EDIT);
   if (!authResult.authenticated) {
     return NextResponse.json({ success: false, message: authResult.error }, { status: authResult.status });
   }

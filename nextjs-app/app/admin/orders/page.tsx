@@ -146,7 +146,7 @@ export default function OrderPage() {
         }
     };
 
-    if (!isAdmin && !hasPermission(PERMISSIONS.ORDERS_VIEW)) {
+    if (!isAdmin && !hasPermission(PERMISSIONS.LAB_ORDERS_VIEW)) {
         return <AccessDenied section="Orders" />;
     }
 

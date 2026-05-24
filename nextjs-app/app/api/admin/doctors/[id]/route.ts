@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db/mongoose';
 import Doctor from '@/lib/models/Doctor';
-import { adminAuth, adminOrStaffAuth } from '@/lib/auth';
+import { adminAuth, adminOrStaffAuth, getAdminContext } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/constants/permissions';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 }
 
 export async function PUT(request: NextRequest, { params }: Params) {
-  const authResult = await adminAuth(request);
+  const authResult = await adminOrStaffAuth(request, PERMISSIONS.DOCTORS_EDIT);
   if (!authResult.authenticated) {
     return NextResponse.json({ success: false, message: authResult.error }, { status: authResult.status });
   }
@@ -34,6 +34,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   await connectToDatabase();
   const { id } = await params;
   const body = await request.json();
+  const { adminId } = getAdminContext(authResult);
 
   if (body.slug) {
     const conflict = await Doctor.findOne({ slug: body.slug, _id: { $ne: id }, isDeleted: false });
@@ -44,7 +45,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
   const doctor = await Doctor.findOneAndUpdate(
     { _id: id, isDeleted: false },
-    { ...body, updatedBy: authResult.admin._id },
+    { ...body, updatedBy: adminId },
     { new: true, runValidators: true }
   ).select('-__v -isDeleted');
 

@@ -147,9 +147,14 @@ export default function EditStaffPage() {
                             const viewPerm = group.permissions[0] as Permission;
                             const editPerm = group.permissions[1] as Permission | undefined;
                             return (
-                                <div key={group.label} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50">
-                                    <span className="text-sm text-gray-700">{group.label}</span>
-                                    <div className="flex gap-6">
+                                <div key={group.label} className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-gray-50">
+                                    <div>
+                                        <p className="text-sm text-gray-700 font-medium">{group.label}</p>
+                                        {'description' in group && (
+                                            <p className="text-xs text-gray-400 mt-0.5">{group.description}</p>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-6 shrink-0 ml-4">
                                         <input
                                             type="checkbox"
                                             checked={permissions.includes(viewPerm)}

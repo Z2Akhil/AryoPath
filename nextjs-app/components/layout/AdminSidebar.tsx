@@ -4,9 +4,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-    Home, BarChart3, ShoppingCart, Package, Users, Bell,
+    Home, BarChart3, Package, Users, Bell,
     Settings, UserCircle, ChevronLeft, ChevronRight,
     ChevronDown, ChevronUp, Stethoscope, Layers, UserCog, Star,
+    ClipboardList,
 } from 'lucide-react';
 import { useAdminAuth } from '@/providers/AdminAuthProvider';
 import { PERMISSIONS } from '@/lib/constants/permissions';
@@ -14,16 +15,19 @@ import { PERMISSIONS } from '@/lib/constants/permissions';
 interface SidebarProps {
     collapsed: boolean;
     onToggle: () => void;
+    analyticsOpen: boolean;
+    onToggleAnalytics: () => void;
+    bookingsOpen: boolean;
+    onToggleBookings: () => void;
     productOpen: boolean;
     onToggleProduct: () => void;
 }
 
-type FlyoutType = 'orders' | 'products' | null;
+type FlyoutType = 'analytics' | 'bookings' | 'products' | null;
 
-const AdminSidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, productOpen, onToggleProduct }) => {
+const AdminSidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, analyticsOpen, onToggleAnalytics, bookingsOpen, onToggleBookings, productOpen, onToggleProduct }) => {
     const pathname = usePathname();
     const { isAdmin, hasPermission } = useAdminAuth();
-    const [ordersOpen, setOrdersOpen] = useState(pathname.startsWith('/admin/orders'));
     const [flyout, setFlyout] = useState<FlyoutType>(null);
     const [flyoutY, setFlyoutY] = useState(0);
     const flyoutRef = useRef<HTMLDivElement>(null);
@@ -63,14 +67,17 @@ const AdminSidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, productOpen
         `block px-4 py-2.5 text-sm font-medium transition-colors rounded-lg mx-1
         ${isActive(path, exact) ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'}`;
 
-    const showAnalytics    = isAdmin;
-    const showOrders       = isAdmin || hasPermission(PERMISSIONS.ORDERS_VIEW);
-    const showProducts     = isAdmin || hasPermission(PERMISSIONS.PRODUCTS_VIEW) || hasPermission(PERMISSIONS.MEDICINES_VIEW);
-    const showMedicines    = isAdmin || hasPermission(PERMISSIONS.MEDICINES_VIEW);
-    const showLabProducts  = isAdmin || hasPermission(PERMISSIONS.PRODUCTS_VIEW);
-    const showDoctors      = isAdmin || hasPermission(PERMISSIONS.DOCTORS_VIEW);
-    const showUsers        = isAdmin || hasPermission(PERMISSIONS.USERS_VIEW);
+    const showAnalytics     = isAdmin;
+    const showLabOrders     = isAdmin || hasPermission(PERMISSIONS.LAB_ORDERS_VIEW);
+    const showMedOrders     = isAdmin || hasPermission(PERMISSIONS.MED_ORDERS_VIEW);
+    const showAppointments  = isAdmin || hasPermission(PERMISSIONS.APPOINTMENTS_VIEW);
+    const showProducts      = isAdmin || hasPermission(PERMISSIONS.PRODUCTS_VIEW) || hasPermission(PERMISSIONS.MEDICINES_VIEW);
+    const showMedicines     = isAdmin || hasPermission(PERMISSIONS.MEDICINES_VIEW);
+    const showLabProducts   = isAdmin || hasPermission(PERMISSIONS.PRODUCTS_VIEW);
+    const showDoctors       = isAdmin || hasPermission(PERMISSIONS.DOCTORS_VIEW);
+    const showUsers         = isAdmin || hasPermission(PERMISSIONS.USERS_VIEW);
     const showNotifications = isAdmin || hasPermission(PERMISSIONS.NOTIFICATIONS_VIEW);
+    const showServices      = isAdmin || hasPermission(PERMISSIONS.SERVICES_VIEW);
 
     return (
         <>
@@ -96,12 +103,43 @@ const AdminSidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, productOpen
                         {!collapsed && <span className="ml-3">Home</span>}
                     </Link>
 
-                    {/* Analytics */}
-                    {showAnalytics && (
-                        <Link href="/admin/analytics" className={navLinkClass('/admin/analytics')} title="Analytics">
-                            <BarChart3 className="h-5 w-5" />
-                            {!collapsed && <span className="ml-3">Analytics</span>}
-                        </Link>
+                    {/* Analytics accordion */}
+                    {(showAnalytics || showMedicines || showAppointments) && (
+                        <>
+                            <button
+                                onClick={collapsed
+                                    ? (e) => openFlyout('analytics', e)
+                                    : onToggleAnalytics}
+                                className={`flex ${collapsed ? 'justify-center' : 'justify-between'} items-center w-full ${collapsed ? 'px-2' : 'px-4'} py-3 rounded-md hover:bg-blue-50 font-medium transition-all duration-200 ${isActive('/admin/analytics') || isActive('/admin/medicine-dashboard') || isActive('/admin/appointments/dashboard') ? 'text-blue-600' : 'text-gray-700'}`}
+                                title="Analytics"
+                            >
+                                <div className="flex items-center">
+                                    <BarChart3 className="h-5 w-5" />
+                                    {!collapsed && <span className="ml-3">Analytics</span>}
+                                </div>
+                                {!collapsed && (analyticsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />)}
+                            </button>
+
+                            {analyticsOpen && !collapsed && (
+                                <div className="pl-8 space-y-1 text-sm">
+                                    {showAnalytics && (
+                                        <Link href="/admin/analytics" className={`block px-3 py-2 rounded-md transition-colors font-medium ${isActive('/admin/analytics', true) ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-blue-100'}`}>
+                                            Overview
+                                        </Link>
+                                    )}
+                                    {showMedicines && (
+                                        <Link href="/admin/medicine-dashboard" className={`block px-3 py-2 rounded-md transition-colors font-medium ${isActive('/admin/medicine-dashboard') ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-blue-100'}`}>
+                                            Meds Sales
+                                        </Link>
+                                    )}
+                                    {showAppointments && (
+                                        <Link href="/admin/appointments/dashboard" className={`block px-3 py-2 rounded-md transition-colors font-medium ${isActive('/admin/appointments/dashboard') ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-blue-100'}`}>
+                                            Consultations
+                                        </Link>
+                                    )}
+                                </div>
+                            )}
+                        </>
                     )}
 
                     {/* Homepage Featured */}
@@ -112,31 +150,40 @@ const AdminSidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, productOpen
                         </Link>
                     )}
 
-                    {/* Orders */}
-                    {showOrders && (
+                    {/* Bookings accordion */}
+                    {(showLabOrders || showMedOrders || showAppointments) && (
                         <>
                             <button
                                 onClick={collapsed
-                                    ? (e) => openFlyout('orders', e)
-                                    : () => setOrdersOpen(v => !v)}
-                                className={`flex ${collapsed ? 'justify-center' : 'justify-between'} items-center w-full ${collapsed ? 'px-2' : 'px-4'} py-3 rounded-md hover:bg-blue-50 font-medium transition-all duration-200 ${isActive('/admin/orders') ? 'text-blue-600' : 'text-gray-700'}`}
-                                title="Orders"
+                                    ? (e) => openFlyout('bookings', e)
+                                    : onToggleBookings}
+                                className={`flex ${collapsed ? 'justify-center' : 'justify-between'} items-center w-full ${collapsed ? 'px-2' : 'px-4'} py-3 rounded-md hover:bg-blue-50 font-medium transition-all duration-200 ${isActive('/admin/orders') || isActive('/admin/appointments') ? 'text-blue-600' : 'text-gray-700'}`}
+                                title="Bookings"
                             >
                                 <div className="flex items-center">
-                                    <ShoppingCart className="h-5 w-5" />
-                                    {!collapsed && <span className="ml-3">Orders</span>}
+                                    <ClipboardList className="h-5 w-5" />
+                                    {!collapsed && <span className="ml-3">Bookings</span>}
                                 </div>
-                                {!collapsed && (ordersOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />)}
+                                {!collapsed && (bookingsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />)}
                             </button>
 
-                            {ordersOpen && !collapsed && (
+                            {bookingsOpen && !collapsed && (
                                 <div className="pl-8 space-y-1 text-sm">
-                                    <Link href="/admin/orders" className={`block px-3 py-2 rounded-md transition-colors font-medium ${isActive('/admin/orders', true) ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-blue-100'}`}>
-                                        Lab Tests
-                                    </Link>
-                                    <Link href="/admin/orders/medicine" className={`block px-3 py-2 rounded-md transition-colors font-medium ${isActive('/admin/orders/medicine') ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-blue-100'}`}>
-                                        Medicines
-                                    </Link>
+                                    {showLabOrders && (
+                                        <Link href="/admin/orders" className={`block px-3 py-2 rounded-md transition-colors font-medium ${isActive('/admin/orders', true) ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-blue-100'}`}>
+                                            Lab Orders
+                                        </Link>
+                                    )}
+                                    {showMedOrders && (
+                                        <Link href="/admin/orders/medicine" className={`block px-3 py-2 rounded-md transition-colors font-medium ${isActive('/admin/orders/medicine') ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-blue-100'}`}>
+                                            Meds Orders
+                                        </Link>
+                                    )}
+                                    {showAppointments && (
+                                        <Link href="/admin/appointments" className={`block px-3 py-2 rounded-md transition-colors font-medium ${isActive('/admin/appointments') ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-blue-100'}`}>
+                                            Appointments
+                                        </Link>
+                                    )}
                                 </div>
                             )}
                         </>
@@ -208,17 +255,20 @@ const AdminSidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, productOpen
                         </Link>
                     )}
 
-                    {/* Settings / Services / Account — admin only */}
+                    {/* Services — admin + staff with SERVICES_VIEW */}
+                    {showServices && (
+                        <Link href="/admin/settings/services" className={navLinkClass('/admin/settings/services')} title="Services">
+                            <Layers className="h-5 w-5" />
+                            {!collapsed && <span className="ml-3">Services</span>}
+                        </Link>
+                    )}
+
+                    {/* Settings / Account — admin only */}
                     {isAdmin && (
                         <>
                             <Link href="/admin/settings" className={navLinkClass('/admin/settings', true)} title="Settings">
                                 <Settings className="h-5 w-5" />
                                 {!collapsed && <span className="ml-3">Settings</span>}
-                            </Link>
-
-                            <Link href="/admin/settings/services" className={navLinkClass('/admin/settings/services')} title="Service Settings">
-                                <Layers className="h-5 w-5" />
-                                {!collapsed && <span className="ml-3">Services</span>}
                             </Link>
 
                             <Link href="/admin/account" className={navLinkClass('/admin/account')} title="Account">
@@ -238,13 +288,28 @@ const AdminSidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, productOpen
                     className="fixed z-50 ml-2 w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-in fade-in slide-in-from-left-2 duration-150"
                 >
                     <p className="px-4 pb-1.5 pt-0.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        {flyout === 'orders' ? 'Orders' : 'Products'}
+                        {flyout === 'analytics' ? 'Analytics' : flyout === 'bookings' ? 'Bookings' : 'Products'}
                     </p>
 
-                    {flyout === 'orders' && (
+                    {flyout === 'analytics' && (
                         <>
-                            <Link href="/admin/orders"          onClick={() => setFlyout(null)} className={flyoutLinkClass('/admin/orders', true)}>Lab Tests</Link>
-                            <Link href="/admin/orders/medicine" onClick={() => setFlyout(null)} className={flyoutLinkClass('/admin/orders/medicine')}>Medicines</Link>
+                            <Link href="/admin/analytics"              onClick={() => setFlyout(null)} className={flyoutLinkClass('/admin/analytics', true)}>Overview</Link>
+                            <Link href="/admin/medicine-dashboard"     onClick={() => setFlyout(null)} className={flyoutLinkClass('/admin/medicine-dashboard')}>Meds Sales</Link>
+                            <Link href="/admin/appointments/dashboard" onClick={() => setFlyout(null)} className={flyoutLinkClass('/admin/appointments/dashboard')}>Consultations</Link>
+                        </>
+                    )}
+
+                    {flyout === 'bookings' && (
+                        <>
+                            {showLabOrders && (
+                                <Link href="/admin/orders"          onClick={() => setFlyout(null)} className={flyoutLinkClass('/admin/orders', true)}>Lab Orders</Link>
+                            )}
+                            {showMedOrders && (
+                                <Link href="/admin/orders/medicine" onClick={() => setFlyout(null)} className={flyoutLinkClass('/admin/orders/medicine')}>Meds Orders</Link>
+                            )}
+                            {showAppointments && (
+                                <Link href="/admin/appointments"    onClick={() => setFlyout(null)} className={flyoutLinkClass('/admin/appointments')}>Appointments</Link>
+                            )}
                         </>
                     )}
 
