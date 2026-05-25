@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
+import type { MedicineOrderStatus } from '@/types/medicineOrder';
+
+// Maps Delhivery scan status keywords → our order milestone status
+function mapCourierStatus(courierStatus: string): MedicineOrderStatus | null {
+  const s = courierStatus.toLowerCase();
+  if (s.includes('delivered') && !s.includes('undelivered'))  return 'delivered';
+  if (s.includes('out for delivery') || s.includes('out_for_delivery')) return 'out_for_delivery';
+  if (s.includes('in transit') || s.includes('intransit') || s.includes('manifested') || s.includes('shipped')) return 'shipped';
+  return null;
+}
 
 // Delhivery pushes status updates here.
 // Register this URL in the Delhivery seller dashboard as the webhook endpoint.
@@ -46,9 +56,10 @@ export async function POST(req: NextRequest) {
         (order as any).courierStatusHistory = existing;
       }
 
-      if (status.toLowerCase().includes('delivered') && order.status !== 'delivered') {
-        order.status = 'delivered';
-        (order as any).deliveredAt = timestamp;
+      const mappedStatus = mapCourierStatus(status);
+      if (mappedStatus && order.status !== mappedStatus) {
+        order.status = mappedStatus;
+        if (mappedStatus === 'delivered') (order as any).deliveredAt = timestamp;
       }
 
       await order.save();

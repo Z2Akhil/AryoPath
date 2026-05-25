@@ -54,6 +54,16 @@ export default function MedicineOrderTrackingPage() {
         const res = await medicineOrderApi.getByOrderId(orderId);
         if (res.success) {
           setOrder(res.data);
+          // If AWB exists, refresh tracking from Delhivery in the background —
+          // this updates courier status + auto-marks delivered if Delhivery says so
+          if ((res.data as any).awb) {
+            medicineOrderApi.getTracking(orderId)
+              .then(async () => {
+                const updated = await medicineOrderApi.getByOrderId(orderId);
+                if (updated.success) setOrder(updated.data);
+              })
+              .catch(() => {/* silent — tracking refresh is best-effort */});
+          }
         } else {
           setError('Order not found.');
         }
