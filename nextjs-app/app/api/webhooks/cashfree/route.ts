@@ -25,8 +25,10 @@ export async function POST(req: NextRequest) {
 
     const body = JSON.parse(rawBody);
 
-    // Only handle successful payments; acknowledge everything else silently
-    if (body?.type !== 'PAYMENT_SUCCESS') {
+    // Cashfree dashboard calls this event "success payment"; the payload type field
+    // varies by API version so we check the actual payment_status instead.
+    const paymentStatus = (body?.data?.payment?.payment_status ?? '').toUpperCase();
+    if (paymentStatus !== 'SUCCESS') {
       return NextResponse.json({ received: true });
     }
 
