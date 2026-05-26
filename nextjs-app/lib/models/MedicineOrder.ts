@@ -48,10 +48,11 @@ const PrescriptionSchema = new Schema(
 
 const CourierEventSchema = new Schema(
   {
-    status:    { type: String, required: true },
-    activity:  { type: String, default: '' },
-    location:  { type: String, default: '' },
-    timestamp: { type: Date, required: true },
+    status:     { type: String, required: true },
+    statusType: { type: String, default: '' },
+    activity:   { type: String, default: '' },
+    location:   { type: String, default: '' },
+    timestamp:  { type: Date, required: true },
   },
   { _id: false }
 );
@@ -116,6 +117,8 @@ const MedicineOrderSchema = new Schema<MedicineOrderDocument>(
     courierStatus:          { type: String, default: '' },
     courierStatusUpdatedAt: { type: Date },
     courierStatusHistory:   { type: [CourierEventSchema], default: [] },
+    // TTL: pending_payment / payment_failed orders auto-delete after 30 min
+    expiresAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
@@ -123,6 +126,8 @@ const MedicineOrderSchema = new Schema<MedicineOrderDocument>(
 MedicineOrderSchema.index({ userId: 1, createdAt: -1 });
 MedicineOrderSchema.index({ status: 1 });
 MedicineOrderSchema.index({ awb: 1 }, { sparse: true });
+// TTL index — deletes doc when expiresAt is reached; sparse so confirmed orders (expiresAt=null) are ignored
+MedicineOrderSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0, sparse: true });
 
 const MedicineOrder =
   (mongoose.models.MedicineOrder as Model<MedicineOrderDocument>) ||

@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
                 'payment.status':      'paid',
                 'payment.paidAt':      new Date(),
                 status: (existingOrder as any).requiresPrescription ? 'prescription_required' : 'confirmed',
+                expiresAt: null, // cancel TTL — payment done, order is real
             },
             { new: true }
         ).lean();

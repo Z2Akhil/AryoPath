@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
       'payment.status':      'paid',
       'payment.paidAt':      new Date(),
       status: (existing as any).requiresPrescription ? 'prescription_required' : 'confirmed',
+      expiresAt: null, // cancel TTL — payment confirmed via webhook
     });
 
     // Decrement stock — same logic as the verify route
