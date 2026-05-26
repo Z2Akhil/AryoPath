@@ -62,6 +62,11 @@ const medicineOrderApi = {
     };
   },
 
+  cancelPendingOrder: async (orderId: string) => {
+    const res = await axiosInstance.delete(`/orders/medicine/${orderId}`);
+    return res.data as { success: boolean };
+  },
+
   uploadPrescription: async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);

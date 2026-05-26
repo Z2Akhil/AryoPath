@@ -99,6 +99,8 @@ export default function MedicineCheckoutForm() {
       });
 
       if ((result as any).error) {
+        // User cancelled or payment failed — delete the pending order immediately
+        medicineOrderApi.cancelPendingOrder(internalOrderId).catch(() => {/* silent — TTL will clean up anyway */});
         const errMsg = (result as any).error?.message || 'Payment failed or was cancelled.';
         if (errMsg !== 'cancelled') toast.error(errMsg);
         return;

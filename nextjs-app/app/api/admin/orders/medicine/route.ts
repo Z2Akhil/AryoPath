@@ -23,7 +23,10 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate   = searchParams.get('endDate');
 
-    const query: any = {};
+    // Never show unpaid ghost orders to admin unless explicitly filtered for
+    const query: any = {
+      status: { $nin: ['pending_payment', 'payment_failed'] },
+    };
 
     if (status) query.status = status;
 
