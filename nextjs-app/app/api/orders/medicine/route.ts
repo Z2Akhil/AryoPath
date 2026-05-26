@@ -127,13 +127,18 @@ export async function GET(req: NextRequest) {
     const page  = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
     const limit = Math.min(20, parseInt(searchParams.get('limit') ?? '10'));
 
+    const filter = {
+      userId: (user as any)._id,
+      status: { $nin: ['pending_payment', 'payment_failed'] },
+    };
+
     const [orders, total] = await Promise.all([
-      MedicineOrder.find({ userId: (user as any)._id })
+      MedicineOrder.find(filter)
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
         .lean(),
-      MedicineOrder.countDocuments({ userId: (user as any)._id }),
+      MedicineOrder.countDocuments(filter),
     ]);
 
     return NextResponse.json({
