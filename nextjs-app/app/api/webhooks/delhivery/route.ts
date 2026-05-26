@@ -3,12 +3,19 @@ import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import type { MedicineOrderStatus } from '@/types/medicineOrder';
 
-// Maps Delhivery scan status keywords → our order milestone status
+// Maps Delhivery B2C webhook status strings → our order milestone status.
+// Exact status values per Delhivery docs (forward shipment):
+//   Manifested  → shipped   (order created in Delhivery system)
+//   In Transit  → shipped
+//   Dispatched  → out_for_delivery  (FE out for final delivery)
+//   Delivered   → delivered
+//   RTO         → cancelled (return to origin — undelivered)
 function mapCourierStatus(courierStatus: string): MedicineOrderStatus | null {
-  const s = courierStatus.toLowerCase();
-  if (s.includes('delivered') && !s.includes('undelivered'))  return 'delivered';
-  if (s.includes('out for delivery') || s.includes('out_for_delivery')) return 'out_for_delivery';
-  if (s.includes('in transit') || s.includes('intransit') || s.includes('manifested') || s.includes('shipped')) return 'shipped';
+  const s = courierStatus.toLowerCase().trim();
+  if (s === 'delivered')                        return 'delivered';
+  if (s === 'dispatched')                       return 'out_for_delivery';
+  if (s === 'in transit' || s === 'manifested') return 'shipped';
+  if (s === 'rto')                              return 'cancelled';
   return null;
 }
 
@@ -27,8 +34,9 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
-    // Delhivery webhook payload shape (may vary — adapt to actual payload from their docs)
-    const packages: any[] = body?.packages ?? (Array.isArray(body) ? body : [body]);
+    // Delhivery scan push payload: { waybill, status, statusType, instructions, city, state, timestamp }
+    // May arrive as a single object or wrapped in a packages/shipments array
+    const packages: any[] = body?.packages ?? body?.shipments ?? (Array.isArray(body) ? body : [body]);
 
     await connectDB();
 
@@ -40,7 +48,8 @@ export async function POST(req: NextRequest) {
       if (!order) continue;
 
       const status    = pkg?.status ?? pkg?.Status ?? '';
-      const activity  = pkg?.instructions ?? pkg?.activity ?? pkg?.Activity ?? '';
+      const statusType = pkg?.statusType ?? pkg?.status_type ?? '';
+      const activity  = pkg?.instructions ?? pkg?.activity ?? '';
       const location  = pkg?.city ?? pkg?.City ?? pkg?.location ?? '';
       const timestamp = new Date(pkg?.timestamp ?? pkg?.status_time ?? Date.now());
 
@@ -52,7 +61,7 @@ export async function POST(req: NextRequest) {
         (e: any) => e.status === status && Math.abs(new Date(e.timestamp).getTime() - timestamp.getTime()) < 60000
       );
       if (!alreadyRecorded) {
-        existing.unshift({ status, activity, location, timestamp });
+        existing.unshift({ status, statusType, activity, location, timestamp });
         (order as any).courierStatusHistory = existing;
       }
 
