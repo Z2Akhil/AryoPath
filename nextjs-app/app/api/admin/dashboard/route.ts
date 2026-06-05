@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/auth';
+import { adminOrStaffAuth, getAdminContext } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 import connectDB from '@/lib/db/mongoose';
 import Order from '@/lib/models/Order';
 import User from '@/lib/models/User';
@@ -11,7 +12,7 @@ import AdminActivity from '@/lib/models/AdminActivity';
 
 export async function GET(req: NextRequest) {
     const startTime = Date.now();
-    const auth = await adminAuth(req);
+    const auth = await adminOrStaffAuth(req, PERMISSIONS.LAB_ORDERS_VIEW);
 
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
@@ -141,12 +142,13 @@ export async function GET(req: NextRequest) {
         const avgOrderValue = revenueData[0]?.avgOrderValue || 0;
         const conversionRate = totalUsers > 0 ? ((totalOrders / totalUsers) * 100).toFixed(1) : '0';
 
-        // Log admin activity
-        await AdminActivity.logActivity({
-            adminId: auth.admin._id,
-            sessionId: auth.session._id,
+        // Log admin activity (skip for staff — no adminId)
+        const { adminId, sessionId } = getAdminContext(auth);
+        if (adminId) await AdminActivity.logActivity({
+            adminId,
+            sessionId,
             action: 'DASHBOARD_FETCH',
-            description: `Admin ${auth.admin.name} fetched dashboard data`,
+            description: `Admin fetched dashboard data`,
             resource: 'dashboard',
             endpoint: '/api/admin/dashboard',
             method: 'GET',
@@ -232,10 +234,11 @@ export async function GET(req: NextRequest) {
         const responseTime = Date.now() - startTime;
         console.error('Dashboard fetch error:', error);
 
-        // Log error activity
-        await AdminActivity.logActivity({
-            adminId: auth.admin._id,
-            sessionId: auth.session._id,
+        // Log error activity (skip for staff)
+        const { adminId: eAdminId, sessionId: eSessionId } = getAdminContext(auth);
+        if (eAdminId) await AdminActivity.logActivity({
+            adminId: eAdminId,
+            sessionId: eSessionId,
             action: 'ERROR',
             description: `Failed to fetch dashboard data: ${error.message}`,
             resource: 'dashboard',

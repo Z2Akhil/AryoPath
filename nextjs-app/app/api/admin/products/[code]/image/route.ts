@@ -12,7 +12,7 @@ type Params = { params: Promise<{ code: string }> };
 
 // PATCH — upload or replace package image
 export async function PATCH(req: NextRequest, { params }: Params) {
-    const auth = await adminOrStaffAuth(req, PERMISSIONS.PRODUCTS_EDIT);
+    const auth = await adminOrStaffAuth(req, PERMISSIONS.PRODUCTS_VIEW);
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
     }
@@ -69,7 +69,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 // DELETE — remove custom image and delete from Cloudinary
 export async function DELETE(req: NextRequest, { params }: Params) {
-    const auth = await adminOrStaffAuth(req, PERMISSIONS.PRODUCTS_EDIT);
+    const auth = await adminOrStaffAuth(req, PERMISSIONS.PRODUCTS_VIEW);
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
     }
