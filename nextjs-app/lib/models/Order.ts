@@ -105,7 +105,12 @@ const orderSchema = new Schema<OrderDocument, IOrderModel>({
     adminId: {
         type: Schema.Types.ObjectId,
         ref: 'Admin',
-        required: true
+        default: null,
+    },
+    staffId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Staff',
+        default: null,
     },
     package: {
         code: {
@@ -292,6 +297,7 @@ const orderSchema = new Schema<OrderDocument, IOrderModel>({
 
 orderSchema.index({ userId: 1 });
 orderSchema.index({ adminId: 1 });
+orderSchema.index({ staffId: 1 }, { sparse: true });
 orderSchema.index({ 'thyrocare.orderNo': 1 });
 orderSchema.index({ 'thyrocare.status': 1 });
 orderSchema.index({ status: 1 });

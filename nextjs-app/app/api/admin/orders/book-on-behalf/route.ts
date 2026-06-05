@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/auth';
+import { adminOrStaffAuth, getAdminContext } from '@/lib/auth';
 import connectDB from '@/lib/db/mongoose';
 import Order from '@/lib/models/Order';
 import AdminActivity from '@/lib/models/AdminActivity';
@@ -9,11 +9,15 @@ import { ThyrocareService } from '@/lib/services/thyrocare';
 
 export async function POST(req: NextRequest) {
     const startTime = Date.now();
-    const auth = await adminAuth(req);
+    const auth = await adminOrStaffAuth(req, 'lab_orders.edit');
 
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
     }
+
+    const isStaff = (auth as any).role === 'staff';
+    const resolvedAdminId = isStaff ? null : (auth as any).admin._id;
+    const staffId = isStaff ? (auth as any).staff._id : null;
 
     try {
         await connectDB();
@@ -55,7 +59,8 @@ export async function POST(req: NextRequest) {
         const order = new Order({
             orderId,
             userId,
-            adminId: auth.admin?._id,
+            adminId: resolvedAdminId,
+            staffId: staffId,
             package: {
                 code: packageIds,
                 name: combinedName,
@@ -154,7 +159,8 @@ export async function POST(req: NextRequest) {
 
             // Log activity
             await AdminActivity.logActivity({
-                adminId: auth.admin?._id,
+                adminId: resolvedAdminId,
+            staffId: staffId,
                 sessionId: auth.session?._id,
                 action: 'ORDER_BOOK_ON_BEHALF',
                 description: `Admin booked order for user ${userId}`,

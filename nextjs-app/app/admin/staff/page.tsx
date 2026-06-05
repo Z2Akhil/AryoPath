@@ -4,12 +4,25 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Edit2, Trash2, UserCheck, UserX, Loader2 } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, UserCheck, UserX, Loader2, Trophy, Users, Calendar } from 'lucide-react';
 import { adminStaffApi } from '@/lib/api/adminStaffApi';
+import { adminAxios } from '@/lib/api/adminAxios';
 import { useToast } from '@/providers/ToastProvider';
 import { StaffProfile } from '@/types/staff';
 import { useAdminAuth } from '@/providers/AdminAuthProvider';
 import AccessDenied from '@/components/admin/AccessDenied';
+
+interface StaffRanking {
+    staffId: string;
+    name: string;
+    email: string;
+    mobile: string;
+    isActive: boolean;
+    totalBookings: number;
+    uniqueUsers: number;
+    lastBookingAt: string;
+    users: { _id: string; name: string; mobile: string }[];
+}
 
 export default function AdminStaffPage() {
     const { isAdmin } = useAdminAuth();
@@ -21,6 +34,8 @@ export default function AdminStaffPage() {
     const [page, setPage]         = useState(1);
     const [total, setTotal]       = useState(0);
     const [deletingId, setDeletingId] = useState('');
+    const [rankings, setRankings]     = useState<StaffRanking[]>([]);
+    const [rankLoading, setRankLoading] = useState(true);
     const limit = 20;
 
     const fetchStaff = useCallback(async () => {
@@ -38,6 +53,13 @@ export default function AdminStaffPage() {
     }, [page]);
 
     useEffect(() => { fetchStaff(); }, [fetchStaff]);
+
+    useEffect(() => {
+        adminAxios.get('/admin/staff/rankings')
+            .then(r => setRankings(r.data.data ?? []))
+            .catch(() => {})
+            .finally(() => setRankLoading(false));
+    }, []);
 
     const handleDelete = async (id: string, name: string) => {
         if (!confirm(`Delete staff member "${name}"? This cannot be undone.`)) return;
@@ -90,6 +112,78 @@ export default function AdminStaffPage() {
                     <Plus className="w-4 h-4" />
                     Add Staff
                 </Link>
+            </div>
+
+            {/* Staff Rankings */}
+            <div className="mb-8">
+                <div className="flex items-center gap-2 mb-4">
+                    <Trophy className="w-5 h-5 text-amber-500" />
+                    <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Booking Rankings</h2>
+                </div>
+
+                {rankLoading ? (
+                    <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-blue-400" /></div>
+                ) : rankings.length === 0 ? (
+                    <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-400 text-sm">
+                        No staff bookings yet. Once staff books lab tests for users, rankings appear here.
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {rankings.map((r, idx) => (
+                            <div key={r.staffId} className="bg-white border border-gray-200 rounded-xl p-5 relative overflow-hidden">
+                                {/* Rank badge */}
+                                <div className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${
+                                    idx === 0 ? 'bg-amber-100 text-amber-700' :
+                                    idx === 1 ? 'bg-gray-100 text-gray-600' :
+                                    idx === 2 ? 'bg-orange-100 text-orange-700' :
+                                    'bg-blue-50 text-blue-500'
+                                }`}>#{idx + 1}</div>
+
+                                <div className="mb-3 pr-10">
+                                    <p className="font-bold text-gray-900 text-sm">{r.name}</p>
+                                    <p className="text-xs text-gray-400">{r.email}</p>
+                                    <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium ${r.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                        {r.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                </div>
+
+                                <div className="flex gap-4 mb-3">
+                                    <div className="text-center">
+                                        <p className="text-2xl font-black text-blue-600">{r.totalBookings}</p>
+                                        <p className="text-xs text-gray-400">Bookings</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-2xl font-black text-teal-600">{r.uniqueUsers}</p>
+                                        <p className="text-xs text-gray-400">Users</p>
+                                    </div>
+                                </div>
+
+                                {r.users.length > 0 && (
+                                    <div>
+                                        <p className="text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1">
+                                            <Users className="w-3 h-3" /> Recent users
+                                        </p>
+                                        <div className="space-y-1">
+                                            {r.users.map(u => (
+                                                <div key={u._id} className="flex justify-between text-xs">
+                                                    <span className="text-gray-700 font-medium truncate max-w-[60%]">{u.name}</span>
+                                                    <span className="text-gray-400">{u.mobile}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {r.lastBookingAt && (
+                                    <p className="text-xs text-gray-400 mt-3 flex items-center gap-1">
+                                        <Calendar className="w-3 h-3" />
+                                        Last: {new Date(r.lastBookingAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    </p>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Search */}
