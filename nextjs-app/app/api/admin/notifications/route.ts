@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
                 })),
                 totalRecipients: users.length,
                 recipientCount: users.length,
-                createdBy: auth.admin._id,
+                createdBy: (auth as any).admin?._id,
                 status: 'sending',
                 startedAt: new Date()
             });
@@ -221,10 +221,12 @@ export async function POST(req: NextRequest) {
 
         const responseTime = Date.now() - startTime;
 
+        const adminId = (auth as any).admin?._id;
+        const sessionId = (auth as any).session?._id;
         try {
-            await AdminActivity.logActivity({
-                adminId: auth.admin._id,
-                sessionId: auth.session._id,
+            if (adminId) await AdminActivity.logActivity({
+                adminId,
+                sessionId,
                 action: 'NOTIFICATIONS_SEND',
                 description: `Sent ${emailType || 'promotional'} notification: "${subject}" to ${users.length} users (${sentCount} successful, ${failedCount} failed)`,
                 resource: 'notifications',

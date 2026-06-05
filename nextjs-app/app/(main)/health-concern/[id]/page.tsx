@@ -8,7 +8,7 @@ import HealthConcernPageClient from './HealthConcernPageClient';
 
 export const revalidate = 3600;
 
-const SELECT = 'name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category thyrocareData.imageLocation thyrocareData.imageMaster';
+const SELECT = 'name type code customPricing customImage thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category thyrocareData.imageLocation thyrocareData.imageMaster';
 
 function serialize(doc: any) {
     return {
@@ -23,6 +23,7 @@ function serialize(doc: any) {
         testCount: doc.thyrocareData?.testCount || 0,
         fasting: doc.thyrocareData?.fasting || '',
         category: doc.thyrocareData?.category || '',
+        customImage: doc.customImage?.url ? { url: doc.customImage.url, publicId: doc.customImage.publicId } : null,
         thyrocareData: doc.thyrocareData
             ? {
                   imageLocation: doc.thyrocareData.imageLocation || null,

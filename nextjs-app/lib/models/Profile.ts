@@ -59,6 +59,10 @@ export interface IProfile extends Document {
     sellingPrice: number;
     isCustomized: boolean;
   };
+  customImage?: {
+    url: string;
+    publicId: string;
+  };
   isActive: boolean;
   isFeatured: boolean;
   featuredOrder: number;
@@ -131,6 +135,10 @@ const ProfileSchema = new Schema<IProfile, IProfileModel>(
       sellingPrice: { type: Number, default: 0 },
       isCustomized: { type: Boolean, default: false }
     },
+    customImage: {
+      url: { type: String, default: '' },
+      publicId: { type: String, default: '' }
+    },
     isActive: { type: Boolean, default: true },
     isFeatured: { type: Boolean, default: false, index: true },
     featuredOrder: { type: Number, default: 0 },
@@ -189,6 +197,11 @@ ProfileSchema.methods.getCombinedData = function () {
     sellingPrice,
     isCustomized: this.customPricing?.isCustomized,
     actualMargin: thyrocareMargin - (thyrocareRate - sellingPrice),
+    customImage: (() => {
+      // Access raw _doc to bypass any Mongoose schema cache issue
+      const raw = (this as any)._doc?.customImage ?? (this as any).customImage;
+      return raw?.url ? { url: raw.url, publicId: raw.publicId } : null;
+    })(),
     isActive: this.isActive,
     lastSynced: this.lastSynced
   };

@@ -74,7 +74,8 @@ export async function GET(req: NextRequest) {
                     isCustomized: doc.customPricing?.isCustomized || false,
                     actualMargin: thyrocareMargin - (thyrocareRate - sellingPrice),
                     isActive: doc.isActive !== false,
-                    isInThyrocare: doc.isInThyrocare !== false
+                    isInThyrocare: doc.isInThyrocare !== false,
+                    customImage: (doc as any).customImage?.url ? (doc as any).customImage : null,
                 };
             });
 

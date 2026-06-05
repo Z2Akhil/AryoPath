@@ -70,5 +70,36 @@ export const adminProductApi = {
             console.error('Error deactivating product:', error);
             throw error.response?.data || { success: false, error: 'Failed to deactivate product' };
         }
-    }
+    },
+
+    /**
+     * Upload or replace custom image for a package (PROFILE type only)
+     * @param code Product code
+     * @param file Image file
+     */
+    uploadPackageImage: async (code: string, file: File) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        try {
+            const response = await adminAxios.patch(`/admin/products/${code}/image`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            return response.data;
+        } catch (error: any) {
+            throw error.response?.data || { success: false, error: 'Image upload failed' };
+        }
+    },
+
+    /**
+     * Remove custom image for a package
+     * @param code Product code
+     */
+    removePackageImage: async (code: string) => {
+        try {
+            const response = await adminAxios.delete(`/admin/products/${code}/image`);
+            return response.data;
+        } catch (error: any) {
+            throw error.response?.data || { success: false, error: 'Image removal failed' };
+        }
+    },
 };

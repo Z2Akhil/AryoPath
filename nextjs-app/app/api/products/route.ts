@@ -40,10 +40,41 @@ export async function GET(request: NextRequest) {
 
       case 'PROFILE':
         totalCount = await Profile.countDocuments(searchFilter);
-        const profileQuery = Profile.find(searchFilter).skip(search ? 0 : skipNum);
+        const profileQuery = Profile.find(searchFilter).skip(search ? 0 : skipNum).lean();
         if (limitNum && !search) profileQuery.limit(limitNum);
-        const profiles = await profileQuery;
-        products = profiles.map((profile) => profile.getCombinedData());
+        const profileDocs = await profileQuery;
+        products = profileDocs.map((doc: any) => {
+            const thyrocareRate = doc.thyrocareData?.rate?.b2C || 0;
+            const thyrocareMargin = doc.thyrocareData?.margin || 0;
+            const discount = doc.customPricing?.discount || 0;
+            const sellingPrice = doc.customPricing?.sellingPrice || thyrocareRate;
+            return {
+                code: doc.code,
+                name: doc.name,
+                type: doc.type,
+                category: doc.thyrocareData?.category,
+                thyrocareRate,
+                thyrocareMargin,
+                childs: doc.thyrocareData?.childs || [],
+                imageLocation: doc.thyrocareData?.imageLocation,
+                imageMaster: doc.thyrocareData?.imageMaster || [],
+                customImage: doc.customImage?.url ? doc.customImage : null,
+                testCount: doc.thyrocareData?.testCount,
+                bookedCount: doc.thyrocareData?.bookedCount,
+                specimenType: doc.thyrocareData?.specimenType,
+                fasting: doc.thyrocareData?.fasting,
+                rate: {
+                    b2C: doc.thyrocareData?.rate?.b2C || 0,
+                    offerRate: doc.thyrocareData?.rate?.offerRate || 0,
+                    payAmt: doc.thyrocareData?.rate?.payAmt || 0,
+                },
+                discount,
+                sellingPrice,
+                isCustomized: doc.customPricing?.isCustomized || false,
+                actualMargin: thyrocareMargin - (thyrocareRate - sellingPrice),
+                isActive: doc.isActive !== false,
+            };
+        });
         products = Array.from(new Map(products.map(p => [(p as any).code, p])).values());
         break;
 

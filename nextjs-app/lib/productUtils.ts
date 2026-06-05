@@ -31,6 +31,9 @@ export const getProductDisplayPrice = (product: any) => {
 export const getImageUrl = (product: any) => {
   if (!product) return "/packagePic.webp";
 
+  // Priority: custom uploaded image → Thyrocare image → fallback
+  if (product.customImage?.url) return product.customImage.url;
+
   // Get raw path from various possible fields
   let rawPath = product.imageLocation || product.thyrocareData?.imageLocation ||
     product.imageMaster?.[0]?.imgLocations ||

@@ -50,7 +50,7 @@ export default async function ProfilesPage({ limit, showHeader, mobileScroll }: 
     const fetchLimit = limit || 12;
 
     const isHomeWidget = !!limit;
-    const SELECT = 'name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster isFeatured featuredOrder';
+    const SELECT = 'name type code customPricing customImage thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster isFeatured featuredOrder';
 
     let profileDocs: any[];
     const totalCount = await Profile.countDocuments({ isActive: true });
@@ -81,9 +81,10 @@ export default async function ProfilesPage({ limit, showHeader, mobileScroll }: 
         testCount: p.thyrocareData?.testCount || 0,
         fasting: p.thyrocareData?.fasting || '',
         category: p.thyrocareData?.category || '',
+        customImage: p.customImage?.url ? { url: p.customImage.url, publicId: p.customImage.publicId } : null,
         imageLocation: p.imageLocation || null,
         imageMaster: p.imageMaster ? JSON.parse(JSON.stringify(p.imageMaster)) : null,
-        thyrocareData: p.thyrocareData ? { 
+        thyrocareData: p.thyrocareData ? {
             imageLocation: p.thyrocareData.imageLocation || null,
             imageMaster: p.thyrocareData.imageMaster ? JSON.parse(JSON.stringify(p.thyrocareData.imageMaster)) : null
         } : null,

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from "react";
-import { Pencil, RefreshCw, CheckCircle, AlertCircle, Search } from "lucide-react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { Pencil, RefreshCw, CheckCircle, AlertCircle, Search, ImagePlus, X, Loader } from "lucide-react";
 import { adminProductApi } from "@/lib/api/adminProductApi";
 import Pagination from "@/components/common/Pagination";
 
@@ -15,6 +15,7 @@ export interface AdminProduct {
     childs: any[];
     imageLocation?: string;
     imageMaster: any[];
+    customImage?: { url: string; publicId: string } | null;
     testCount?: number;
     bookedCount?: number;
     specimenType?: string;
@@ -38,6 +39,118 @@ interface AdminTableProps {
     onDataUpdate?: (newData: AdminProduct[]) => void;
 }
 
+// Inline image cell — upload / remove for PROFILE rows
+const PackageImageCell: React.FC<{
+    item: AdminProduct;
+    onUpdate: (code: string, customImage: { url: string; publicId: string } | null) => void;
+}> = ({ item, onUpdate }) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+    const [saved, setSaved] = useState(false);
+    const [imgError, setImgError] = useState(false);
+
+    const customUrl = item.customImage?.url || '';
+    const thyrocareUrl = item.imageLocation || '';
+
+    const showSaved = (duration = 2000) => {
+        setSaved(true);
+        setTimeout(() => setSaved(false), duration);
+    };
+
+    const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploading(true);
+        try {
+            const res = await adminProductApi.uploadPackageImage(item.code, file);
+            if (res.success) {
+                onUpdate(item.code, { url: res.url, publicId: res.publicId });
+                setImgError(false);
+                showSaved();
+            }
+        } catch {
+            // silent — user can retry
+        } finally {
+            setUploading(false);
+            if (inputRef.current) inputRef.current.value = '';
+        }
+    };
+
+    const handleRemove = async () => {
+        setUploading(true);
+        try {
+            await adminProductApi.removePackageImage(item.code);
+            onUpdate(item.code, null);
+            showSaved();
+        } catch {
+            // silent
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    // Displayed image: customUrl → thyrocareUrl → nothing
+    const displayUrl = customUrl || thyrocareUrl;
+
+    return (
+        <div className="flex items-center gap-2">
+            {/* Thumbnail */}
+            <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
+                {displayUrl && !imgError ? (
+                    <img
+                        src={displayUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        onError={() => setImgError(true)}
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <ImagePlus className="w-4 h-4 text-gray-300" />
+                    </div>
+                )}
+                {customUrl && !imgError && (
+                    <div className="absolute top-0 left-0 w-1.5 h-1.5 bg-blue-500 rounded-full m-0.5" title="Custom image" />
+                )}
+            </div>
+
+            {/* Controls */}
+            <input
+                ref={inputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="hidden"
+                onChange={handleFile}
+            />
+            {uploading ? (
+                <Loader className="w-4 h-4 text-blue-500 animate-spin" />
+            ) : saved ? (
+                <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" /> Saved
+                </span>
+            ) : (
+                <div className="flex gap-1">
+                    <button
+                        onClick={() => inputRef.current?.click()}
+                        className="p-1 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        title={customUrl ? 'Replace image' : 'Upload image'}
+                    >
+                        <ImagePlus className="w-3.5 h-3.5" />
+                    </button>
+                    {customUrl && (
+                        <button
+                            onClick={handleRemove}
+                            className="p-1 rounded text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            title="Remove custom image"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const AdminTable: React.FC<AdminTableProps> = ({ data, onDataUpdate }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [sortOption, setSortOption] = useState("");
@@ -60,10 +173,12 @@ const AdminTable: React.FC<AdminTableProps> = ({ data, onDataUpdate }) => {
     }, [searchTerm, sortOption]);
 
     const hideCategory = localData.length > 0 && localData[0]?.type === "OFFER";
+    const showImageCol = localData.length > 0 && (localData[0]?.type === "PROFILE" || localData[0]?.type === "POP");
 
     const headings = [
         "ID",
         "NAME",
+        ...(showImageCol ? ["IMAGE"] : []),
         ...(hideCategory ? [] : ["CATEGORY"]),
         "STATUS",
         "THYROCARE RATE",
@@ -72,6 +187,14 @@ const AdminTable: React.FC<AdminTableProps> = ({ data, onDataUpdate }) => {
         "SELLING PRICE",
         "ACTIONS",
     ];
+
+    const handleImageUpdate = (code: string, customImage: { url: string; publicId: string } | null) => {
+        const updated = localData.map(item =>
+            item.code === code ? { ...item, customImage } : item
+        );
+        setLocalData(updated);
+        if (onDataUpdate) onDataUpdate(updated);
+    };
 
     const handleDiscountChange = (code: string, newDiscount: number) => {
         const product = localData.find(item => item.code === code);
@@ -279,6 +402,7 @@ const AdminTable: React.FC<AdminTableProps> = ({ data, onDataUpdate }) => {
                                 const isOrphaned = item.isInThyrocare === false;
                                 const isActive = item.isActive !== false;
                                 const isDisabled = isOrphaned || !isActive;
+                                const isProfile = item.type === 'PROFILE' || item.type === 'POP';
 
                                 return (
                                     <tr
@@ -304,6 +428,17 @@ const AdminTable: React.FC<AdminTableProps> = ({ data, onDataUpdate }) => {
                                                 )}
                                             </div>
                                         </td>
+
+                                        {/* IMAGE — PROFILE only */}
+                                        {showImageCol && (
+                                            <td className="px-6 py-4 border-b border-gray-50">
+                                                {isProfile ? (
+                                                    <PackageImageCell item={item} onUpdate={handleImageUpdate} />
+                                                ) : (
+                                                    <span className="text-gray-200">—</span>
+                                                )}
+                                            </td>
+                                        )}
 
                                         {/* Category */}
                                         {!hideCategory && (
