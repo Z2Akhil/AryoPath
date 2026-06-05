@@ -23,7 +23,11 @@ export async function GET(
             return response.data;
         });
 
-        return NextResponse.json({ success: true, data });
+        return NextResponse.json({
+            success: true,
+            serviceable: data?.status === 'Y',
+            data,
+        });
 
     } catch (error: any) {
         console.error('Pincode check error:', error);

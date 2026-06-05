@@ -15,6 +15,31 @@ const VALID_STATUSES: MedicineOrderStatus[] = [
   'delivered', 'cancelled', 'refunded',
 ];
 
+export async function GET(req: NextRequest, { params }: { params: Promise<{ orderId: string }> }) {
+  const auth = await adminOrStaffAuth(req, PERMISSIONS.MED_ORDERS_VIEW);
+  if (!auth.authenticated) {
+    return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
+  }
+
+  try {
+    await connectDB();
+    const { orderId } = await params;
+
+    const order = await MedicineOrder.findOne({ orderId })
+      .populate('userId', 'firstName lastName mobileNumber email')
+      .lean();
+
+    if (!order) {
+      return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, order });
+  } catch (err: any) {
+    console.error('[Admin] Medicine order GET error:', err);
+    return NextResponse.json({ success: false, error: 'Failed to fetch order' }, { status: 500 });
+  }
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ orderId: string }> }) {
   const auth = await adminOrStaffAuth(req, PERMISSIONS.MED_ORDERS_EDIT);
   if (!auth.authenticated) {

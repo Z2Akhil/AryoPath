@@ -2,15 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/db/mongoose';
 import Cart from '@/lib/models/Cart';
 import MedicineCart from '@/lib/models/MedicineCart';
-import { adminAuth } from '@/lib/auth';
+import { adminOrStaffAuth } from '@/lib/auth';
 
 export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ userId: string }> }
 ) {
-    const auth = await adminAuth(req);
+    const auth = await adminOrStaffAuth(req, 'users.view');
     if (!auth.authenticated) {
-        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+        return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
     }
 
     const { userId } = await params;

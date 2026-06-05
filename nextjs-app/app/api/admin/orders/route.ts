@@ -82,9 +82,9 @@ export async function GET(req: NextRequest) {
             Order.countDocuments(query)
         ]);
 
-        // Log activity
+        // Log activity (admin only — staff has no adminId/session)
         const { adminId, sessionId } = getAdminContext(auth);
-        await AdminActivity.logActivity({
+        if (adminId) await AdminActivity.logActivity({
             adminId,
             sessionId,
             action: 'ORDERS_FETCH',

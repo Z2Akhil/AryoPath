@@ -282,6 +282,7 @@ export default function BookingPage({
   // Booking state
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [consultMode, setConsultMode] = useState<'video' | 'audio'>('video');
   const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('');
   const [couponInput, setCouponInput] = useState('');
@@ -326,6 +327,16 @@ export default function BookingPage({
       .finally(() => setFetchLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
+
+  // Fetch booked slots whenever date or doctor changes
+  useEffect(() => {
+    if (!selectedDate || !slug) return;
+    setBookedSlots([]);
+    fetch(`/api/consult/booked-slots?doctorSlug=${encodeURIComponent(slug)}&date=${encodeURIComponent(selectedDate)}`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setBookedSlots(data.bookedSlots || []); })
+      .catch(() => {});
+  }, [selectedDate, slug]);
 
   // Pricing calculations
   const fee = doctor?.consultationFee || 0;
@@ -658,7 +669,7 @@ export default function BookingPage({
           </div>
 
           {Object.entries(slotGroups).map(([period, slots], idx, arr) => {
-            const availableCount = slots.filter(s => !isSlotPast(s, selectedDate)).length;
+            const availableCount = slots.filter(s => !isSlotPast(s, selectedDate) && !bookedSlots.includes(s)).length;
             const isOpen = !!openPeriods[period];
             const isLast = idx === arr.length - 1;
 
@@ -693,16 +704,20 @@ export default function BookingPage({
                   <div className="px-5 pb-4 flex flex-wrap gap-2">
                     {slots.map((slot) => {
                       const past     = isSlotPast(slot, selectedDate);
+                      const booked   = bookedSlots.includes(slot);
                       const selected = selectedTime === slot;
+                      const disabled = past || booked;
                       return (
                         <button
                           key={slot}
                           type="button"
-                          disabled={past}
-                          onClick={() => setSelectedTime(slot)}
+                          disabled={disabled}
+                          onClick={() => !disabled && setSelectedTime(slot)}
                           className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border min-h-[44px] ${
                             past
                               ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                              : booked
+                              ? 'bg-red-50 border-red-100 text-red-300 cursor-not-allowed'
                               : selected
                               ? 'bg-blue-600 border-blue-600 text-white shadow-md scale-105'
                               : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700'
@@ -710,6 +725,7 @@ export default function BookingPage({
                         >
                           {formatSlotLabel(slot)}
                           {past && <span className="block text-[9px] font-normal mt-0.5 text-gray-300">Passed</span>}
+                          {booked && !past && <span className="block text-[9px] font-normal mt-0.5 text-red-300">Booked</span>}
                         </button>
                       );
                     })}

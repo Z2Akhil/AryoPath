@@ -591,7 +591,7 @@ export default function MedicineOrdersPage() {
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-  if (!isAdmin && !hasPermission(PERMISSIONS.ORDERS_VIEW)) return <AccessDenied section="Medicine Orders" />;
+  if (!isAdmin && !hasPermission(PERMISSIONS.MED_ORDERS_VIEW)) return <AccessDenied section="Medicine Orders" />;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

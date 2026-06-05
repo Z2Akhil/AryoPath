@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
             MedicineOrder.aggregate([
                 { $match: { 'payment.status': 'paid' } },
-                { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+                { $group: { _id: null, total: { $sum: '$totalAmount' }, count: { $sum: 1 } } },
             ]),
 
             MedicineOrder.aggregate([
@@ -104,9 +104,9 @@ export async function GET(req: NextRequest) {
 
         const statusMap = Object.fromEntries(byStatus.map((b: any) => [b._id, b.count]));
         const totalRevenue  = revenueAll[0]?.total    || 0;
+        const totalPaidCount = revenueAll[0]?.count   || 0;
         const monthRevenue  = revenueMonth[0]?.total  || 0;
-        const monthCount    = revenueMonth[0]?.count  || 0;
-        const avgOrderValue = monthCount > 0 ? Math.round(monthRevenue / monthCount) : 0;
+        const avgOrderValue = totalPaidCount > 0 ? Math.round(totalRevenue / totalPaidCount) : 0;
 
         // Fill missing days in trend
         const trendMap = Object.fromEntries(trend.map((t: any) => [t._id, t]));

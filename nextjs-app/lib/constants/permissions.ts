@@ -116,3 +116,6 @@ export const PERMISSION_GROUPS = [
 ] as const;
 
 export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
+
+// Groups where checking grants ALL permissions in the group (no view/edit split shown)
+export const FULL_ACCESS_SECTIONS = new Set(['Lab Orders', 'Meds Orders', 'Appointments']);

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { adminStaffApi } from '@/lib/api/adminStaffApi';
 import { useToast } from '@/providers/ToastProvider';
-import { PERMISSION_GROUPS, Permission } from '@/lib/constants/permissions';
+import { PERMISSION_GROUPS, Permission, FULL_ACCESS_SECTIONS } from '@/lib/constants/permissions';
 import { StaffProfile } from '@/types/staff';
 import { useAdminAuth } from '@/providers/AdminAuthProvider';
 import AccessDenied from '@/components/admin/AccessDenied';
@@ -135,17 +135,43 @@ export default function EditStaffPage() {
 
                 {/* Permissions */}
                 <div className="bg-white rounded-xl border border-gray-200 p-5">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-sm font-semibold text-gray-700">Permissions</h2>
-                        <div className="flex gap-3 text-xs text-gray-400">
-                            <span>View</span>
-                            <span>Edit</span>
-                        </div>
-                    </div>
+                    <h2 className="text-sm font-semibold text-gray-700 mb-4">Permissions</h2>
                     <div className="space-y-1">
                         {PERMISSION_GROUPS.map(group => {
-                            const viewPerm = group.permissions[0] as Permission;
-                            const editPerm = group.permissions[1] as Permission | undefined;
+                            const isFull = FULL_ACCESS_SECTIONS.has(group.label);
+                            const groupPerms = group.permissions as readonly Permission[];
+                            const viewPerm = groupPerms[0];
+                            // Single-perm groups (Users, Homepage, Notifications, Services) also treated as full-access
+                            const editPerm = (!isFull && groupPerms.length > 1) ? groupPerms[1] : undefined;
+                            const isSingleAccess = isFull || groupPerms.length === 1;
+
+                            if (isSingleAccess) {
+                                const hasAccess = groupPerms.some(p => permissions.includes(p));
+                                return (
+                                    <div key={group.label} className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-gray-50">
+                                        <div>
+                                            <p className="text-sm text-gray-700 font-medium">{group.label}</p>
+                                            {'description' in group && (
+                                                <p className="text-xs text-gray-400 mt-0.5">{group.description}</p>
+                                            )}
+                                        </div>
+                                        <label className="flex items-center gap-2 shrink-0 ml-4 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={hasAccess}
+                                                onChange={() => setPermissions(prev =>
+                                                    hasAccess
+                                                        ? prev.filter(p => !groupPerms.includes(p))
+                                                        : [...new Set([...prev, ...groupPerms])]
+                                                )}
+                                                className="w-4 h-4 accent-blue-600"
+                                            />
+                                            <span className="text-xs text-gray-500">Full Access</span>
+                                        </label>
+                                    </div>
+                                );
+                            }
+
                             return (
                                 <div key={group.label} className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-gray-50">
                                     <div>
@@ -154,23 +180,25 @@ export default function EditStaffPage() {
                                             <p className="text-xs text-gray-400 mt-0.5">{group.description}</p>
                                         )}
                                     </div>
-                                    <div className="flex gap-6 shrink-0 ml-4">
-                                        <input
-                                            type="checkbox"
-                                            checked={permissions.includes(viewPerm)}
-                                            onChange={() => togglePermission(viewPerm, false, editPerm)}
-                                            className="w-4 h-4 accent-blue-600"
-                                        />
-                                        {editPerm ? (
+                                    <div className="flex items-center gap-4 shrink-0 ml-4">
+                                        <label className="flex items-center gap-1.5 cursor-pointer">
                                             <input
                                                 type="checkbox"
-                                                checked={permissions.includes(editPerm)}
-                                                onChange={() => togglePermission(editPerm, true, viewPerm)}
+                                                checked={permissions.includes(viewPerm)}
+                                                onChange={() => togglePermission(viewPerm, false, editPerm)}
                                                 className="w-4 h-4 accent-blue-600"
                                             />
-                                        ) : (
-                                            <span className="w-4 h-4 inline-block" />
-                                        )}
+                                            <span className="text-xs text-gray-500">View</span>
+                                        </label>
+                                        <label className="flex items-center gap-1.5 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={permissions.includes(editPerm!)}
+                                                onChange={() => togglePermission(editPerm!, true, viewPerm)}
+                                                className="w-4 h-4 accent-blue-600"
+                                            />
+                                            <span className="text-xs text-gray-500">Edit</span>
+                                        </label>
                                     </div>
                                 </div>
                             );

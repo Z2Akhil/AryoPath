@@ -20,7 +20,14 @@ export async function POST(
         await connectDB();
         const { orderId } = await params;
 
-        const result: any = await OrderStatusSyncService.syncOrderStatus(orderId);
+        // Look up by human-readable orderId field, not MongoDB _id
+        const Order = (await import('@/lib/models/Order')).default;
+        const order = await Order.findOne({ orderId });
+        if (!order) {
+            return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+        }
+
+        const result: any = await OrderStatusSyncService.syncOrderStatus(order);
 
         // Log activity
         await AdminActivity.logActivity({
