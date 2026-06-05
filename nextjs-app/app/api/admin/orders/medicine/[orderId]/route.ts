@@ -7,6 +7,12 @@ import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import { trackShipment } from '@/lib/services/delhiveryService';
 import type { MedicineOrderStatus } from '@/types/medicineOrder';
+import {
+  sendMedicineConfirmedEmail,
+  sendMedicineShippedEmail,
+  sendMedicineDeliveredEmail,
+  sendMedicineCancelledEmail,
+} from '@/lib/services/transactionalEmailService';
 
 const VALID_STATUSES: MedicineOrderStatus[] = [
   'pending_payment', 'payment_failed', 'confirmed',
@@ -91,6 +97,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
 
     await order.save();
     await order.populate('userId', 'firstName lastName mobileNumber email');
+
+    const toEmail: string = (order.userId as any)?.email || order.shippingAddress?.email || '';
+    if (status === 'confirmed')  sendMedicineConfirmedEmail(order, toEmail).catch(console.error);
+    if (status === 'shipped')    sendMedicineShippedEmail(order, toEmail).catch(console.error);
+    if (status === 'delivered')  sendMedicineDeliveredEmail(order, toEmail).catch(console.error);
+    if (status === 'cancelled')  sendMedicineCancelledEmail(order, toEmail).catch(console.error);
 
     return NextResponse.json({ success: true, order });
   } catch (err: any) {

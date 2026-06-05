@@ -4,6 +4,7 @@ import connectToDatabase from '@/lib/db/mongoose';
 import User from '@/lib/models/User';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import Medicine from '@/lib/models/Medicine';
+import { getMedicineOrderEmail, sendMedicineConfirmedEmail } from '@/lib/services/transactionalEmailService';
 
 const CF_BASE = process.env.CASHFREE_ENV === 'production'
     ? 'https://api.cashfree.com'
@@ -97,6 +98,8 @@ export async function POST(req: NextRequest) {
                 }
             })
         );
+
+        getMedicineOrderEmail(order).then(email => sendMedicineConfirmedEmail(order, email)).catch(console.error);
 
         return NextResponse.json({
             success: true,

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import connectToDatabase from '@/lib/db/mongoose';
 import Doctor from '@/lib/models/Doctor';
 import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
+import { sendConsultBookedEmail, sendDoctorNewAppointmentEmail } from '@/lib/services/transactionalEmailService';
 import NotificationService from '@/lib/services/notificationService';
 import { confirmationNotifications } from '@/lib/notifications/consultTemplates';
 import { scheduleReminder } from '@/lib/queue/reminderQueue';
@@ -180,6 +181,10 @@ export async function POST(req: NextRequest) {
     }
 
     const apptShortId = shortId(appointment._id);
+
+    // ── Send confirmation emails (non-blocking) ───────────────────────────────
+    sendConsultBookedEmail(appointment).catch(console.error);
+    sendDoctorNewAppointmentEmail(appointment).catch(console.error);
 
     // ── Send confirmation WhatsApp (non-blocking) ──────────────────────────────
     NotificationService.sendAsync(

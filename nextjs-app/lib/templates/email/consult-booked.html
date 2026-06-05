@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Booking Received – Ayropath</title>
+</head>
+<body style="font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;">
+
+  <div style="background:#fff8e1;border-left:4px solid #f59e0b;padding:20px 24px;margin-bottom:0;">
+    <h2 style="margin:0 0 4px;color:#7c5b00;font-size:20px;">Booking Received</h2>
+    <p style="margin:0;font-size:13px;color:#a17b00;">We have received your consultation request</p>
+  </div>
+
+  <div style="background:#ffffff;padding:28px 24px;border:1px solid #e9ecef;border-top:none;">
+    <p style="font-size:16px;margin:0 0 20px;">Hello <strong>{{patientName}}</strong>,</p>
+    <p style="font-size:14px;color:#555;margin:0 0 20px;">Your consultation booking has been received and is pending confirmation. Here are your appointment details:</p>
+
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:14px;">
+      <tr style="background:#f8f9fa;"><td style="padding:10px 14px;font-weight:600;color:#555;width:40%;">Doctor</td><td style="padding:10px 14px;color:#222;">Dr. {{doctorName}}</td></tr>
+      <tr><td style="padding:10px 14px;font-weight:600;color:#555;border-top:1px solid #f0f0f0;">Date</td><td style="padding:10px 14px;color:#222;border-top:1px solid #f0f0f0;">{{date}}</td></tr>
+      <tr style="background:#f8f9fa;"><td style="padding:10px 14px;font-weight:600;color:#555;">Time</td><td style="padding:10px 14px;color:#222;">{{time}}</td></tr>
+      <tr><td style="padding:10px 14px;font-weight:600;color:#555;border-top:1px solid #f0f0f0;">Mode</td><td style="padding:10px 14px;color:#222;border-top:1px solid #f0f0f0;">{{mode}}</td></tr>
+      <tr style="background:#f8f9fa;"><td style="padding:10px 14px;font-weight:600;color:#555;">Amount Paid</td><td style="padding:10px 14px;color:#222;font-weight:bold;">{{amount}}</td></tr>
+      <tr><td style="padding:10px 14px;font-weight:600;color:#555;border-top:1px solid #f0f0f0;">Booking ID</td><td style="padding:10px 14px;color:#666;font-family:monospace;border-top:1px solid #f0f0f0;">{{bookingId}}</td></tr>
+    </table>
+
+    {{meetLinkHtml}}
+
+    <p style="font-size:13px;color:#777;margin:20px 0 0;">You will receive a confirmation email once the appointment is confirmed by the doctor.</p>
+
+    <div style="background:#fff3cd;border:1px solid #ffeaa7;padding:14px;border-radius:5px;margin:20px 0 0;">
+      <p style="margin:0;font-size:13px;color:#856404;"><strong>Need help?</strong> Contact us at <a href="tel:9973956949" style="color:#2c5aa0;">9973956949</a> or <a href="mailto:admin@ayropath.com" style="color:#2c5aa0;">admin@ayropath.com</a></p>
+    </div>
+  </div>
+
+  <div style="background:#f8f9fa;padding:18px 24px;border-radius:0 0 8px 8px;font-size:12px;color:#666;text-align:center;">
+    <p style="margin:0 0 4px;font-size:14px;color:#2c5aa0;font-weight:bold;">Ayropath</p>
+    <p style="margin:0;font-size:11px;color:#888;font-style:italic;">In association with ThyroCare</p>
+    <hr style="border:none;border-top:1px solid #dee2e6;margin:12px 0;" />
+    <p style="margin:0;font-size:11px;color:#888;">© 2025 Ayropath Diagnostic Services. All rights reserved. <a href="https://ayropath.com/privacy-policy" style="color:#2c5aa0;">Privacy Policy</a></p>
+  </div>
+
+</body>
+</html>

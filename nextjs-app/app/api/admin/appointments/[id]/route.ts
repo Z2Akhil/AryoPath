@@ -3,6 +3,7 @@ import connectToDatabase from '@/lib/db/mongoose';
 import { adminOrStaffAuth } from '@/lib/auth';
 import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
 import { PERMISSIONS } from '@/lib/constants/permissions';
+import { sendConsultConfirmedEmail, sendConsultCancelledEmail, sendConsultCompletedEmail, sendDoctorAppointmentCancelledEmail } from '@/lib/services/transactionalEmailService';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -65,6 +66,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
         appointment.status = status;
         await appointment.save();
+
+        if (status === 'confirmed') sendConsultConfirmedEmail(appointment).catch(console.error);
+        if (status === 'cancelled') { sendConsultCancelledEmail(appointment).catch(console.error); sendDoctorAppointmentCancelledEmail(appointment).catch(console.error); }
+        if (status === 'completed') sendConsultCompletedEmail(appointment).catch(console.error);
 
         return NextResponse.json({ success: true, appointment });
     } catch (error) {

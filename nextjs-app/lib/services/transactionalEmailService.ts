@@ -1,0 +1,249 @@
+import fs from 'fs/promises';
+import path from 'path';
+import nodemailer from 'nodemailer';
+
+const PORTAL_URL = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/doctor`;
+
+async function sendMail(to: string, subject: string, html: string): Promise<void> {
+  if (!to) return;
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT || '587'),
+    secure: false,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    tls: { rejectUnauthorized: false },
+    connectionTimeout: 10000,
+    socketTimeout: 10000,
+  });
+  try {
+    const r = await transporter.sendMail({
+      from: `"${process.env.SMTP_FROM_NAME || 'Ayropath'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+      to, subject, html,
+    });
+    console.log(`[Email] Sent to ${to}: ${r.messageId}`);
+  } catch (err) {
+    console.error(`[Email] Failed to ${to}:`, err);
+  } finally {
+    transporter.close();
+  }
+}
+
+async function render(name: string, vars: Record<string, string>): Promise<string> {
+  const filePath = path.join(process.cwd(), 'lib/templates/email', `${name}.html`);
+  let html = await fs.readFile(filePath, 'utf-8');
+  for (const [key, val] of Object.entries(vars)) {
+    html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), val ?? '');
+  }
+  return html;
+}
+
+function buildItemsHtml(items: any[]): string {
+  return items.map(it => `
+    <tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;">${it.name}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px;">${it.quantity ?? it.qty ?? 1}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px;">₹${Number(it.offerPrice ?? it.price ?? 0).toLocaleString('en-IN')}</td>
+    </tr>`).join('');
+}
+
+function buildPrescriptionHtml(prescription: any): string {
+  if (!prescription?.medicines?.length) return '';
+  const rows = prescription.medicines.map((m: any) => `
+    <tr>
+      <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;font-weight:600;font-size:13px;">${m.name}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;font-size:13px;">${m.dose || '—'}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;font-size:13px;">${m.frequency || '—'}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;font-size:13px;">${m.duration || '—'}</td>
+    </tr>`).join('');
+  return `
+    <div style="margin-top:24px;border-top:1px solid #e9ecef;padding-top:20px;">
+      <h3 style="color:#2c5aa0;margin:0 0 12px;font-size:15px;">Prescription</h3>
+      ${prescription.notes ? `<p style="background:#f0f7ff;border-left:4px solid #2c5aa0;padding:10px 14px;border-radius:0 6px 6px 0;color:#444;margin:0 0 14px;font-size:13px;">${prescription.notes}</p>` : ''}
+      <table style="width:100%;border-collapse:collapse;">
+        <thead><tr style="background:#f8f9fa;">
+          <th style="padding:8px 10px;text-align:left;color:#555;font-size:12px;font-weight:600;">Medicine</th>
+          <th style="padding:8px 10px;text-align:left;color:#555;font-size:12px;font-weight:600;">Dose</th>
+          <th style="padding:8px 10px;text-align:left;color:#555;font-size:12px;font-weight:600;">Frequency</th>
+          <th style="padding:8px 10px;text-align:left;color:#555;font-size:12px;font-weight:600;">Duration</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ── Consultation ──────────────────────────────────────────────────────────────
+
+export async function sendConsultBookedEmail(appt: any): Promise<void> {
+  if (!appt.patientEmail) return;
+  const meetLinkHtml = appt.meetLink
+    ? `<div style="text-align:center;margin:20px 0;"><a href="${appt.meetLink}" style="display:inline-block;background:#2c5aa0;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:14px;">Join Video Consultation</a></div>`
+    : '';
+  const html = await render('consult-booked', {
+    patientName: appt.patientName,
+    doctorName: appt.doctorName,
+    date: appt.appointmentDate,
+    time: appt.appointmentTime,
+    mode: appt.consultationMode === 'video' ? 'Video Call' : 'Audio Call',
+    meetLinkHtml,
+    bookingId: String(appt._id).slice(-8).toUpperCase(),
+    amount: `₹${appt.finalAmount ?? appt.consultationFee ?? 0}`,
+  });
+  await sendMail(appt.patientEmail, 'Booking Received – Ayropath Consultation', html);
+}
+
+export async function sendConsultConfirmedEmail(appt: any): Promise<void> {
+  if (!appt.patientEmail) return;
+  const meetLinkHtml = appt.meetLink
+    ? `<div style="text-align:center;margin:20px 0;"><a href="${appt.meetLink}" style="display:inline-block;background:#2c5aa0;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:14px;">Join Video Consultation</a></div>`
+    : '';
+  const html = await render('consult-confirmed', {
+    patientName: appt.patientName,
+    doctorName: appt.doctorName,
+    date: appt.appointmentDate,
+    time: appt.appointmentTime,
+    mode: appt.consultationMode === 'video' ? 'Video Call' : 'Audio Call',
+    meetLinkHtml,
+    bookingId: String(appt._id).slice(-8).toUpperCase(),
+    amount: `₹${appt.finalAmount ?? appt.consultationFee ?? 0}`,
+  });
+  await sendMail(appt.patientEmail, 'Appointment Confirmed – Ayropath', html);
+}
+
+export async function sendConsultCancelledEmail(appt: any): Promise<void> {
+  if (!appt.patientEmail) return;
+  const html = await render('consult-cancelled', {
+    patientName: appt.patientName,
+    doctorName: appt.doctorName,
+    date: appt.appointmentDate,
+    time: appt.appointmentTime,
+    bookingId: String(appt._id).slice(-8).toUpperCase(),
+  });
+  await sendMail(appt.patientEmail, 'Appointment Cancelled – Ayropath', html);
+}
+
+export async function sendConsultCompletedEmail(appt: any): Promise<void> {
+  if (!appt.patientEmail) return;
+  const html = await render('consult-completed', {
+    patientName: appt.patientName,
+    doctorName: appt.doctorName,
+    bookingId: String(appt._id).slice(-8).toUpperCase(),
+    prescriptionHtml: buildPrescriptionHtml(appt.prescription),
+  });
+  await sendMail(appt.patientEmail, 'Consultation Completed – Ayropath', html);
+}
+
+// ── Doctor Notifications ──────────────────────────────────────────────────────
+
+async function getDoctorEmail(doctorId: any): Promise<string> {
+  try {
+    const Doctor = (await import('@/lib/models/Doctor')).default;
+    const doc = await Doctor.findById(doctorId).select('email').lean();
+    return (doc as any)?.email || '';
+  } catch { return ''; }
+}
+
+export async function sendDoctorNewAppointmentEmail(appt: any): Promise<void> {
+  const toEmail = await getDoctorEmail(appt.doctorId);
+  if (!toEmail) return;
+  const meetLinkHtml = appt.meetLink
+    ? `<div style="text-align:center;margin:20px 0;"><a href="${appt.meetLink}" style="display:inline-block;background:#16a34a;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:14px;">Join Video Call</a></div>`
+    : '';
+  const html = await render('doctor-new-appointment', {
+    doctorName: appt.doctorName,
+    patientName: appt.patientName,
+    patientMobile: appt.patientMobile,
+    date: appt.appointmentDate,
+    time: appt.appointmentTime,
+    mode: appt.consultationMode === 'video' ? 'Video Call' : 'Audio Call',
+    meetLinkHtml,
+    bookingId: String(appt._id).slice(-8).toUpperCase(),
+    portalUrl: PORTAL_URL,
+  });
+  await sendMail(toEmail, `New Appointment – ${appt.patientName} on ${appt.appointmentDate}`, html);
+}
+
+export async function sendDoctorAppointmentCancelledEmail(appt: any): Promise<void> {
+  const toEmail = await getDoctorEmail(appt.doctorId);
+  if (!toEmail) return;
+  const html = await render('doctor-appointment-cancelled', {
+    doctorName: appt.doctorName,
+    patientName: appt.patientName,
+    date: appt.appointmentDate,
+    time: appt.appointmentTime,
+    bookingId: String(appt._id).slice(-8).toUpperCase(),
+    portalUrl: PORTAL_URL,
+  });
+  await sendMail(toEmail, `Appointment Cancelled – ${appt.patientName}`, html);
+}
+
+// ── Medicine Orders ───────────────────────────────────────────────────────────
+
+export async function getMedicineOrderEmail(order: any): Promise<string> {
+  if (order.shippingAddress?.email) return order.shippingAddress.email;
+  try {
+    const User = (await import('@/lib/models/User')).default;
+    const user = await User.findById(order.userId).select('email').lean();
+    return (user as any)?.email || '';
+  } catch { return ''; }
+}
+
+export async function sendMedicineConfirmedEmail(order: any, toEmail: string): Promise<void> {
+  if (!toEmail) return;
+  const prescriptionNote = order.requiresPrescription
+    ? '<p style="background:#fff8e1;border-left:4px solid #f59e0b;padding:10px 14px;border-radius:0 6px 6px 0;margin:16px 0;color:#7c5b00;font-size:13px;"><strong>Prescription Required</strong> — Please upload your prescription via the app to proceed with fulfilment.</p>'
+    : '';
+  const html = await render('medicine-confirmed', {
+    fullName: order.shippingAddress?.fullName ?? '',
+    orderId: order.orderId,
+    itemsHtml: buildItemsHtml(order.items ?? []),
+    totalAmount: `₹${Number(order.grandTotal ?? order.totalAmount ?? 0).toLocaleString('en-IN')}`,
+    prescriptionNote,
+    deliveryDays: '3–5',
+  });
+  await sendMail(toEmail, `Order Confirmed #${order.orderId} – Ayropath`, html);
+}
+
+export async function sendMedicineShippedEmail(order: any, toEmail: string): Promise<void> {
+  if (!toEmail) return;
+  const trackingUrl = (order as any).trackingUrl || '';
+  const trackingBtn = trackingUrl
+    ? `<div style="text-align:center;margin:20px 0;"><a href="${trackingUrl}" style="display:inline-block;background:#2c5aa0;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:14px;">Track Your Order</a></div>`
+    : '';
+  const estimated = order.estimatedDelivery
+    ? new Date(order.estimatedDelivery).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    : '3–5 business days';
+  const html = await render('medicine-shipped', {
+    fullName: order.shippingAddress?.fullName ?? '',
+    orderId: order.orderId,
+    awb: (order as any).awb ?? '—',
+    courierPartner: (order as any).courierPartner ?? 'Delhivery',
+    trackingBtn,
+    estimatedDelivery: estimated,
+  });
+  await sendMail(toEmail, `Order Shipped #${order.orderId} – Ayropath`, html);
+}
+
+export async function sendMedicineDeliveredEmail(order: any, toEmail: string): Promise<void> {
+  if (!toEmail) return;
+  const html = await render('medicine-delivered', {
+    fullName: order.shippingAddress?.fullName ?? '',
+    orderId: order.orderId,
+    totalAmount: `₹${Number(order.grandTotal ?? order.totalAmount ?? 0).toLocaleString('en-IN')}`,
+  });
+  await sendMail(toEmail, `Order Delivered #${order.orderId} – Ayropath`, html);
+}
+
+export async function sendMedicineCancelledEmail(order: any, toEmail: string): Promise<void> {
+  if (!toEmail) return;
+  const paid = (order as any).payment?.status === 'paid';
+  const refundNote = paid
+    ? 'Your refund will be processed to the original payment method within 5–7 business days.'
+    : 'No payment was charged for this order.';
+  const html = await render('medicine-cancelled', {
+    fullName: order.shippingAddress?.fullName ?? '',
+    orderId: order.orderId,
+    cancellationReason: order.cancellationReason || 'Cancelled by Ayropath',
+    refundNote,
+  });
+  await sendMail(toEmail, `Order Cancelled #${order.orderId} – Ayropath`, html);
+}

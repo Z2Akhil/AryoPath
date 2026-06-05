@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import Medicine from '@/lib/models/Medicine';
+import { getMedicineOrderEmail, sendMedicineConfirmedEmail } from '@/lib/services/transactionalEmailService';
 
 function verifySignature(rawBody: string, timestamp: string, sig: string): boolean {
   const secret = process.env.CASHFREE_SECRET_KEY || '';
@@ -73,6 +74,8 @@ export async function POST(req: NextRequest) {
         }
       }),
     );
+
+    getMedicineOrderEmail(existing).then(email => sendMedicineConfirmedEmail(existing, email)).catch(console.error);
 
     return NextResponse.json({ received: true });
   } catch (err) {

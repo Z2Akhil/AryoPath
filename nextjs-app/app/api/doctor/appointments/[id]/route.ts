@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { doctorAuth } from '@/lib/auth';
 import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
 import connectToDatabase from '@/lib/db/mongoose';
+import { sendConsultConfirmedEmail, sendConsultCancelledEmail, sendConsultCompletedEmail, sendDoctorAppointmentCancelledEmail } from '@/lib/services/transactionalEmailService';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -73,6 +74,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     await appointment.save();
+
+    if (status === 'confirmed') sendConsultConfirmedEmail(appointment).catch(console.error);
+    if (status === 'cancelled') { sendConsultCancelledEmail(appointment).catch(console.error); sendDoctorAppointmentCancelledEmail(appointment).catch(console.error); }
+    if (status === 'completed' || prescription !== undefined) sendConsultCompletedEmail(appointment).catch(console.error);
+
     const updated = await ConsultationAppointment.findById(id).lean();
     return NextResponse.json({ success: true, appointment: updated });
 }
