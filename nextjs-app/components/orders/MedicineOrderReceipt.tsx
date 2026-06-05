@@ -27,7 +27,7 @@ export default function MedicineOrderReceipt({ order }: { order: MedicineOrder }
                     <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280', marginBottom: '6px' }}>Delivery Address</p>
                     <p style={{ fontWeight: 700, margin: '0 0 2px' }}>{order.shippingAddress.fullName}</p>
                     <p style={{ margin: '0 0 2px', color: '#374151' }}>{order.shippingAddress.addressLine1}</p>
-                    {order.shippingAddress.addressLine2 && <p style={{ margin: '0 0 2px', color: '#374151' }}>{order.shippingAddress.addressLine2}</p>}
+                    {order.shippingAddress.email && <p style={{ margin: '0 0 2px', color: '#374151' }}>{order.shippingAddress.email}</p>}
                     <p style={{ margin: '0 0 2px', color: '#374151' }}>{order.shippingAddress.city}, {order.shippingAddress.state} — {order.shippingAddress.pincode}</p>
                     <p style={{ margin: 0, color: '#374151' }}>Mobile: {order.shippingAddress.mobile}</p>
                 </div>

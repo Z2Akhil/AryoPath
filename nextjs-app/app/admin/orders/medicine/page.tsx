@@ -275,7 +275,7 @@ function OrderModal({
             <InfoRow icon={MapPin} label="Address" value={
               <span>
                 {addr.addressLine1}
-                {addr.addressLine2 ? `, ${addr.addressLine2}` : ''}
+                {addr.email ? ` · ${addr.email}` : ''}
                 {addr.landmark ? ` (Near ${addr.landmark})` : ''},{' '}
                 {addr.city}, {addr.state} — {addr.pincode}
               </span>

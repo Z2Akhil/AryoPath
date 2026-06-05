@@ -166,9 +166,10 @@ export default function MedicineCheckoutForm() {
 
           <div className="sm:col-span-2">
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-              Address Line 2
+              Email <span className="text-gray-400 font-normal">(optional)</span>
             </label>
-            <input {...register('addressLine2')} placeholder="Area, Locality, Colony (optional)" className={field} />
+            <input {...register('email')} type="email" placeholder="For order updates (optional)" className={field} />
+            {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
           </div>
 
           <div>

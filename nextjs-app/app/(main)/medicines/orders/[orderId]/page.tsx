@@ -326,7 +326,7 @@ export default function MedicineOrderTrackingPage() {
             <div className="text-sm text-gray-600 space-y-0.5">
               <p className="font-bold text-gray-800">{order.shippingAddress.fullName}</p>
               <p>{order.shippingAddress.addressLine1}</p>
-              {order.shippingAddress.addressLine2 && <p>{order.shippingAddress.addressLine2}</p>}
+              {order.shippingAddress.email && <p>{order.shippingAddress.email}</p>}
               <p>{order.shippingAddress.city}, {order.shippingAddress.state} — {order.shippingAddress.pincode}</p>
               <p>📞 {order.shippingAddress.mobile}</p>
             </div>

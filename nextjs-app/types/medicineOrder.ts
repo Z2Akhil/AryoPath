@@ -51,7 +51,7 @@ export interface ShippingAddress {
   fullName: string;
   mobile: string;
   addressLine1: string;
-  addressLine2?: string;
+  email?: string;
   city: string;
   state: string;
   pincode: string;
@@ -124,7 +124,7 @@ export const checkoutAddressSchema = z.object({
   fullName: z.string().min(2, 'Full name is required'),
   mobile: z.string().min(10, 'Valid mobile number required').max(15),
   addressLine1: z.string().min(5, 'Address is required'),
-  addressLine2: z.string().optional().default(''),
+  email: z.string().email('Enter a valid email').optional().or(z.literal('')).default(''),
   city: z.string().min(2, 'City is required'),
   state: z.string().min(2, 'State is required'),
   pincode: z.string().length(6, 'Enter a valid 6-digit pincode'),
