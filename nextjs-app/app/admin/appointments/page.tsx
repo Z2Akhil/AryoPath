@@ -218,7 +218,13 @@ export default function AppointmentsPage() {
                                                 ₹{(appt.finalAmount || appt.consultationFee || 0).toLocaleString('en-IN')}
                                             </td>
                                             <td className="px-4 py-3">
-                                                <div className="flex gap-1 flex-wrap">
+                                                <div className="flex gap-1 flex-wrap items-center">
+                                                    <Link
+                                                        href={`/admin/appointments/${appt._id}`}
+                                                        className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                                                    >
+                                                        View
+                                                    </Link>
                                                     {appt.status === 'pending' && (
                                                         <button
                                                             onClick={() => handleStatusUpdate(appt._id, 'confirmed')}

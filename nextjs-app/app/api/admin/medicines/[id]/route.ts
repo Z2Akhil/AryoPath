@@ -68,7 +68,7 @@ export async function PUT(request: NextRequest, context: Context) {
     }
   }
 
-  const updated = await Medicine.findByIdAndUpdate(id, body, { new: true, runValidators: true });
+  const updated = await Medicine.findByIdAndUpdate(id, body, { returnDocument: 'after', runValidators: true });
 
   return NextResponse.json({ success: true, data: updated });
 }

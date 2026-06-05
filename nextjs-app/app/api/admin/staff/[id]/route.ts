@@ -55,7 +55,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         updateData.passwordHash = await bcrypt.hash(password, 12);
     }
 
-    const staff = await Staff.findByIdAndUpdate(id, updateData, { new: true }).select('-passwordHash').lean();
+    const staff = await Staff.findByIdAndUpdate(id, updateData, { returnDocument: 'after' }).select('-passwordHash').lean();
     if (!staff) {
         return NextResponse.json({ success: false, error: 'Staff not found' }, { status: 404 });
     }

@@ -33,7 +33,7 @@ export async function PATCH(
         const updatedUser = await User.findByIdAndUpdate(
             userId,
             { isActive, updatedAt: new Date() },
-            { new: true }
+            { returnDocument: 'after' }
         ).select('-password');
 
         const responseTime = Date.now() - startTime;

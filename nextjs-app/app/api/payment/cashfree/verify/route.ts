@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
                 status: (existingOrder as any).requiresPrescription ? 'prescription_required' : 'confirmed',
                 expiresAt: null, // cancel TTL — payment done, order is real
             },
-            { new: true }
+            { returnDocument: 'after' }
         ).lean();
 
         // Decrement stock for each ordered item
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
                 const updated = await Medicine.findByIdAndUpdate(
                     item.medicineId,
                     { $inc: { stockQuantity: -item.quantity } },
-                    { new: true }
+                    { returnDocument: 'after' }
                 ).select('stockQuantity').lean();
                 if (updated && (updated as any).stockQuantity <= 0) {
                     await Medicine.findByIdAndUpdate(item.medicineId, {

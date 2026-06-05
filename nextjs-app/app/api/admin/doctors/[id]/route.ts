@@ -46,7 +46,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const doctor = await Doctor.findOneAndUpdate(
     { _id: id, isDeleted: false },
     { ...body, updatedBy: adminId },
-    { new: true, runValidators: true }
+    { returnDocument: 'after', runValidators: true }
   ).select('-__v -isDeleted');
 
   if (!doctor) {
@@ -68,7 +68,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   const doctor = await Doctor.findOneAndUpdate(
     { _id: id, isDeleted: false },
     { isDeleted: true, updatedBy: getAdminContext(authResult).adminId },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   if (!doctor) {

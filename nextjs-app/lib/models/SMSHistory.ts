@@ -147,7 +147,7 @@ smsHistorySchema.statics.updateStatus = async function (
             updateData.deliveredAt = new Date();
         }
 
-        const record = await this.findOneAndUpdate({ requestId }, updateData, { new: true });
+        const record = await this.findOneAndUpdate({ requestId }, updateData, { returnDocument: 'after' });
         return record;
     } catch (error) {
         console.error('Error updating SMS status:', error);

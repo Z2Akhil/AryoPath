@@ -89,7 +89,7 @@ export async function PUT(
         const updatedUser = await User.findByIdAndUpdate(
             userId,
             sanitizedUpdateData,
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).select('-password');
 
         const responseTime = Date.now() - startTime;

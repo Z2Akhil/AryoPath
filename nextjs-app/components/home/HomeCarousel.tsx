@@ -52,7 +52,7 @@ const HomeCarousel = () => {
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   className="object-cover"
-                  loading="lazy"
+                  priority={item.id <= 4}
                 />
               </div>
               <div className="p-4 bg-white">

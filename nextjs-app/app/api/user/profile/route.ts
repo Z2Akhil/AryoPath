@@ -161,7 +161,7 @@ export async function PUT(req: NextRequest) {
         const updatedUser = await User.findByIdAndUpdate(
             user._id,
             { ...updateData, updatedAt: new Date() },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).select('-password');
 
         if (!updatedUser) {

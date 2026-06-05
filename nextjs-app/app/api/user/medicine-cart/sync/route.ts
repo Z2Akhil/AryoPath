@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
         await MedicineCart.findOneAndUpdate(
             { userId: user._id },
             { userId: user._id, items: Array.isArray(items) ? items : [] },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         );
 
         return NextResponse.json({ success: true });

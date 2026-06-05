@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       user = await User.findOneAndUpdate(
         { mobileNumber },
         { isVerified: true },
-        { new: true }
+        { returnDocument: 'after' }
       );
     }
 

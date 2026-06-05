@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
         const updated = await Medicine.findByIdAndUpdate(
           item.medicineId,
           { $inc: { stockQuantity: -item.quantity } },
-          { new: true },
+          { returnDocument: 'after' },
         ).select('stockQuantity').lean();
 
         if (updated && (updated as any).stockQuantity <= 0) {
