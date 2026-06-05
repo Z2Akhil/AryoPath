@@ -26,11 +26,13 @@ import UserEditModal from '@/components/admin/users/UserEditModal';
 import BookOrderModal from '@/components/admin/orders/BookOrderModal';
 import UserCartModal from '@/components/admin/users/UserCartModal';
 import { useAdminAuth } from '@/providers/AdminAuthProvider';
+import { useToast } from '@/providers/ToastProvider';
 import { PERMISSIONS } from '@/lib/constants/permissions';
 import AccessDenied from '@/components/admin/AccessDenied';
 
 export default function UsersClient() {
     const { isAdmin, hasPermission } = useAdminAuth();
+    const toast = useToast();
     const [users, setUsers] = useState<CustomerUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -415,9 +417,7 @@ export default function UsersClient() {
                     onSuccess={(msg) => {
                         setIsBookModalOpen(false);
                         setSelectedUser(null);
-                        // Show success message (using error block as fallback notification)
-                        setError(msg);
-                        setTimeout(() => setError(null), 3000);
+                        toast.success(msg);
                     }}
                 />
             )}

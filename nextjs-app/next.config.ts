@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['10.28.158.199'],
+  allowedDevOrigins: ['0.0.0.0'],
   compress: true, // Gzip compression — improves TTFB which affects Core Web Vitals
   poweredByHeader: false, // Remove X-Powered-By header (security + minor perf)
   images: {

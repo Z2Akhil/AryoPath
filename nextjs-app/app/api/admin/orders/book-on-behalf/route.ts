@@ -1,23 +1,24 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { adminOrStaffAuth, getAdminContext } from '@/lib/auth';
+import { adminOrStaffAuth } from '@/lib/auth';
 import connectDB from '@/lib/db/mongoose';
 import Order from '@/lib/models/Order';
 import AdminActivity from '@/lib/models/AdminActivity';
 import axios from 'axios';
 import { ThyrocareService } from '@/lib/services/thyrocare';
+import AdminSession from '@/lib/models/AdminSession';
 
 export async function POST(req: NextRequest) {
     const startTime = Date.now();
-    const auth = await adminOrStaffAuth(req, 'lab_orders.edit');
+    const auth = await adminOrStaffAuth(req, 'users.view');
 
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
     }
 
-    const isStaff = (auth as any).role === 'staff';
+    const isStaff         = (auth as any).role === 'staff';
     const resolvedAdminId = isStaff ? null : (auth as any).admin._id;
-    const staffId = isStaff ? (auth as any).staff._id : null;
+    const staffId         = isStaff ? (auth as any).staff._id : null;
 
     try {
         await connectDB();
@@ -42,6 +43,10 @@ export async function POST(req: NextRequest) {
         if (!userId || !packageIds || !packageNames || !packagePrices || !beneficiaries || !contactInfo || !appointment) {
             return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
         }
+
+        // ref_code must be the registered admin mobile (Thyrocare DSA requirement)
+        const activeSession = await AdminSession.findOne({ isActive: true }).populate('adminId').lean();
+        const thyrocareRefMobile = (activeSession as any)?.adminId?.mobile || '';
 
         // Calculate totals
         const totalOriginalPrice = packagePrices.reduce((sum: number, p: any) => sum + (p.thyrocareRate || p.originalPrice || p.price || 0), 0);
@@ -110,7 +115,7 @@ export async function POST(req: NextRequest) {
                     pay_type: 'POSTPAID',
                     pincode: order.contactInfo.address.pincode,
                     products: Array.isArray(order.package.code) ? order.package.code.join(',') : order.package.code,
-                    ref_code: auth.admin?.mobile || '',
+                    ref_code: thyrocareRefMobile,
                     reports: order.reportsHardcopy,
                     service_type: 'HOME',
                     ben_data: order.beneficiaries.map(ben => ({
@@ -157,22 +162,23 @@ export async function POST(req: NextRequest) {
             order.status = 'CREATED';
             await order.save();
 
-            // Log activity
-            await AdminActivity.logActivity({
-                adminId: resolvedAdminId,
-            staffId: staffId,
-                sessionId: auth.session?._id,
-                action: 'ORDER_BOOK_ON_BEHALF',
-                description: `Admin booked order for user ${userId}`,
-                resource: 'orders',
-                endpoint: '/api/admin/orders/book-on-behalf',
-                method: 'POST',
-                ipAddress: req.headers.get('x-forwarded-for') || '0.0.0.0',
-                userAgent: req.headers.get('user-agent') || 'unknown',
-                statusCode: 201,
-                responseTime: Date.now() - startTime,
-                metadata: { orderId, targetUserId: userId }
-            });
+            // Log activity — adminId required; skip for staff (no admin session)
+            if (!isStaff && resolvedAdminId) {
+                await AdminActivity.logActivity({
+                    adminId: resolvedAdminId,
+                    sessionId: (auth as any).session?._id,
+                    action: 'ORDER_BOOK_ON_BEHALF',
+                    description: `Admin booked order for user ${userId}`,
+                    resource: 'orders',
+                    endpoint: '/api/admin/orders/book-on-behalf',
+                    method: 'POST',
+                    ipAddress: req.headers.get('x-forwarded-for') || '0.0.0.0',
+                    userAgent: req.headers.get('user-agent') || 'unknown',
+                    statusCode: 201,
+                    responseTime: Date.now() - startTime,
+                    metadata: { orderId, targetUserId: userId }
+                });
+            }
 
             return NextResponse.json({ success: true, message: 'Order created successfully', order });
 

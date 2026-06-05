@@ -279,7 +279,7 @@ const BookOrderModal: React.FC<BookOrderModalProps> = ({ user, onClose, onSucces
 
             const response = await adminOrderApi.bookOnBehalf(payload);
 
-            if ((response as any).data?.success) {
+            if (response?.success) {
                 onSuccess('Order booked successfully!');
                 onClose();
             }

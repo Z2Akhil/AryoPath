@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
         // Aggregate orders booked by staff, count + list users
         const rankings = await Order.aggregate([
-            { $match: { staffId: { $ne: null, $exists: true } } },
+            { $match: { staffId: { $ne: null, $exists: true }, status: { $nin: ['FAILED', 'CANCELLED'] } } },
             {
                 $group: {
                     _id: '$staffId',
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
                     as: 'staff',
                 },
             },
-            { $unwind: { path: '$staff', preserveNullAndEmpty: false } },
+            { $unwind: { path: '$staff', preserveNullAndEmptyArrays: false } },
             {
                 $lookup: {
                     from: 'users',
