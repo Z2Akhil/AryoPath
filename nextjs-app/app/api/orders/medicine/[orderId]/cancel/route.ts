@@ -3,7 +3,11 @@ import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import { initiateRefund } from '@/lib/services/cashfreeRefundService';
-import { getMedicineOrderEmail, sendMedicineCancelledEmail } from '@/lib/services/transactionalEmailService';
+import {
+  getMedicineOrderEmail,
+  sendMedicineCancelledEmail,
+  sendMedicineRefundInitiatedEmail,
+} from '@/lib/services/transactionalEmailService';
 
 const CANCELLABLE_STATUSES = ['confirmed', 'prescription_required', 'prescription_verified', 'packed'];
 
@@ -51,16 +55,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
       order.grandTotal,
       'User cancelled medicine order'
     );
+    const refundOk = status !== 'failed';
     await MedicineOrder.collection.updateOne(
       { _id: order._id },
       { $set: {
+        // Move to refunded immediately once refund is initiated
+        ...(refundOk ? { status: 'refunded', 'payment.status': 'refunded' } : {}),
         'payment.refundId':          refundId,
         'payment.refundAmount':      order.grandTotal,
-        'payment.refundStatus':      status === 'failed' ? 'failed' : 'initiated',
+        'payment.refundStatus':      refundOk ? 'initiated' : 'failed',
         'payment.refundInitiatedAt': new Date(),
       }}
     );
-    refundInitiated = status !== 'failed';
+    refundInitiated = refundOk;
+
+    if (refundOk) {
+      getMedicineOrderEmail(order).then(email => sendMedicineRefundInitiatedEmail(order, email)).catch(console.error);
+    }
   }
 
   getMedicineOrderEmail(order).then(email => sendMedicineCancelledEmail(order, email)).catch(console.error);

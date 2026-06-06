@@ -6,7 +6,12 @@ import { PERMISSIONS } from '@/lib/constants/permissions';
 import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import { initiateRefund } from '@/lib/services/cashfreeRefundService';
-import { getMedicineOrderEmail, sendMedicineRefundInitiatedEmail } from '@/lib/services/transactionalEmailService';
+import {
+  getMedicineOrderEmail,
+  sendMedicineRefundInitiatedEmail,
+  sendMedicineReturnApprovedEmail,
+} from '@/lib/services/transactionalEmailService';
+import { scheduleReversePickup } from '@/lib/services/delhiveryService';
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ orderId: string }> }) {
   const auth = await adminOrStaffAuth(req, PERMISSIONS.MED_ORDERS_EDIT);
@@ -34,6 +39,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
     ret.approvedAt = new Date();
     if (adminNotes) ret.adminNotes = adminNotes;
     order.markModified('returnRequest');
+
+    // Schedule reverse pickup with Delhivery (fire async — don't block response)
+    const pickupResult = await scheduleReversePickup({
+      orderId: order.orderId,
+      awb: (order as any).awb ?? '',
+      shippingAddress: order.shippingAddress as any,
+      grandTotal: order.grandTotal,
+    });
+
+    if (pickupResult.success && pickupResult.returnAwb) {
+      (order as any).returnAwb = pickupResult.returnAwb;
+      console.log(`[Return] Reverse pickup scheduled. AWB: ${pickupResult.returnAwb}`);
+    } else {
+      console.warn(`[Return] Delhivery reverse pickup failed: ${pickupResult.error}. Approve continues — schedule manually.`);
+    }
+
+    // Email user with pickup confirmation
+    getMedicineOrderEmail(order).then(email =>
+      sendMedicineReturnApprovedEmail(order, email, pickupResult.returnAwb || undefined)
+    ).catch(console.error);
   }
 
   if (action === 'reject') {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
+import { getMedicineOrderEmail, sendMedicineReturnRequestedEmail } from '@/lib/services/transactionalEmailService';
 
 const RETURN_WINDOW_DAYS = 7;
 
@@ -53,6 +54,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   };
 
   await order.save();
+
+  getMedicineOrderEmail(order).then(email => sendMedicineReturnRequestedEmail(order, email)).catch(console.error);
 
   return NextResponse.json({ success: true, message: 'Return request submitted. Our team will contact you within 24 hours.' });
 }

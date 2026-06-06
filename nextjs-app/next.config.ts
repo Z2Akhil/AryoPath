@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3000',
+        pathname: '/uploads/**',
+      },
     ],
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400,

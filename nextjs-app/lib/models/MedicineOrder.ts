@@ -139,6 +139,7 @@ const MedicineOrderSchema = new Schema<MedicineOrderDocument>(
     cancellationReason: { type: String, default: '' },
     notes: { type: String, default: '' },
     returnRequest: { type: ReturnRequestSchema },
+    returnAwb:              { type: String, default: '' },
     awb:                    { type: String, default: '' },
     courierPartner:         { type: String, default: '' },
     trackingUrl:            { type: String, default: '' },

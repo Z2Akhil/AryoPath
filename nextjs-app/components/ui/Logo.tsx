@@ -24,7 +24,11 @@ export const Logo = ({ logo, loading }: LogoProps) => {
 
   if (loading) return <LogoSkeleton />;
 
-  const logoSrc = !imgError && logo ? logo : '/logo-120.webp';
+  // Old backend stored logos as /uploads/xxx — prefix with backend URL
+  const resolvedLogo = logo?.startsWith('/uploads/')
+    ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}${logo}`
+    : logo;
+  const logoSrc = !imgError && resolvedLogo ? resolvedLogo : '/logo-120.webp';
 
   return (
     <Link href="/" className="flex items-center group cursor-pointer" aria-label="Ayropath Home">

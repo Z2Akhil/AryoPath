@@ -426,10 +426,13 @@ function OrderModal({
                 <span className="text-sm font-semibold text-red-600">{fmt(order.cancelledAt)}</span>
               </div>
             )}
-            {order.cancellationReason && (
+            {(['cancelled', 'refunded', 'return_requested', 'return_received'] as string[]).includes(order.status) && (
               <div className="flex items-start gap-2">
                 <span className="text-xs text-gray-400 whitespace-nowrap mt-0.5">Reason:</span>
-                <span className="text-xs text-gray-600 font-medium">{order.cancellationReason}</span>
+                <span className="text-xs text-gray-600 font-medium">
+                  {order.cancellationReason ||
+                    ((order as any).returnRequest?.reason ? `Return: ${(order as any).returnRequest.reason}` : 'No reason provided')}
+                </span>
               </div>
             )}
             {(order as any).returnRequest && (
@@ -519,9 +522,14 @@ function OrderModal({
                 onChange={e => setStatus(e.target.value as MedicineOrderStatus)}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               >
-                {(Object.keys(STATUS) as MedicineOrderStatus[]).map(s => (
-                  <option key={s} value={s}>{STATUS[s].label}</option>
-                ))}
+                {(Object.keys(STATUS) as MedicineOrderStatus[]).map(s => {
+                  const managed = ['return_requested', 'return_received', 'refunded'].includes(s);
+                  return (
+                    <option key={s} value={s} disabled={managed}>
+                      {STATUS[s].label}{managed ? ' (managed by panel)' : ''}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -640,6 +648,7 @@ export default function MedicineOrdersPage() {
 
   const handleModalSave = (updated: PopulatedOrder) => {
     setOrders(prev => prev.map(o => o.orderId === updated.orderId ? updated : o));
+    setSelectedOrder(updated);
   };
 
   const totalOrders = Object.values(statusCounts).reduce((a, b) => a + b, 0);

@@ -12,13 +12,16 @@ import {
   sendMedicineShippedEmail,
   sendMedicineDeliveredEmail,
   sendMedicineCancelledEmail,
+  sendMedicineRefundInitiatedEmail,
 } from '@/lib/services/transactionalEmailService';
+import { initiateRefund } from '@/lib/services/cashfreeRefundService';
 
 const VALID_STATUSES: MedicineOrderStatus[] = [
   'pending_payment', 'payment_failed', 'confirmed',
   'prescription_required', 'prescription_verified',
   'packed', 'shipped', 'out_for_delivery',
   'delivered', 'cancelled', 'refunded',
+  'return_requested', 'return_received',
 ];
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ orderId: string }> }) {
@@ -73,8 +76,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
       if (status === 'delivered' && !order.deliveredAt) (order as any).deliveredAt = new Date();
       if (status === 'cancelled' && !order.cancelledAt) (order as any).cancelledAt = new Date();
     }
-    if (notes !== undefined)             order.notes = notes;
+    if (notes !== undefined) order.notes = notes;
     if (cancellationReason !== undefined) order.cancellationReason = cancellationReason;
+    if (status === 'cancelled' && !order.cancellationReason) order.cancellationReason = 'Cancelled by admin';
 
     if (awb !== undefined && awb !== (order as any).awb) {
       (order as any).awb = awb;
@@ -99,10 +103,40 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
     await order.populate('userId', 'firstName lastName mobileNumber email');
 
     const toEmail: string = order.shippingAddress?.email || (order.userId as any)?.email || '';
-    if (status === 'confirmed')  sendMedicineConfirmedEmail(order, toEmail).catch(console.error);
-    if (status === 'shipped')    sendMedicineShippedEmail(order, toEmail).catch(console.error);
-    if (status === 'delivered')  sendMedicineDeliveredEmail(order, toEmail).catch(console.error);
-    if (status === 'cancelled')  sendMedicineCancelledEmail(order, toEmail).catch(console.error);
+    if (status === 'confirmed') sendMedicineConfirmedEmail(order, toEmail).catch(console.error);
+    if (status === 'shipped')   sendMedicineShippedEmail(order, toEmail).catch(console.error);
+    if (status === 'delivered') sendMedicineDeliveredEmail(order, toEmail).catch(console.error);
+
+    if (status === 'cancelled') {
+      sendMedicineCancelledEmail(order, toEmail).catch(console.error);
+
+      // Auto-refund if paid online and no refund already in progress
+      const payment = order.payment as any;
+      if (payment?.status === 'paid' && payment?.cfOrderId && !payment?.refundId) {
+        const { refundId, status: refundStatus } = await initiateRefund(
+          payment.cfOrderId,
+          order.grandTotal,
+          `Admin cancelled order: ${order.cancellationReason || 'No reason'}`
+        );
+        const refundOk = refundStatus !== 'failed';
+        await MedicineOrder.collection.updateOne(
+          { _id: order._id },
+          { $set: {
+            ...(refundOk ? { status: 'refunded', 'payment.status': 'refunded' } : {}),
+            'payment.refundId':          refundId,
+            'payment.refundAmount':      order.grandTotal,
+            'payment.refundStatus':      refundOk ? 'initiated' : 'failed',
+            'payment.refundInitiatedAt': new Date(),
+          }}
+        );
+        if (refundOk) {
+          // Update local order object so returned JSON reflects refunded status
+          (order as any).status = 'refunded';
+          (payment).status = 'refunded';
+          sendMedicineRefundInitiatedEmail(order, toEmail).catch(console.error);
+        }
+      }
+    }
 
     return NextResponse.json({ success: true, order });
   } catch (err: any) {

@@ -259,6 +259,25 @@ export async function sendMedicineCancelledEmail(order: any, toEmail: string): P
   await sendMail(toEmail, `Order Cancelled #${order.orderId} – Ayropath`, html);
 }
 
+export async function sendMedicineReturnApprovedEmail(order: any, toEmail: string, returnAwb?: string): Promise<void> {
+  if (!toEmail) return;
+  const awbLine = returnAwb
+    ? `<p style="margin:8px 0;font-size:14px;color:#333;"><strong>Return AWB:</strong> ${returnAwb}</p>`
+    : '';
+  const html = await render('medicine-return-approved', {
+    fullName: order.shippingAddress?.fullName ?? '',
+    orderId: order.orderId,
+    awbLine,
+    pickupAddress: [
+      order.shippingAddress?.addressLine1,
+      order.shippingAddress?.city,
+      order.shippingAddress?.state,
+      order.shippingAddress?.pincode,
+    ].filter(Boolean).join(', '),
+  });
+  await sendMail(toEmail, `Return Approved – Keep Items Ready #${order.orderId}`, html);
+}
+
 export async function sendMedicineReturnRequestedEmail(order: any, toEmail: string): Promise<void> {
   if (!toEmail) return;
   const html = await render('medicine-return-requested', {
