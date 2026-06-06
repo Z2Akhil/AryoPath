@@ -38,6 +38,18 @@ async function sendMail(to: string, subject: string, html: string): Promise<void
   }
 }
 
+function formatTime12h(time: string): string {
+  if (/AM|PM/i.test(time)) return time; // already 12h
+  const m = time.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return time;
+  let h = parseInt(m[1], 10);
+  const min = m[2];
+  const meridiem = h >= 12 ? 'PM' : 'AM';
+  if (h > 12) h -= 12;
+  if (h === 0) h = 12;
+  return `${h}:${min} ${meridiem}`;
+}
+
 async function render(name: string, vars: Record<string, string>): Promise<string> {
   const filePath = path.join(process.cwd(), 'lib/templates/email', `${name}.html`);
   let html = await fs.readFile(filePath, 'utf-8');
@@ -92,7 +104,7 @@ export async function sendConsultBookedEmail(appt: any): Promise<void> {
     patientName: appt.patientName,
     doctorName: appt.doctorName,
     date: appt.appointmentDate,
-    time: appt.appointmentTime,
+    time: formatTime12h(appt.appointmentTime),
     mode: appt.consultationMode === 'video' ? 'Video Call' : 'Audio Call',
     meetLinkHtml,
     bookingId: String(appt._id).slice(-8).toUpperCase(),
@@ -110,7 +122,7 @@ export async function sendConsultConfirmedEmail(appt: any): Promise<void> {
     patientName: appt.patientName,
     doctorName: appt.doctorName,
     date: appt.appointmentDate,
-    time: appt.appointmentTime,
+    time: formatTime12h(appt.appointmentTime),
     mode: appt.consultationMode === 'video' ? 'Video Call' : 'Audio Call',
     meetLinkHtml,
     bookingId: String(appt._id).slice(-8).toUpperCase(),
@@ -125,10 +137,24 @@ export async function sendConsultCancelledEmail(appt: any): Promise<void> {
     patientName: appt.patientName,
     doctorName: appt.doctorName,
     date: appt.appointmentDate,
-    time: appt.appointmentTime,
+    time: formatTime12h(appt.appointmentTime),
     bookingId: String(appt._id).slice(-8).toUpperCase(),
   });
   await sendMail(appt.patientEmail, 'Appointment Cancelled – Ayropath', html);
+}
+
+export async function sendConsultRefundInitiatedEmail(appt: any): Promise<void> {
+  if (!appt.patientEmail) return;
+  const amount = `₹${Number(appt.payment?.refundAmount ?? appt.finalAmount ?? 0).toLocaleString('en-IN')}`;
+  const html = await render('consult-refund-initiated', {
+    patientName: appt.patientName,
+    doctorName: appt.doctorName,
+    date: appt.appointmentDate,
+    time: formatTime12h(appt.appointmentTime),
+    bookingId: String(appt._id).slice(-8).toUpperCase(),
+    refundAmount: amount,
+  });
+  await sendMail(appt.patientEmail, `Refund Initiated – Ayropath Consultation`, html);
 }
 
 export async function sendConsultCompletedEmail(appt: any): Promise<void> {
@@ -163,7 +189,7 @@ export async function sendDoctorNewAppointmentEmail(appt: any): Promise<void> {
     patientName: appt.patientName,
     patientMobile: appt.patientMobile,
     date: appt.appointmentDate,
-    time: appt.appointmentTime,
+    time: formatTime12h(appt.appointmentTime),
     mode: appt.consultationMode === 'video' ? 'Video Call' : 'Audio Call',
     meetLinkHtml,
     bookingId: String(appt._id).slice(-8).toUpperCase(),
@@ -179,7 +205,7 @@ export async function sendDoctorAppointmentCancelledEmail(appt: any): Promise<vo
     doctorName: appt.doctorName,
     patientName: appt.patientName,
     date: appt.appointmentDate,
-    time: appt.appointmentTime,
+    time: formatTime12h(appt.appointmentTime),
     bookingId: String(appt._id).slice(-8).toUpperCase(),
     portalUrl: PORTAL_URL,
   });

@@ -45,8 +45,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
     confirmed: { label: 'Confirmed', color: 'bg-blue-100 text-blue-800 border-blue-200',        icon: CheckCircle },
     completed: { label: 'Completed', color: 'bg-green-100 text-green-800 border-green-200',     icon: CheckCircle },
     cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-800 border-red-200',           icon: XCircle },
-    no_show:   { label: 'Expired',   color: 'bg-gray-100 text-gray-600 border-gray-200',         icon: XCircle },
-    expired:   { label: 'Expired',   color: 'bg-gray-100 text-gray-600 border-gray-200',         icon: XCircle },
+    no_show:   { label: 'Expired',   color: 'bg-gray-100 text-gray-600 border-gray-200',        icon: XCircle },
+    expired:   { label: 'Expired',   color: 'bg-gray-100 text-gray-600 border-gray-200',        icon: XCircle },
+    refunded:  { label: 'Refunded',  color: 'bg-green-100 text-green-700 border-green-200',     icon: CheckCircle },
 };
 
 const PAYMENT_STATUS: Record<string, { label: string; color: string }> = {
@@ -61,6 +62,8 @@ const VALID_TRANSITIONS: Record<string, ('confirmed' | 'completed' | 'cancelled'
     confirmed: ['completed', 'cancelled'],
     completed: [],
     cancelled: [],
+    no_show:   [],
+    refunded:  [],
 };
 
 function fmt(dt: string | Date | undefined) {
@@ -250,11 +253,8 @@ export default function AppointmentDetailPage() {
                         {transitions.length === 0
                             ? 'No further status changes available.'
                             : canEdit ? 'Update appointment status:' : 'Read-only — no edit permission.'}
-                        {appt.status === 'cancelled' && appt.payment?.status === 'paid' &&
-                          !(appt.payment as any).refundStatus || (appt.payment as any)?.refundStatus === 'none' ? (
-                          <RefundButton apptId={appt._id} />
-                        ) : (appt.payment as any)?.refundStatus && (appt.payment as any).refundStatus !== 'none' ? (
-                          <p className="text-xs text-green-600 font-medium mt-2">Refund {(appt.payment as any).refundStatus}</p>
+                        {appt.status === 'refunded' || (appt.payment as any)?.refundStatus === 'initiated' || (appt.payment as any)?.refundStatus === 'processed' ? (
+                          <p className="text-xs text-green-600 font-medium mt-2">Refund {(appt.payment as any)?.refundStatus || 'initiated'} — credit within 5–7 business days</p>
                         ) : null}
                     </p>
                     <div className="flex flex-wrap gap-2">

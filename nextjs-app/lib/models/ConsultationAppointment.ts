@@ -43,7 +43,7 @@ export interface ConsultationAppointmentDocument extends Document {
   couponCode: string;
   couponDiscount: number;
   finalAmount: number;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'refunded';
   reportUrls: { url: string; publicId: string }[];
   prescription?: Prescription;
   payment?: ConsultPayment;
@@ -132,7 +132,7 @@ const ConsultationAppointmentSchema = new Schema<ConsultationAppointmentDocument
 
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'],
+      enum: ['pending', 'confirmed', 'completed', 'cancelled', 'no_show', 'refunded'],
       default: 'pending',
     },
 

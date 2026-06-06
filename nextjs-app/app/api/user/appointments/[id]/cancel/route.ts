@@ -3,7 +3,11 @@ import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/db/mongoose';
 import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
 import { initiateRefund } from '@/lib/services/cashfreeRefundService';
-import { sendConsultCancelledEmail, sendDoctorAppointmentCancelledEmail } from '@/lib/services/transactionalEmailService';
+import {
+  sendConsultCancelledEmail,
+  sendDoctorAppointmentCancelledEmail,
+  sendConsultRefundInitiatedEmail,
+} from '@/lib/services/transactionalEmailService';
 
 const CANCEL_WINDOW_MS = 2 * 60 * 60 * 1000; // 2 hours
 
@@ -65,16 +69,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       appt.finalAmount,
       'User cancelled consultation'
     );
+    const refundOk = status !== 'failed';
     await ConsultationAppointment.collection.updateOne(
       { _id: appt._id },
       { $set: {
+        ...(refundOk ? { status: 'refunded', 'payment.status': 'refunded' } : {}),
         'payment.refundId':          refundId,
         'payment.refundAmount':      appt.finalAmount,
-        'payment.refundStatus':      status === 'failed' ? 'failed' : 'initiated',
+        'payment.refundStatus':      refundOk ? 'initiated' : 'failed',
         'payment.refundInitiatedAt': new Date(),
       }}
     );
-    refundInitiated = status !== 'failed';
+    refundInitiated = refundOk;
+    if (refundOk) sendConsultRefundInitiatedEmail(appt).catch(console.error);
   }
 
   sendConsultCancelledEmail(appt).catch(console.error);

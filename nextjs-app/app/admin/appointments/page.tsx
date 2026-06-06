@@ -20,6 +20,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
     cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-700',        icon: XCircle },
     no_show:   { label: 'Expired',   color: 'bg-gray-100 text-gray-500',      icon: XCircle },
     expired:   { label: 'Expired',   color: 'bg-gray-100 text-gray-500',      icon: XCircle },
+    refunded:  { label: 'Refunded',  color: 'bg-green-100 text-green-700',    icon: CheckCircle },
 };
 
 function resolveStatus(appt: any): string {
@@ -27,10 +28,10 @@ function resolveStatus(appt: any): string {
         const slotEnded = new Date(appt.appointmentDateTime).getTime() + 30 * 60 * 1000 < Date.now();
         if (slotEnded) return 'expired';
     }
-    return appt.status;
+    return appt.status; // cancelled, refunded, completed, no_show pass through as-is
 }
 
-const FILTERS = ['all', 'pending', 'confirmed', 'completed', 'cancelled'] as const;
+const FILTERS = ['all', 'pending', 'confirmed', 'completed', 'cancelled', 'refunded'] as const;
 
 function formatDateTime(dt: string) {
     if (!dt) return '—';

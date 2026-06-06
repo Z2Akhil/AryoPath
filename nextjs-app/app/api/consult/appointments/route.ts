@@ -35,16 +35,22 @@ function getUserIdFromRequest(req: NextRequest): string | null {
  * Parse "2026-05-20" + "10:00 AM" → UTC Date (treating input as IST).
  */
 function parseAppointmentDateTime(date: string, time: string): Date {
-  const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
   let hours = 0;
   let minutes = 0;
 
-  if (match) {
-    hours = parseInt(match[1], 10);
-    minutes = parseInt(match[2], 10);
-    const meridiem = match[3].toUpperCase();
+  const match12 = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  const match24 = time.match(/^(\d{1,2}):(\d{2})$/);
+
+  if (match12) {
+    hours = parseInt(match12[1], 10);
+    minutes = parseInt(match12[2], 10);
+    const meridiem = match12[3].toUpperCase();
     if (meridiem === 'PM' && hours !== 12) hours += 12;
     if (meridiem === 'AM' && hours === 12) hours = 0;
+  } else if (match24) {
+    // 24h format e.g. "10:00" or "14:30"
+    hours = parseInt(match24[1], 10);
+    minutes = parseInt(match24[2], 10);
   }
 
   const [year, month, day] = date.split('-').map(Number);

@@ -3,7 +3,14 @@ import connectToDatabase from '@/lib/db/mongoose';
 import { adminOrStaffAuth } from '@/lib/auth';
 import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
 import { PERMISSIONS } from '@/lib/constants/permissions';
-import { sendConsultConfirmedEmail, sendConsultCancelledEmail, sendConsultCompletedEmail, sendDoctorAppointmentCancelledEmail } from '@/lib/services/transactionalEmailService';
+import {
+  sendConsultConfirmedEmail,
+  sendConsultCancelledEmail,
+  sendConsultCompletedEmail,
+  sendDoctorAppointmentCancelledEmail,
+  sendConsultRefundInitiatedEmail,
+} from '@/lib/services/transactionalEmailService';
+import { initiateRefund } from '@/lib/services/cashfreeRefundService';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -34,6 +41,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
     completed: [],
     cancelled: [],
     no_show:   [],
+    refunded:  [],
 };
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -73,11 +81,40 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             { $set: updateFields }
         );
 
-        const updated = await ConsultationAppointment.findById(id).lean();
+        const updated = await ConsultationAppointment.findById(id).lean() as any;
 
         if (status === 'confirmed') sendConsultConfirmedEmail(updated).catch(console.error);
-        if (status === 'cancelled') { sendConsultCancelledEmail(updated).catch(console.error); sendDoctorAppointmentCancelledEmail(updated).catch(console.error); }
         if (status === 'completed') sendConsultCompletedEmail(updated).catch(console.error);
+
+        if (status === 'cancelled') {
+            sendConsultCancelledEmail(updated).catch(console.error);
+            sendDoctorAppointmentCancelledEmail(updated).catch(console.error);
+
+            // Auto-refund if paid online and no refund already in progress
+            const payment = updated?.payment as any;
+            if (payment?.status === 'paid' && payment?.cfOrderId && !payment?.refundId) {
+                const { refundId, status: refundStatus } = await initiateRefund(
+                    payment.cfOrderId,
+                    updated.finalAmount,
+                    'Admin cancelled consultation'
+                );
+                const refundOk = refundStatus !== 'failed';
+                await ConsultationAppointment.collection.updateOne(
+                    { _id: appointment._id },
+                    { $set: {
+                        ...(refundOk ? { status: 'refunded', 'payment.status': 'refunded' } : {}),
+                        'payment.refundId':          refundId,
+                        'payment.refundAmount':      updated.finalAmount,
+                        'payment.refundStatus':      refundOk ? 'initiated' : 'failed',
+                        'payment.refundInitiatedAt': new Date(),
+                    }}
+                );
+                if (refundOk) {
+                    updated.status = 'refunded';
+                    sendConsultRefundInitiatedEmail(updated).catch(console.error);
+                }
+            }
+        }
 
         return NextResponse.json({ success: true, appointment: updated });
     } catch (error) {
