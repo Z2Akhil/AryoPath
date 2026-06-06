@@ -98,7 +98,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
     await order.save();
     await order.populate('userId', 'firstName lastName mobileNumber email');
 
-    const toEmail: string = (order.userId as any)?.email || order.shippingAddress?.email || '';
+    const toEmail: string = order.shippingAddress?.email || (order.userId as any)?.email || '';
     if (status === 'confirmed')  sendMedicineConfirmedEmail(order, toEmail).catch(console.error);
     if (status === 'shipped')    sendMedicineShippedEmail(order, toEmail).catch(console.error);
     if (status === 'delivered')  sendMedicineDeliveredEmail(order, toEmail).catch(console.error);

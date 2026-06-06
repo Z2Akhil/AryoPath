@@ -55,11 +55,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         appointment.status = status;
     }
 
+    const setFields: Record<string, any> = {};
+    if (status !== undefined) {
+        setFields.status = status;
+        if (status === 'cancelled') setFields.cancelledAt = new Date();
+    }
+
     if (prescription !== undefined) {
         if (!prescription.medicines || !Array.isArray(prescription.medicines)) {
             return NextResponse.json({ success: false, error: 'Invalid prescription' }, { status: 400 });
         }
-        appointment.set('prescription', {
+        setFields.prescription = {
             medicines: prescription.medicines.map((m: any) => ({
                 name:         String(m.name || '').trim(),
                 dose:         String(m.dose || '').trim(),
@@ -69,11 +75,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
             })),
             notes:    String(prescription.notes || '').trim(),
             issuedAt: new Date(),
-        });
-        appointment.markModified('prescription');
+        };
     }
 
-    await appointment.save();
+    await ConsultationAppointment.collection.updateOne(
+        { _id: appointment._id },
+        { $set: setFields }
+    );
 
     if (status === 'confirmed') sendConsultConfirmedEmail(appointment).catch(console.error);
     if (status === 'cancelled') { sendConsultCancelledEmail(appointment).catch(console.error); sendDoctorAppointmentCancelledEmail(appointment).catch(console.error); }

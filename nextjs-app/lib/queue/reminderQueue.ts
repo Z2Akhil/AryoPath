@@ -61,3 +61,15 @@ export async function scheduleReminder(data: ReminderJobData, fireAt: Date): Pro
     jobId: `reminder-${data.appointmentId}`,  // idempotent: won't duplicate on re-create
   });
 }
+
+export async function scheduleNoShowExpiry(appointmentId: string, expiresAt: Date): Promise<void> {
+  const delay = expiresAt.getTime() - Date.now();
+  await getReminderQueue().add(
+    'no_show_expiry',
+    { appointmentId } as any,
+    {
+      delay: Math.max(delay, 0),
+      jobId: `expiry-${appointmentId}`,
+    }
+  );
+}

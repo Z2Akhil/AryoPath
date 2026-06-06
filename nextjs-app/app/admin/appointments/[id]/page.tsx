@@ -13,12 +13,40 @@ import { useAdminAuth } from '@/providers/AdminAuthProvider';
 import { PERMISSIONS } from '@/lib/constants/permissions';
 import AccessDenied from '@/components/admin/AccessDenied';
 import adminAppointmentApi from '@/lib/api/adminAppointmentApi';
+import { adminAxios } from '@/lib/api/adminAxios';
+
+function RefundButton({ apptId }: { apptId: string }) {
+  const [loading, setLoading] = React.useState(false);
+  const [done, setDone] = React.useState(false);
+  const [err, setErr] = React.useState('');
+  const handle = async () => {
+    if (!confirm('Initiate Cashfree refund for this appointment?')) return;
+    setLoading(true); setErr('');
+    try {
+      const r = await adminAxios.post(`/admin/appointments/${apptId}/refund`);
+      if (r.data.success) setDone(true);
+      else setErr(r.data.error || 'Refund failed');
+    } catch { setErr('Refund failed'); }
+    finally { setLoading(false); }
+  };
+  if (done) return <p className="text-xs text-green-600 font-medium mt-2">Refund initiated</p>;
+  return (
+    <div className="mt-2">
+      {err && <p className="text-xs text-red-500 mb-1">{err}</p>}
+      <button onClick={handle} disabled={loading} className="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50">
+        {loading ? 'Processing...' : 'Initiate Refund'}
+      </button>
+    </div>
+  );
+}
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
     pending:   { label: 'Pending',   color: 'bg-yellow-100 text-yellow-800 border-yellow-200',  icon: Clock },
     confirmed: { label: 'Confirmed', color: 'bg-blue-100 text-blue-800 border-blue-200',        icon: CheckCircle },
     completed: { label: 'Completed', color: 'bg-green-100 text-green-800 border-green-200',     icon: CheckCircle },
     cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-800 border-red-200',           icon: XCircle },
+    no_show:   { label: 'Expired',   color: 'bg-gray-100 text-gray-600 border-gray-200',         icon: XCircle },
+    expired:   { label: 'Expired',   color: 'bg-gray-100 text-gray-600 border-gray-200',         icon: XCircle },
 };
 
 const PAYMENT_STATUS: Record<string, { label: string; color: string }> = {
@@ -122,10 +150,13 @@ export default function AppointmentDetailPage() {
         </div>
     );
 
-    const statusCfg = STATUS_CONFIG[appt.status] || STATUS_CONFIG.pending;
+    const slotExpired  = ['pending', 'confirmed'].includes(appt.status) &&
+                         new Date(appt.appointmentDateTime).getTime() + 30 * 60 * 1000 < Date.now();
+    const displayStatus = slotExpired ? 'expired' : appt.status;
+    const statusCfg  = STATUS_CONFIG[displayStatus] || STATUS_CONFIG.pending;
     const StatusIcon = statusCfg.icon;
     const paymentCfg = PAYMENT_STATUS[appt.payment?.status || 'not_required'];
-    const transitions = VALID_TRANSITIONS[appt.status] || [];
+    const transitions = slotExpired ? [] : (VALID_TRANSITIONS[appt.status] || []);
 
     return (
         <div className="p-6 max-w-4xl mx-auto space-y-5">
@@ -219,6 +250,12 @@ export default function AppointmentDetailPage() {
                         {transitions.length === 0
                             ? 'No further status changes available.'
                             : canEdit ? 'Update appointment status:' : 'Read-only — no edit permission.'}
+                        {appt.status === 'cancelled' && appt.payment?.status === 'paid' &&
+                          !(appt.payment as any).refundStatus || (appt.payment as any)?.refundStatus === 'none' ? (
+                          <RefundButton apptId={appt._id} />
+                        ) : (appt.payment as any)?.refundStatus && (appt.payment as any).refundStatus !== 'none' ? (
+                          <p className="text-xs text-green-600 font-medium mt-2">Refund {(appt.payment as any).refundStatus}</p>
+                        ) : null}
                     </p>
                     <div className="flex flex-wrap gap-2">
                         {transitions.map(t => (

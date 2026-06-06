@@ -43,12 +43,14 @@ export interface ConsultationAppointmentDocument extends Document {
   couponCode: string;
   couponDiscount: number;
   finalAmount: number;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
   reportUrls: { url: string; publicId: string }[];
   prescription?: Prescription;
   payment?: ConsultPayment;
   reminderSent: boolean;
   userId?: mongoose.Types.ObjectId;
+  cancelledAt?: Date;
+  cancellationReason?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -89,6 +91,14 @@ const ConsultPaymentSchema = new Schema(
     },
     amount: { type: Number, default: 0 },
     paidAt: { type: Date },
+    refundId:          { type: String, default: '' },
+    refundAmount:      { type: Number, default: 0 },
+    refundStatus: {
+      type: String,
+      enum: ['none', 'initiated', 'pending', 'processed', 'failed'],
+      default: 'none',
+    },
+    refundInitiatedAt: { type: Date },
   },
   { _id: false }
 );
@@ -122,14 +132,16 @@ const ConsultationAppointmentSchema = new Schema<ConsultationAppointmentDocument
 
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'completed', 'cancelled'],
+      enum: ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'],
       default: 'pending',
     },
 
-    reportUrls:   { type: [ReportUrlSchema], default: [] },
-    prescription:  { type: PrescriptionSchema, default: undefined },
-    payment:       { type: ConsultPaymentSchema, default: undefined },
-    reminderSent: { type: Boolean, default: false },
+    reportUrls:        { type: [ReportUrlSchema], default: [] },
+    prescription:      { type: PrescriptionSchema, default: undefined },
+    payment:           { type: ConsultPaymentSchema, default: undefined },
+    reminderSent:      { type: Boolean, default: false },
+    cancelledAt:       { type: Date },
+    cancellationReason:{ type: String, default: '' },
 
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: false },
   },

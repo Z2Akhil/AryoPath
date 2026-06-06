@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   CheckCircle2, Package, MapPin, ArrowLeft, ExternalLink,
-  Truck, Loader2, AlertCircle, FileText, Upload, Printer,
+  Truck, Loader2, AlertCircle, FileText, Upload, Printer, X, RotateCcw,
 } from 'lucide-react';
 import medicineOrderApi from '@/lib/api/medicineOrderApi';
 import { MedicineOrder, UploadedPrescription } from '@/types/medicineOrder';
@@ -48,6 +48,55 @@ export default function MedicineOrderTrackingPage() {
   const [submittingRx, setSubmittingRx]         = useState(false);
   const [rxSubmitted, setRxSubmitted]           = useState(false);
 
+  // Cancel / Return state
+  const [confirmCancel, setConfirmCancel]   = useState(false);
+  const [cancelling, setCancelling]         = useState(false);
+  const [confirmReturn, setConfirmReturn]   = useState(false);
+  const [returnReason, setReturnReason]     = useState('');
+  const [submittingReturn, setSubmittingReturn] = useState(false);
+
+  const handleCancelOrder = async () => {
+    setCancelling(true);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    try {
+      const res = await fetch(`/api/orders/medicine/${orderId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ reason: 'Cancelled by customer' }),
+      }).then(r => r.json());
+      if (res.success) {
+        const updated = await medicineOrderApi.getByOrderId(orderId);
+        if (updated.success) setOrder(updated.data);
+        setConfirmCancel(false);
+      } else {
+        alert(res.error || 'Failed to cancel order');
+      }
+    } catch { alert('Failed to cancel order'); }
+    finally { setCancelling(false); }
+  };
+
+  const handleReturnRequest = async () => {
+    if (!returnReason.trim()) return;
+    setSubmittingReturn(true);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    try {
+      const res = await fetch(`/api/orders/medicine/${orderId}/return`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ reason: returnReason }),
+      }).then(r => r.json());
+      if (res.success) {
+        const updated = await medicineOrderApi.getByOrderId(orderId);
+        if (updated.success) setOrder(updated.data);
+        setConfirmReturn(false);
+        setReturnReason('');
+      } else {
+        alert(res.error || 'Failed to submit return request');
+      }
+    } catch { alert('Failed to submit return request'); }
+    finally { setSubmittingReturn(false); }
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -63,6 +112,23 @@ export default function MedicineOrderTrackingPage() {
                 if (updated.success) setOrder(updated.data);
               })
               .catch(() => {/* silent — tracking refresh is best-effort */});
+          }
+          // If refund is pending/initiated, check Cashfree for latest status
+          const rs = (res.data as any).payment?.refundStatus;
+          if (rs === 'initiated' || rs === 'pending') {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+            fetch(`/api/orders/medicine/${orderId}/check-refund`, {
+              method: 'POST',
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            })
+              .then(r => r.json())
+              .then(async d => {
+                if (d.success && d.refundStatus !== rs) {
+                  const updated = await medicineOrderApi.getByOrderId(orderId);
+                  if (updated.success) setOrder(updated.data);
+                }
+              })
+              .catch(() => {});
           }
         } else {
           setError('Order not found.');
@@ -313,6 +379,87 @@ export default function MedicineOrderTrackingPage() {
             >
               <Printer className="h-3.5 w-3.5" /> Print Receipt
             </button>
+          )}
+
+          {/* Refund status */}
+          {(() => {
+            const rs = (order as any).payment?.refundStatus;
+            const amt = `₹${Number((order as any).payment?.refundAmount ?? 0).toLocaleString('en-IN')}`;
+            if (!rs || rs === 'none') return null;
+            if (rs === 'processed') return (
+              <div className="mt-3 p-3 bg-green-50 border border-green-100 rounded-xl text-xs text-green-700 font-medium">
+                Refund of {amt} has been processed ✓
+              </div>
+            );
+            if (rs === 'failed') return (
+              <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600 font-medium">
+                Refund failed — please contact support at 9973956949
+              </div>
+            );
+            return (
+              <div className="mt-3 p-3 bg-green-50 border border-green-100 rounded-xl text-xs text-green-700 font-medium">
+                Refund of {amt} initiated — credit within 5–7 business days
+              </div>
+            );
+          })()}
+
+          {/* Cancel order */}
+          {['confirmed','prescription_required','prescription_verified','packed'].includes(order.status) && (
+            <div className="mt-3">
+              {confirmCancel ? (
+                <div className="border border-red-100 rounded-xl p-3 space-y-2">
+                  <p className="text-xs text-gray-600">Cancel this order? A refund will be initiated if you paid online.</p>
+                  <div className="flex gap-2">
+                    <button onClick={handleCancelOrder} disabled={cancelling} className="flex-1 py-2 bg-red-600 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1">
+                      {cancelling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />} Yes, Cancel
+                    </button>
+                    <button onClick={() => setConfirmCancel(false)} className="flex-1 py-2 border border-gray-200 text-gray-600 text-xs font-bold rounded-lg">Keep Order</button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmCancel(true)} className="w-full py-2.5 border border-red-200 text-red-600 text-sm font-bold rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-1.5">
+                  <X className="h-3.5 w-3.5" /> Cancel Order
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Return request */}
+          {order.status === 'delivered' && !(order as any).returnRequest &&
+            (order as any).deliveredAt &&
+            (Date.now() - new Date((order as any).deliveredAt).getTime()) / (1000*60*60*24) <= 7 && (
+            <div className="mt-3">
+              {confirmReturn ? (
+                <div className="border border-orange-100 rounded-xl p-3 space-y-2">
+                  <p className="text-xs text-gray-600 font-medium">Tell us why you want to return:</p>
+                  <textarea
+                    value={returnReason}
+                    onChange={e => setReturnReason(e.target.value)}
+                    placeholder="Describe the reason for return..."
+                    rows={3}
+                    className="w-full text-xs border border-gray-200 rounded-lg p-2 resize-none focus:outline-none focus:ring-1 focus:ring-orange-400"
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={handleReturnRequest} disabled={submittingReturn || !returnReason.trim()} className="flex-1 py-2 bg-orange-500 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1 disabled:opacity-50">
+                      {submittingReturn ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} Submit Return
+                    </button>
+                    <button onClick={() => setConfirmReturn(false)} className="flex-1 py-2 border border-gray-200 text-gray-600 text-xs font-bold rounded-lg">Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmReturn(true)} className="w-full py-2.5 border border-orange-200 text-orange-600 text-sm font-bold rounded-xl hover:bg-orange-50 transition-colors flex items-center justify-center gap-1.5">
+                  <RotateCcw className="h-3.5 w-3.5" /> Return Order
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Return status */}
+          {(order as any).returnRequest && (
+            <div className="mt-3 p-3 bg-orange-50 border border-orange-100 rounded-xl">
+              <p className="text-xs font-bold text-orange-700 mb-0.5">Return Request — {(order as any).returnRequest.status}</p>
+              <p className="text-xs text-orange-600">{(order as any).returnRequest.reason}</p>
+            </div>
           )}
         </div>
 

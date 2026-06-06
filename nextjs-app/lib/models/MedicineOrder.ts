@@ -69,6 +69,31 @@ const PaymentSchema = new Schema(
       default: 'pending',
     },
     paidAt: { type: Date },
+    refundId:          { type: String, default: '' },
+    refundAmount:      { type: Number, default: 0 },
+    refundStatus: {
+      type: String,
+      enum: ['none', 'initiated', 'pending', 'processed', 'failed'],
+      default: 'none',
+    },
+    refundInitiatedAt: { type: Date },
+    refundCompletedAt: { type: Date },
+  },
+  { _id: false }
+);
+
+const ReturnRequestSchema = new Schema(
+  {
+    requestedAt: { type: Date },
+    reason:      { type: String, default: '' },
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected', 'received'],
+      default: 'pending',
+    },
+    approvedAt:  { type: Date },
+    receivedAt:  { type: Date },
+    adminNotes:  { type: String, default: '' },
   },
   { _id: false }
 );
@@ -85,6 +110,8 @@ const STATUS_VALUES: MedicineOrderStatus[] = [
   'delivered',
   'cancelled',
   'refunded',
+  'return_requested',
+  'return_received',
 ];
 
 const MedicineOrderSchema = new Schema<MedicineOrderDocument>(
@@ -111,6 +138,7 @@ const MedicineOrderSchema = new Schema<MedicineOrderDocument>(
     cancelledAt: { type: Date },
     cancellationReason: { type: String, default: '' },
     notes: { type: String, default: '' },
+    returnRequest: { type: ReturnRequestSchema },
     awb:                    { type: String, default: '' },
     courierPartner:         { type: String, default: '' },
     trackingUrl:            { type: String, default: '' },

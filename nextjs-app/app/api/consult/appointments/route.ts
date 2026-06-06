@@ -6,7 +6,7 @@ import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
 import { sendConsultBookedEmail, sendDoctorNewAppointmentEmail } from '@/lib/services/transactionalEmailService';
 import NotificationService from '@/lib/services/notificationService';
 import { confirmationNotifications } from '@/lib/notifications/consultTemplates';
-import { scheduleReminder } from '@/lib/queue/reminderQueue';
+import { scheduleReminder, scheduleNoShowExpiry } from '@/lib/queue/reminderQueue';
 import { generateMeetLink } from '@/lib/utils/meetLink';
 
 export const dynamic = 'force-dynamic';
@@ -218,6 +218,11 @@ export async function POST(req: NextRequest) {
       },
       reminderFireAt
     ).catch((err) => console.error('[appointments] Failed to schedule reminder:', err));
+
+    // Schedule no-show expiry — fires 30 min after slot start, marks no_show if still pending/confirmed
+    const expiryAt = new Date(appointmentDateTime.getTime() + 30 * 60 * 1000);
+    scheduleNoShowExpiry(appointment._id.toString(), expiryAt)
+      .catch((err) => console.error('[appointments] Failed to schedule expiry:', err));
 
     return NextResponse.json({ success: true, data: appointment }, { status: 201 });
   } catch (error) {

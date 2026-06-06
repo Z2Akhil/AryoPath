@@ -15,10 +15,57 @@ import { getRedisConnection } from './redisConnection';
 import { ReminderJobData } from './reminderQueue';
 import NotificationService from '@/lib/services/notificationService';
 import { reminderNotifications } from '@/lib/notifications/consultTemplates';
+import connectDB from '@/lib/db/mongoose';
+import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
+import { initiateRefund } from '@/lib/services/cashfreeRefundService';
 
 const worker = new Worker<ReminderJobData>(
   'appointment-reminders',
   async (job) => {
+    // ── No-show expiry ────────────────────────────────────────────────────────
+    if (job.name === 'no_show_expiry') {
+      const { appointmentId } = job.data as any;
+      console.log(`[ReminderWorker] Checking no-show expiry for ${appointmentId}`);
+      await connectDB();
+
+      // Atomically claim — prevents race with user cancel running simultaneously
+      const mongoose = await import('mongoose');
+      const appt = await ConsultationAppointment.collection.findOneAndUpdate(
+        { _id: new mongoose.default.Types.ObjectId(appointmentId), status: { $in: ['pending', 'confirmed'] } },
+        { $set: { status: 'no_show' } }
+      );
+
+      if (!appt) return; // already cancelled/completed
+
+      const wasConfirmed = appt.status === 'confirmed';
+
+      console.log(`[ReminderWorker] Marked ${appointmentId} as no_show (was: ${appt.status})`);
+
+      // Refund only if NEVER confirmed AND no refund already in progress (guard against race with user cancel)
+      if (!wasConfirmed && appt.payment?.status === 'paid' && (appt.payment as any).cfOrderId && !(appt.payment as any).refundId) {
+        const { refundId, status } = await initiateRefund(
+          (appt.payment as any).cfOrderId,
+          appt.finalAmount,
+          'Appointment expired without confirmation — auto refund'
+        );
+        await ConsultationAppointment.collection.updateOne(
+          { _id: appt._id },
+          {
+            $set: {
+              'payment.refundId':          refundId,
+              'payment.refundAmount':      appt.finalAmount,
+              'payment.refundStatus':      status === 'failed' ? 'failed' : 'initiated',
+              'payment.refundInitiatedAt': new Date(),
+            }
+          }
+        );
+        console.log(`[ReminderWorker] Refund initiated for unconfirmed expired appointment ${appointmentId}: ${status}`);
+      }
+
+      return;
+    }
+
+    // ── Reminder ──────────────────────────────────────────────────────────────
     const data = job.data;
     console.log(`[ReminderWorker] Processing reminder for appointment ${data.shortId}`);
 

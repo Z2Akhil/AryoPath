@@ -18,7 +18,17 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
     confirmed: { label: 'Confirmed', color: 'bg-blue-100 text-blue-700',      icon: CheckCircle },
     completed: { label: 'Completed', color: 'bg-green-100 text-green-700',    icon: CheckCircle },
     cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-700',        icon: XCircle },
+    no_show:   { label: 'Expired',   color: 'bg-gray-100 text-gray-500',      icon: XCircle },
+    expired:   { label: 'Expired',   color: 'bg-gray-100 text-gray-500',      icon: XCircle },
 };
+
+function resolveStatus(appt: any): string {
+    if (['pending', 'confirmed'].includes(appt.status)) {
+        const slotEnded = new Date(appt.appointmentDateTime).getTime() + 30 * 60 * 1000 < Date.now();
+        if (slotEnded) return 'expired';
+    }
+    return appt.status;
+}
 
 const FILTERS = ['all', 'pending', 'confirmed', 'completed', 'cancelled'] as const;
 
@@ -187,7 +197,9 @@ export default function AppointmentsPage() {
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {appointments.map(appt => {
-                                    const sc     = STATUS_CONFIG[appt.status] || STATUS_CONFIG.pending;
+                                    const resolvedStatus = resolveStatus(appt);
+                                    const isExpiredAppt  = resolvedStatus === 'expired';
+                                    const sc     = STATUS_CONFIG[resolvedStatus] || STATUS_CONFIG.pending;
                                     const Icon   = sc.icon;
                                     const isVideo = appt.consultationMode === 'video';
                                     const busy   = updatingId === appt._id;
@@ -225,7 +237,7 @@ export default function AppointmentsPage() {
                                                     >
                                                         View
                                                     </Link>
-                                                    {appt.status === 'pending' && (
+                                                    {!isExpiredAppt && appt.status === 'pending' && (
                                                         <button
                                                             onClick={() => handleStatusUpdate(appt._id, 'confirmed')}
                                                             disabled={busy}
@@ -234,7 +246,7 @@ export default function AppointmentsPage() {
                                                             Confirm
                                                         </button>
                                                     )}
-                                                    {appt.status === 'confirmed' && (
+                                                    {!isExpiredAppt && appt.status === 'confirmed' && (
                                                         <button
                                                             onClick={() => handleStatusUpdate(appt._id, 'completed')}
                                                             disabled={busy}
@@ -243,7 +255,7 @@ export default function AppointmentsPage() {
                                                             Complete
                                                         </button>
                                                     )}
-                                                    {['pending', 'confirmed'].includes(appt.status) && (
+                                                    {!isExpiredAppt && ['pending', 'confirmed'].includes(appt.status) && (
                                                         <button
                                                             onClick={() => handleStatusUpdate(appt._id, 'cancelled')}
                                                             disabled={busy}

@@ -4,27 +4,37 @@ import nodemailer from 'nodemailer';
 
 const PORTAL_URL = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/doctor`;
 
+// Singleton pooled transporter — reuses connections, avoids rapid-reconnect throttling
+let _transporter: ReturnType<typeof nodemailer.createTransport> | null = null;
+function getTransporter() {
+  if (!_transporter) {
+    _transporter = nodemailer.createTransport({
+      pool: true,           // reuse connections
+      maxConnections: 3,
+      maxMessages: 100,
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT || '587'),
+      secure: false,
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      tls: { rejectUnauthorized: false },
+      connectionTimeout: 30000,
+      greetingTimeout:   15000,
+      socketTimeout:     30000,
+    });
+  }
+  return _transporter;
+}
+
 async function sendMail(to: string, subject: string, html: string): Promise<void> {
   if (!to) return;
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT || '587'),
-    secure: false,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-    tls: { rejectUnauthorized: false },
-    connectionTimeout: 10000,
-    socketTimeout: 10000,
-  });
   try {
-    const r = await transporter.sendMail({
+    const r = await getTransporter().sendMail({
       from: `"${process.env.SMTP_FROM_NAME || 'Ayropath'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
       to, subject, html,
     });
     console.log(`[Email] Sent to ${to}: ${r.messageId}`);
   } catch (err) {
     console.error(`[Email] Failed to ${to}:`, err);
-  } finally {
-    transporter.close();
   }
 }
 
@@ -177,6 +187,7 @@ export async function sendDoctorAppointmentCancelledEmail(appt: any): Promise<vo
 }
 
 // ── Medicine Orders ───────────────────────────────────────────────────────────
+// (cancel / return / refund)
 
 export async function getMedicineOrderEmail(order: any): Promise<string> {
   if (order.shippingAddress?.email) return order.shippingAddress.email;
@@ -246,4 +257,25 @@ export async function sendMedicineCancelledEmail(order: any, toEmail: string): P
     refundNote,
   });
   await sendMail(toEmail, `Order Cancelled #${order.orderId} – Ayropath`, html);
+}
+
+export async function sendMedicineReturnRequestedEmail(order: any, toEmail: string): Promise<void> {
+  if (!toEmail) return;
+  const html = await render('medicine-return-requested', {
+    fullName: order.shippingAddress?.fullName ?? '',
+    orderId: order.orderId,
+    reason: order.returnRequest?.reason || '',
+  });
+  await sendMail(toEmail, `Return Request Received #${order.orderId} – Ayropath`, html);
+}
+
+export async function sendMedicineRefundInitiatedEmail(order: any, toEmail: string): Promise<void> {
+  if (!toEmail) return;
+  const amount = `₹${Number((order.payment as any)?.refundAmount ?? order.grandTotal ?? 0).toLocaleString('en-IN')}`;
+  const html = await render('medicine-refund-initiated', {
+    fullName: order.shippingAddress?.fullName ?? '',
+    orderId: order.orderId,
+    refundAmount: amount,
+  });
+  await sendMail(toEmail, `Refund Initiated #${order.orderId} – Ayropath`, html);
 }

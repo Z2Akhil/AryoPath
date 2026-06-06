@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ChevronLeft, Video, Phone, Calendar, Clock,
-  ExternalLink, Loader2, AlertCircle, FileText, ChevronDown, ChevronUp, Printer,
+  ExternalLink, Loader2, AlertCircle, FileText, ChevronDown, ChevronUp, Printer, X,
 } from 'lucide-react';
 import { useUser } from '@/providers/UserProvider';
 
@@ -35,6 +35,7 @@ interface Appointment {
   finalAmount: number;
   meetLink?: string;
   prescription?: Prescription;
+  appointmentDateTime: string;
 }
 
 const STATUS_STYLES: Record<string, { label: string; className: string; bar: string }> = {
@@ -42,6 +43,8 @@ const STATUS_STYLES: Record<string, { label: string; className: string; bar: str
   confirmed: { label: 'Confirmed', className: 'bg-blue-50 text-blue-600 border-blue-100',      bar: 'bg-blue-500' },
   completed: { label: 'Completed', className: 'bg-green-50 text-green-600 border-green-100',   bar: 'bg-green-400' },
   cancelled: { label: 'Cancelled', className: 'bg-red-50 text-red-500 border-red-100',         bar: 'bg-red-300' },
+  no_show:   { label: 'No Show',   className: 'bg-gray-50 text-gray-500 border-gray-100',       bar: 'bg-gray-300' },
+  expired:   { label: 'Expired',   className: 'bg-gray-50 text-gray-400 border-gray-100',       bar: 'bg-gray-200' },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -186,6 +189,31 @@ export default function AppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedRx, setExpandedRx] = useState<Record<string, boolean>>({});
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+
+  const handleCancel = async (id: string) => {
+    setCancellingId(id);
+    setConfirmCancelId(null);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    try {
+      const res = await fetch(`/api/user/appointments/${id}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ reason: 'Cancelled by patient' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAppointments(prev => prev.map(a => a._id === id ? { ...a, status: 'cancelled' } : a));
+      } else {
+        alert(data.error || 'Failed to cancel appointment');
+      }
+    } catch {
+      alert('Failed to cancel appointment');
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -266,10 +294,17 @@ export default function AppointmentsPage() {
           <div className="space-y-3">
             {appointments.map((appt) => {
               const isVideo         = appt.consultationMode === 'video';
-              const isActive        = ['pending', 'confirmed'].includes(appt.status);
+              const msUntil         = new Date(appt.appointmentDateTime).getTime() - Date.now();
+              const slotEnded       = msUntil < -30 * 60 * 1000; // 30 min past slot start = expired
+              const isActive        = ['pending', 'confirmed'].includes(appt.status) && !slotEnded;
+              const isExpired       = ['pending', 'confirmed'].includes(appt.status) && slotEnded;
               const isCompleted     = appt.status === 'completed';
               const shortId         = appt._id.slice(-8).toUpperCase();
-              const barColor        = STATUS_STYLES[appt.status]?.bar ?? 'bg-gray-300';
+              const canCancel       = isActive && msUntil > 2 * 60 * 60 * 1000;
+              const withinWindow    = isActive && msUntil <= 2 * 60 * 60 * 1000;
+              const isCancelConfirm = confirmCancelId === appt._id;
+              const isCancelling    = cancellingId === appt._id;
+              const barColor        = (isExpired ? STATUS_STYLES['expired'] : STATUS_STYLES[appt.status])?.bar ?? 'bg-gray-300';
               const hasPrescription = !!(appt.prescription && appt.prescription.medicines.length > 0);
               const rxOpen          = !!expandedRx[appt._id];
 
@@ -285,7 +320,7 @@ export default function AppointmentsPage() {
                           <p className="text-sm font-extrabold text-gray-900 truncate">
                             Dr. {appt.doctorName}
                           </p>
-                          <StatusBadge status={appt.status} />
+                          <StatusBadge status={isExpired ? 'expired' : appt.status} />
                         </div>
                         <p className="text-xs text-gray-400 font-mono">#{shortId}</p>
                       </div>
@@ -336,6 +371,46 @@ export default function AppointmentsPage() {
                           Join Meeting
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
+                      </div>
+                    )}
+
+                    {/* Cancel button */}
+                    {(canCancel || withinWindow) && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        {withinWindow ? (
+                          <p className="text-xs text-amber-600 font-medium">Cannot cancel within 2 hours of appointment</p>
+                        ) : isCancelConfirm ? (
+                          <div className="space-y-2">
+                            <p className="text-xs text-gray-600">Are you sure? A full refund will be initiated if applicable.</p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleCancel(appt._id)}
+                                disabled={!!isCancelling}
+                                className="flex-1 py-2 bg-red-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1"
+                              >
+                                {isCancelling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                                Yes, Cancel
+                              </button>
+                              <button onClick={() => setConfirmCancelId(null)} className="flex-1 py-2 border border-gray-200 text-gray-600 text-xs font-bold rounded-xl">
+                                Keep
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmCancelId(appt._id)}
+                            className="w-full py-2 border border-red-200 text-red-600 text-xs font-bold rounded-xl hover:bg-red-50 transition-colors"
+                          >
+                            Cancel Appointment
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Expired / no-show */}
+                    {(isExpired || appt.status === 'no_show') && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <p className="text-xs text-gray-400 font-medium">Appointment slot has passed</p>
                       </div>
                     )}
 

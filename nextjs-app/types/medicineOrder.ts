@@ -13,7 +13,9 @@ export type MedicineOrderStatus =
   | 'out_for_delivery'
   | 'delivered'
   | 'cancelled'
-  | 'refunded';
+  | 'refunded'
+  | 'return_requested'
+  | 'return_received';
 
 export const ORDER_STATUS_LABELS: Record<MedicineOrderStatus, string> = {
   pending_payment: 'Pending Payment',
@@ -27,6 +29,8 @@ export const ORDER_STATUS_LABELS: Record<MedicineOrderStatus, string> = {
   delivered: 'Delivered',
   cancelled: 'Cancelled',
   refunded: 'Refunded',
+  return_requested: 'Return Requested',
+  return_received: 'Return Received',
 };
 
 // ─── Order Item ────────────────────────────────────────────────────────────────
@@ -84,6 +88,20 @@ export interface MedicineOrderPayment {
   currency:  string;
   status: 'pending' | 'paid' | 'failed' | 'refunded';
   paidAt?: string;
+  refundId?: string;
+  refundAmount?: number;
+  refundStatus?: 'none' | 'initiated' | 'pending' | 'processed' | 'failed';
+  refundInitiatedAt?: string;
+  refundCompletedAt?: string;
+}
+
+export interface ReturnRequest {
+  requestedAt?: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected' | 'received';
+  approvedAt?: string;
+  receivedAt?: string;
+  adminNotes?: string;
 }
 
 // ─── Main Order Interface ──────────────────────────────────────────────────────
@@ -114,6 +132,7 @@ export interface MedicineOrder {
   courierStatus?: string;
   courierStatusUpdatedAt?: string;
   courierStatusHistory?: CourierEvent[];
+  returnRequest?: ReturnRequest;
   createdAt: string;
   updatedAt: string;
 }

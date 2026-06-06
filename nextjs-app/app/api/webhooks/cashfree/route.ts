@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import Medicine from '@/lib/models/Medicine';
+import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
 import { getMedicineOrderEmail, sendMedicineConfirmedEmail } from '@/lib/services/transactionalEmailService';
 
 function verifySignature(rawBody: string, timestamp: string, sig: string): boolean {
@@ -24,10 +25,46 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = JSON.parse(rawBody);
+    // Reject replays older than 5 minutes
+    const tsMs = Number(timestamp) * 1000;
+    if (Math.abs(Date.now() - tsMs) > 5 * 60 * 1000) {
+      return NextResponse.json({ error: 'Webhook expired' }, { status: 401 });
+    }
 
-    // Cashfree dashboard calls this event "success payment"; the payload type field
-    // varies by API version so we check the actual payment_status instead.
+    const body = JSON.parse(rawBody);
+    const eventType = (body?.type ?? '').toUpperCase();
+
+    // ── Refund status update ────────────────────────────────────────────────
+    if (eventType.includes('REFUND')) {
+      const refundStatus = (body?.data?.refund?.refund_status ?? '').toUpperCase();
+      const refundId     = body?.data?.refund?.refund_id ?? '';
+      const cfOrderId    = body?.data?.order?.order_id ?? '';
+
+      if (refundId && cfOrderId) {
+        await connectDB();
+        const mapped = refundStatus === 'SUCCESS' ? 'processed' : refundStatus === 'CANCELLED' ? 'failed' : 'pending';
+
+        // Try medicine order first
+        const medOrder = await MedicineOrder.findOne({ 'payment.refundId': refundId });
+        if (medOrder) {
+          (medOrder.payment as any).refundStatus = mapped;
+          if (mapped === 'processed') (medOrder.payment as any).refundCompletedAt = new Date();
+          medOrder.markModified('payment');
+          await medOrder.save();
+        } else {
+          // Try consultation appointment
+          const appt = await ConsultationAppointment.findOne({ 'payment.refundId': refundId });
+          if (appt) {
+            (appt.payment as any).refundStatus = mapped;
+            appt.markModified('payment');
+            await appt.save();
+          }
+        }
+      }
+      return NextResponse.json({ received: true });
+    }
+
+    // ── Payment success ─────────────────────────────────────────────────────
     const paymentStatus = (body?.data?.payment?.payment_status ?? '').toUpperCase();
     if (paymentStatus !== 'SUCCESS') {
       return NextResponse.json({ received: true });

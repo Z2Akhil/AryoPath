@@ -32,6 +32,8 @@ const STATUS: Record<MedicineOrderStatus, { label: string; cls: string }> = {
   delivered:             { label: 'Delivered',         cls: 'bg-green-50 text-green-700 border-green-200' },
   cancelled:             { label: 'Cancelled',         cls: 'bg-red-50 text-red-600 border-red-200' },
   refunded:              { label: 'Refunded',          cls: 'bg-gray-50 text-gray-500 border-gray-200' },
+  return_requested:      { label: 'Return Requested',  cls: 'bg-orange-50 text-orange-600 border-orange-200' },
+  return_received:       { label: 'Return Received',   cls: 'bg-orange-50 text-orange-700 border-orange-200' },
 };
 
 const PAYMENT_STATUS_CFG: Record<string, { label: string; cls: string }> = {
@@ -56,6 +58,40 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 
 // Cloudinary: append fl_attachment to force file download instead of browser preview
 const makeDownloadUrl = (url: string) => url.replace('/upload/', '/upload/fl_attachment/');
+
+function ReturnActionPanel({ order, onSave }: { order: any; onSave: (o: any) => void }) {
+  const [loading, setLoading] = React.useState(false);
+  const [notes, setNotes]     = React.useState('');
+  const ret = order.returnRequest;
+
+  const handleAction = async (action: 'approve' | 'reject' | 'received') => {
+    setLoading(true);
+    try {
+      const res = await adminMedicineOrderApi.returnAction(order.orderId, action, notes);
+      if (res.success) onSave(res.order);
+    } catch { alert('Action failed'); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="border border-orange-200 rounded-xl p-3 mt-2">
+      <p className="text-xs font-bold text-orange-700 mb-1">Return Request — <span className="capitalize">{ret.status}</span></p>
+      <p className="text-xs text-gray-600 mb-2"><strong>Reason:</strong> {ret.reason}</p>
+      {ret.status === 'pending' && (
+        <div className="space-y-2">
+          <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Admin notes (optional)" className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none" />
+          <div className="flex gap-2">
+            <button onClick={() => handleAction('approve')} disabled={loading} className="flex-1 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg disabled:opacity-50">Approve</button>
+            <button onClick={() => handleAction('reject')} disabled={loading} className="flex-1 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg disabled:opacity-50">Reject</button>
+          </div>
+        </div>
+      )}
+      {ret.status === 'approved' && (
+        <button onClick={() => handleAction('received')} disabled={loading} className="w-full py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg disabled:opacity-50">Mark Item Received → Refund</button>
+      )}
+    </div>
+  );
+}
 
 const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value: React.ReactNode }) => (
   <div className="flex items-start gap-2.5 text-sm text-gray-700">
@@ -396,6 +432,9 @@ function OrderModal({
                 <span className="text-xs text-gray-600 font-medium">{order.cancellationReason}</span>
               </div>
             )}
+            {(order as any).returnRequest && (
+              <ReturnActionPanel order={order} onSave={onSave} />
+            )}
           </div>
 
           {/* ── Courier Tracking ── */}
@@ -708,7 +747,7 @@ export default function MedicineOrdersPage() {
                   const awb = (order as any).awb;
 
                   return (
-                    <tr key={order.orderId} className="hover:bg-gray-50/50 transition-colors">
+                    <tr key={order.orderId} className={`hover:bg-gray-50/50 transition-colors${(order as any).status === 'return_requested' ? ' bg-orange-50' : ''}`}>
                       <td className="px-5 py-4">
                         <span className="font-mono text-xs font-bold text-gray-700">{order.orderId}</span>
                         <div className="flex items-center gap-1 mt-0.5 flex-wrap">
@@ -749,10 +788,15 @@ export default function MedicineOrdersPage() {
                         <StatusBadge status={order.status} />
                       </td>
                       <td className="px-5 py-4">
-                        <button onClick={() => setSelectedOrder(order)}
-                          className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-100 transition-colors">
-                          View
-                        </button>
+                        <div className="flex flex-col gap-1">
+                          <button onClick={() => setSelectedOrder(order)}
+                            className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-100 transition-colors">
+                            View
+                          </button>
+                          {(order as any).status === 'return_requested' && (
+                            <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full text-center">Return Pending</span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

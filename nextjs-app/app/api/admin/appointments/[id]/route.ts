@@ -33,6 +33,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
     confirmed: ['completed', 'cancelled'],
     completed: [],
     cancelled: [],
+    no_show:   [],
 };
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -64,14 +65,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             );
         }
 
-        appointment.status = status;
-        await appointment.save();
+        const updateFields: Record<string, any> = { status };
+        if (status === 'cancelled') updateFields.cancelledAt = new Date();
 
-        if (status === 'confirmed') sendConsultConfirmedEmail(appointment).catch(console.error);
-        if (status === 'cancelled') { sendConsultCancelledEmail(appointment).catch(console.error); sendDoctorAppointmentCancelledEmail(appointment).catch(console.error); }
-        if (status === 'completed') sendConsultCompletedEmail(appointment).catch(console.error);
+        await ConsultationAppointment.collection.updateOne(
+            { _id: appointment._id },
+            { $set: updateFields }
+        );
 
-        return NextResponse.json({ success: true, appointment });
+        const updated = await ConsultationAppointment.findById(id).lean();
+
+        if (status === 'confirmed') sendConsultConfirmedEmail(updated).catch(console.error);
+        if (status === 'cancelled') { sendConsultCancelledEmail(updated).catch(console.error); sendDoctorAppointmentCancelledEmail(updated).catch(console.error); }
+        if (status === 'completed') sendConsultCompletedEmail(updated).catch(console.error);
+
+        return NextResponse.json({ success: true, appointment: updated });
     } catch (error) {
         console.error('Error updating appointment:', error);
         return NextResponse.json({ success: false, error: 'Failed to update appointment' }, { status: 500 });

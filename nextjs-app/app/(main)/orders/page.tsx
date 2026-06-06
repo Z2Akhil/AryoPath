@@ -30,6 +30,8 @@ const MED_STATUS_CFG: Record<MedicineOrderStatus, { label: string; color: string
     delivered:             { label: 'Delivered',           color: 'text-green-700',  bg: 'bg-green-50 border-green-200',    icon: <CheckCircle className="h-3 w-3" /> },
     cancelled:             { label: 'Cancelled',           color: 'text-red-600',    bg: 'bg-red-50 border-red-200',        icon: <XCircle className="h-3 w-3" /> },
     refunded:              { label: 'Refunded',            color: 'text-gray-500',   bg: 'bg-gray-50 border-gray-200',      icon: <RefreshCw className="h-3 w-3" /> },
+    return_requested:      { label: 'Return Requested',    color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200',  icon: <RefreshCw className="h-3 w-3" /> },
+    return_received:       { label: 'Return Received',     color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200',  icon: <CheckCircle className="h-3 w-3" /> },
 };
 
 function MedicineOrderCard({ order }: { order: MedicineOrder }) {
