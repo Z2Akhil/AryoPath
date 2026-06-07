@@ -25,7 +25,8 @@ export async function GET(req: NextRequest) {
     try {
         await connectDB();
 
-        console.log('Fetching dashboard data for admin:', auth.admin.name);
+        const { adminId: _logAdminId } = getAdminContext(auth);
+        console.log('Fetching dashboard data, adminId:', _logAdminId);
 
         // Fetch data in parallel for better performance
         const [

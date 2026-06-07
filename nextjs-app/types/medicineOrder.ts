@@ -133,6 +133,8 @@ export interface MedicineOrder {
   courierStatusUpdatedAt?: string;
   courierStatusHistory?: CourierEvent[];
   returnRequest?: ReturnRequest;
+  returnAwb?: string;
+  expiresAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       payment: { amount: computedGrandTotal, currency: 'INR', status: 'pending' },
       estimatedDelivery: estimatedDelivery as any,
       // Auto-delete if payment is never completed within 30 minutes
-      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000) as any,
     });
 
     const saved = order as any;

@@ -29,6 +29,7 @@ export interface OrderDocument extends Document {
     orderId: string;
     userId: mongoose.Types.ObjectId;
     adminId: mongoose.Types.ObjectId;
+    staffId?: mongoose.Types.ObjectId;
     package: {
         code: string[];
         name: string;

@@ -5,8 +5,8 @@ import nodemailer from 'nodemailer';
 const PORTAL_URL = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/doctor`;
 
 // Singleton pooled transporter — reuses connections, avoids rapid-reconnect throttling
-let _transporter: ReturnType<typeof nodemailer.createTransport> | null = null;
-function getTransporter() {
+let _transporter: nodemailer.Transporter | null = null;
+function getTransporter(): nodemailer.Transporter {
   if (!_transporter) {
     _transporter = nodemailer.createTransport({
       pool: true,           // reuse connections
@@ -20,9 +20,9 @@ function getTransporter() {
       connectionTimeout: 30000,
       greetingTimeout:   15000,
       socketTimeout:     30000,
-    });
+    } as any);
   }
-  return _transporter;
+  return _transporter!;
 }
 
 async function sendMail(to: string, subject: string, html: string): Promise<void> {
