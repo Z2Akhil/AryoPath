@@ -32,21 +32,23 @@ export async function POST(req: NextRequest) {
         if (existingAdmin && existingAdmin.password) {
             const isPasswordValid = await existingAdmin.verifyPassword(password);
 
-            if (isPasswordValid) {
-                // Step 2: Check for active sessions
-                const sameIpSession = await AdminSession.findOne({
-                    adminId: existingAdmin._id,
-                    ipAddress: ipAddress,
-                    isActive: true,
-                    apiKeyExpiresAt: { $gt: new Date() }
-                });
-
-                if (sameIpSession) {
-                    return await handleExistingSession(existingAdmin, sameIpSession, req, startTime, ipAddress, userAgent, username, password);
-                }
-
-                // If different IP or no active session, we'll fall back to handleThyroCareLogin
+            if (!isPasswordValid) {
+                return NextResponse.json({ success: false, error: 'Invalid username or password' }, { status: 401 });
             }
+
+            // Step 2: Check for active sessions
+            const sameIpSession = await AdminSession.findOne({
+                adminId: existingAdmin._id,
+                ipAddress: ipAddress,
+                isActive: true,
+                apiKeyExpiresAt: { $gt: new Date() }
+            });
+
+            if (sameIpSession) {
+                return await handleExistingSession(existingAdmin, sameIpSession, req, startTime, ipAddress, userAgent, username, password);
+            }
+
+            // Password valid but no active session — fall through to Thyrocare for fresh key
         }
 
         // Step 3: Fallback to ThyroCare API

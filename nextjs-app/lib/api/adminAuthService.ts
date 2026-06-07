@@ -27,13 +27,12 @@ class AdminAuthService {
                 throw new Error(response.data.error || 'Login failed: Invalid credentials');
             }
         } catch (error: any) {
-            console.error('Login error:', error);
             if (error.response) {
-                throw new Error(error.response.data?.error || 'Login failed: Invalid credentials');
+                throw new Error(error.response.data?.error || 'Invalid username or password');
             } else if (error.request) {
-                throw new Error('Login failed: Network error. Please check your connection.');
+                throw new Error('Network error. Please check your connection.');
             } else {
-                throw new Error(error.message || 'Login failed: An unexpected error occurred.');
+                throw new Error(error.message || 'Login failed');
             }
         }
     }

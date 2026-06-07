@@ -183,7 +183,9 @@ export const handleThyroCareLogin = async (
                 }
             };
         } else {
-            throw new Error(response.data.response || 'Login failed: Invalid credentials');
+            const err: any = new Error('Invalid username or password');
+            err.statusCode = 401;
+            throw err;
         }
     };
 
@@ -197,6 +199,10 @@ export const handleThyroCareLogin = async (
 
         if (error.message.includes('Circuit breaker is OPEN')) {
             return NextResponse.json({ success: false, error: 'ThyroCare API is temporarily unavailable.' }, { status: 503 });
+        }
+
+        if (error.statusCode === 401) {
+            return NextResponse.json({ success: false, error: error.message }, { status: 401 });
         }
 
         if (error.response) {

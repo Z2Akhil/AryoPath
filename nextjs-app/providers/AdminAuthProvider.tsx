@@ -84,7 +84,6 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     const login = async (username: string, password: string) => {
-        setIsLoading(true);
         setError(null);
 
         try {
@@ -101,13 +100,11 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 });
                 return { success: true };
             }
-            return { success: false, error: 'Login failed' };
+            return { success: false, error: (result as any).error || 'Login failed' };
         } catch (err: any) {
             const msg = err.message || 'Login failed';
             setError(msg);
             return { success: false, error: msg };
-        } finally {
-            setIsLoading(false);
         }
     };
 
