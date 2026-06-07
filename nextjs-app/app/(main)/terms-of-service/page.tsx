@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
     title: 'Terms of Service',
-    description: 'Terms of Service for Ayropath — Read our terms and conditions for using our diagnostic services.',
+    description: 'Terms of Service for Ayropath — terms and conditions for lab tests, doctor consultations, and medicine orders.',
     openGraph: {
         title: 'Terms of Service | Ayropath',
-        description: 'Read the terms and conditions for using Ayropath diagnostic services.',
+        description: 'Terms and conditions for using Ayropath health services.',
         type: 'website',
     },
     alternates: {
@@ -13,229 +13,171 @@ export const metadata: Metadata = {
     },
 };
 
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+    return (
+        <div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-3 border-l-4 border-red-600 pl-3">{title}</h2>
+            {children}
+        </div>
+    );
+}
+
 export default function TermsOfServicePage() {
     return (
         <section className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-6">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">
                 Terms of <span className="text-red-600">Service</span>
             </h1>
-            <p className="text-gray-500 text-sm mb-8">Last Updated: January 2026</p>
+            <p className="text-gray-400 text-sm mb-10">Last Updated: June 2026</p>
 
             <div className="space-y-8 text-gray-700 text-base leading-relaxed">
-                {/* Acceptance of Terms */}
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-3 border-l-4 border-red-600 pl-3">
-                        Acceptance of Terms
-                    </h2>
-                    <p>
-                        By accessing and using the Ayropath website and services, you agree to be bound by
-                        these Terms of Service. If you do not agree with any part of these terms, please
-                        do not use our services. These terms apply to all users, including visitors,
-                        registered users, and customers.
-                    </p>
-                </div>
 
-                {/* Services Description */}
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-3 border-l-4 border-red-600 pl-3">
-                        Our Services
-                    </h2>
-                    <p className="mb-3">
-                        Ayropath Technologies Limited, in association with Thyrocare Technologies Limited,
-                        provides the following services:
+                <p className="text-gray-600">
+                    Welcome to <strong>Ayropath</strong>. By using our website or placing any order,
+                    you agree to these terms. Please read them carefully. If you do not agree, do not use our services.
+                </p>
+
+                <Section title="1. Who We Are">
+                    <p>
+                        Ayropath is an online health platform offering three services:
                     </p>
-                    <ul className="list-disc pl-6 space-y-2">
-                        <li>Home sample collection for diagnostic tests.</li>
-                        <li>Laboratory testing and analysis through NABL and CAP-accredited facilities.</li>
-                        <li>Online access to test reports and health records.</li>
-                        <li>Health packages and preventive care solutions.</li>
-                        <li>Customer support and consultation services.</li>
+                    <ul className="list-disc pl-6 mt-2 space-y-1">
+                        <li><strong>Lab Tests</strong> — booked through and fulfilled entirely by <strong>Thyrocare Technologies Ltd</strong>, a NABL &amp; CAP-accredited laboratory.</li>
+                        <li><strong>Doctor Consultations</strong> — online video or audio appointments with registered medical professionals.</li>
+                        <li><strong>Medicine Orders</strong> — purchase and doorstep delivery of medicines and health products.</li>
                     </ul>
-                </div>
+                </Section>
 
-                {/* User Responsibilities */}
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-3 border-l-4 border-red-600 pl-3">
-                        User Responsibilities
-                    </h2>
-                    <p className="mb-3">As a user of our services, you agree to:</p>
-                    <ul className="list-disc pl-6 space-y-2">
-                        <li>Provide accurate and complete personal and health information.</li>
-                        <li>Keep your account credentials confidential and secure.</li>
-                        <li>Use our services only for lawful purposes.</li>
-                        <li>Not impersonate any person or entity or misrepresent your affiliation.</li>
-                        <li>Not interfere with or disrupt the operation of our website or services.</li>
-                        <li>Comply with all applicable local, state, and national laws and regulations.</li>
+                <Section title="2. Eligibility">
+                    <p>
+                        You must be at least <strong>18 years old</strong> to create an account and place orders.
+                        By using our services you confirm that the information you provide is accurate and complete.
+                        You are responsible for all activity on your account.
+                    </p>
+                </Section>
+
+                <Section title="3. Account &amp; Login">
+                    <ul className="list-disc pl-6 space-y-1">
+                        <li>You can sign up with your phone number (OTP) or email address.</li>
+                        <li>Keep your login details confidential. You are responsible for any activity under your account.</li>
+                        <li>Notify us immediately at <a href="mailto:admin@ayropath.com" className="text-blue-600 underline">admin@ayropath.com</a> if you suspect unauthorised access.</li>
+                        <li>We reserve the right to suspend accounts involved in fraud or misuse.</li>
                     </ul>
-                </div>
+                </Section>
 
-                {/* Account Registration */}
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-3 border-l-4 border-red-600 pl-3">
-                        Account Registration
-                    </h2>
-                    <p>
-                        To access certain features of our services, you may need to create an account.
-                        You are responsible for maintaining the confidentiality of your account information
-                        and for all activities that occur under your account. You must notify us immediately
-                        of any unauthorized use of your account.
-                    </p>
-                </div>
-
-                {/* Booking and Appointments */}
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-3 border-l-4 border-red-600 pl-3">
-                        Booking and Appointments
-                    </h2>
-                    <ul className="list-disc pl-6 space-y-2">
-                        <li>
-                            Appointments for home sample collection are subject to availability and
-                            serviceable areas.
-                        </li>
-                        <li>
-                            You must ensure someone is available at the provided address during the
-                            scheduled time slot.
-                        </li>
-                        <li>
-                            Failure to be available may result in rescheduling or cancellation of the appointment.
-                        </li>
-                        <li>
-                            We reserve the right to reschedule appointments due to unforeseen circumstances
-                            or operational requirements.
-                        </li>
+                <Section title="4. Lab Tests (Thyrocare)">
+                    <ul className="list-disc pl-6 space-y-1">
+                        <li>Lab test bookings are processed and fulfilled by Thyrocare. Ayropath is the booking interface.</li>
+                        <li>You must ensure someone is available at the given address during the scheduled slot for sample collection.</li>
+                        <li>Test reports are delivered digitally, usually within the turnaround time mentioned on the test page.</li>
+                        <li>Results are for informational purposes only. Always consult a qualified doctor before making medical decisions.</li>
+                        <li>Ayropath is not responsible for delays or errors in sample collection or report generation attributable to Thyrocare.</li>
                     </ul>
-                </div>
+                </Section>
 
-                {/* Payments */}
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-3 border-l-4 border-red-600 pl-3">
-                        Payments and Pricing
-                    </h2>
-                    <ul className="list-disc pl-6 space-y-2">
-                        <li>All prices displayed on our website are in Indian Rupees (INR).</li>
-                        <li>Prices are subject to change without prior notice.</li>
-                        <li>Payment must be completed at the time of booking or as specified.</li>
-                        <li>
-                            We accept various payment methods including credit/debit cards, UPI,
-                            net banking, and cash on delivery where available.
-                        </li>
-                        <li>
-                            Additional charges may apply for home collection services below a minimum order value.
-                        </li>
+                <Section title="5. Doctor Consultations">
+                    <ul className="list-disc pl-6 space-y-1">
+                        <li>Consultations are conducted online via video or audio call at the booked time slot.</li>
+                        <li>Doctors are independent medical professionals. Ayropath provides the booking and payment platform only.</li>
+                        <li>You must be ready at the scheduled time. Missing your slot without prior cancellation forfeits your fee.</li>
+                        <li>Advice given during a consultation does not replace in-person medical examination or emergency care.</li>
+                        <li>Cancellations are allowed up to <strong>2 hours before</strong> the appointment. See our <a href="/refund-policy" className="text-blue-600 underline">Refund Policy</a> for details.</li>
                     </ul>
-                </div>
+                </Section>
 
-                {/* Test Reports */}
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-3 border-l-4 border-red-600 pl-3">
-                        Test Reports and Results
-                    </h2>
-                    <ul className="list-disc pl-6 space-y-2">
-                        <li>
-                            Test reports will be made available online within the specified turnaround time.
-                        </li>
-                        <li>
-                            Hard copy reports can be requested for an additional charge where available.
-                        </li>
-                        <li>
-                            Test results are for informational purposes and should be interpreted by
-                            qualified healthcare professionals.
-                        </li>
-                        <li>
-                            We are not responsible for any medical decisions made based on test results
-                            without proper medical consultation.
-                        </li>
+                <Section title="6. Medicine Orders">
+                    <ul className="list-disc pl-6 space-y-1">
+                        <li>All orders are subject to product availability.</li>
+                        <li>Prescription medicines require a valid prescription uploaded at checkout. We may cancel orders if prescriptions are invalid or missing.</li>
+                        <li>Delivery is handled by <strong>Delhivery</strong>. Estimated delivery times are indicative and may vary.</li>
+                        <li>You may cancel before shipment or request a return within 7 days of delivery. See our <a href="/refund-policy" className="text-blue-600 underline">Refund Policy</a> for details.</li>
+                        <li>We do not offer cash-on-delivery. All orders must be paid online at checkout.</li>
                     </ul>
-                </div>
+                </Section>
 
-                {/* Intellectual Property */}
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-3 border-l-4 border-red-600 pl-3">
-                        Intellectual Property
-                    </h2>
-                    <p>
-                        All content on the Ayropath website, including but not limited to text, graphics,
-                        logos, images, and software, is the property of Ayropath Technologies Limited or
-                        its licensors and is protected by copyright and intellectual property laws.
-                        You may not reproduce, distribute, or create derivative works without our
-                        prior written consent.
-                    </p>
-                </div>
-
-                {/* Limitation of Liability */}
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-3 border-l-4 border-red-600 pl-3">
-                        Limitation of Liability
-                    </h2>
-                    <p className="mb-3">
-                        To the fullest extent permitted by law, Ayropath Technologies Limited shall not
-                        be liable for:
-                    </p>
-                    <ul className="list-disc pl-6 space-y-2">
-                        <li>Any indirect, incidental, special, or consequential damages.</li>
-                        <li>Loss of profits, data, or business opportunities.</li>
-                        <li>
-                            Any damages arising from the use or inability to use our services.
-                        </li>
-                        <li>
-                            Medical complications arising from sample collection procedures when
-                            performed by certified professionals following standard protocols.
-                        </li>
+                <Section title="7. Payments">
+                    <ul className="list-disc pl-6 space-y-1">
+                        <li>All prices are in Indian Rupees (₹) and include applicable taxes.</li>
+                        <li>Payments are processed securely by <strong>Cashfree Payments</strong>. We accept UPI, debit/credit cards, and net banking.</li>
+                        <li>Ayropath does not store your card or bank details — they are handled entirely by Cashfree.</li>
+                        <li>Prices may change without notice. The price shown at checkout is the final amount you pay.</li>
                     </ul>
-                </div>
+                </Section>
 
-                {/* Disclaimer */}
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-3 border-l-4 border-red-600 pl-3">
-                        Disclaimer
-                    </h2>
+                <Section title="8. Cancellations &amp; Refunds">
                     <p>
-                        Our services are provided &quot;as is&quot; without warranties of any kind, either express
-                        or implied. We do not guarantee that our services will be uninterrupted,
-                        error-free, or completely secure. Diagnostic test results are subject to
-                        biological variations and should be correlated with clinical findings.
+                        Our full cancellation and refund rules are in the <a href="/refund-policy" className="text-blue-600 underline">Refund Policy page</a>.
+                        In summary:
                     </p>
-                </div>
+                    <ul className="list-disc pl-6 mt-2 space-y-1">
+                        <li>Lab tests: no refund after sample collection.</li>
+                        <li>Consultations: full refund if cancelled more than 2 hours before the slot.</li>
+                        <li>Medicine orders: full refund if cancelled before shipment; returns accepted within 7 days of delivery.</li>
+                        <li>Refunds are credited to the original payment method within 5–7 business days.</li>
+                    </ul>
+                </Section>
 
-                {/* Governing Law */}
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-3 border-l-4 border-red-600 pl-3">
-                        Governing Law
-                    </h2>
+                <Section title="9. Medical Disclaimer">
                     <p>
-                        These Terms of Service shall be governed by and construed in accordance with
-                        the laws of India. Any disputes arising from these terms or your use of our
-                        services shall be subject to the exclusive jurisdiction of the courts in
-                        Mumbai, Maharashtra.
+                        Ayropath is a platform for health services — we are <strong>not a hospital or a pharmacy</strong>.
+                        Content on our website, including lab test descriptions and doctor profiles, is for general information only.
+                        Do not delay or ignore professional medical advice because of something you read on our site.
+                        In a medical emergency, contact emergency services immediately.
                     </p>
-                </div>
+                </Section>
 
-                {/* Changes to Terms */}
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-3 border-l-4 border-red-600 pl-3">
-                        Changes to Terms
-                    </h2>
+                <Section title="10. Intellectual Property">
                     <p>
-                        We reserve the right to modify these Terms of Service at any time. Changes will
-                        be effective immediately upon posting on this page. Your continued use of our
-                        services after any changes constitutes acceptance of the new terms.
+                        All content on Ayropath — text, images, logos, code — belongs to Ayropath Technologies
+                        or its licensors. You may not copy, reproduce, or resell any part without written permission.
                     </p>
-                </div>
+                </Section>
 
-                {/* Contact */}
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-3 border-l-4 border-red-600 pl-3">
-                        Contact Us
-                    </h2>
+                <Section title="11. Limitation of Liability">
+                    <p className="mb-2">To the extent permitted by law, Ayropath is not liable for:</p>
+                    <ul className="list-disc pl-6 space-y-1">
+                        <li>Indirect or consequential losses arising from use of our services.</li>
+                        <li>Medical decisions made based on lab results or doctor consultations on our platform.</li>
+                        <li>Delivery delays or damage caused by Delhivery (our courier partner).</li>
+                        <li>Payment failures or delays caused by Cashfree or your bank.</li>
+                        <li>Service interruptions caused by Thyrocare or other third-party providers.</li>
+                    </ul>
+                </Section>
+
+                <Section title="12. Governing Law">
                     <p>
-                        If you have any questions about these Terms of Service, please contact us at:
+                        These terms are governed by the laws of India. Any dispute will be subject to
+                        the jurisdiction of courts in <strong>Jharkhand, India</strong>.
                     </p>
-                    <div className="mt-3 p-4 bg-gray-50 rounded-lg">
-                        <p className="font-semibold">Ayropath Technologies Limited</p>
-                        <p>Email: admin@ayropath.com</p>
-                        <p>Phone: Available on our website</p>
+                </Section>
+
+                <Section title="13. Changes to These Terms">
+                    <p>
+                        We may update these terms from time to time. Changes take effect when posted on this page.
+                        Your continued use of Ayropath after a change means you accept the updated terms.
+                        The latest version is always at <strong>ayropath.com/terms-of-service</strong>.
+                    </p>
+                </Section>
+
+                <Section title="14. Contact Us">
+                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <p className="font-semibold text-gray-800 mb-2">Ayropath Technologies</p>
+                        <p className="text-sm text-gray-600">
+                            Email: <a href="mailto:admin@ayropath.com" className="text-blue-600 underline">admin@ayropath.com</a>
+                        </p>
+                        <p className="text-sm text-gray-600">
+                            Phone: <a href="tel:9973956949" className="text-blue-600 underline">9973956949</a>
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">Support: Mon–Sat, 9 AM – 6 PM IST</p>
                     </div>
+                </Section>
+
+                <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl">
+                    <p className="text-sm font-medium text-red-800">
+                        By using Ayropath, you confirm that you have read, understood, and agreed to these Terms of Service.
+                    </p>
                 </div>
+
             </div>
         </section>
     );

@@ -45,19 +45,23 @@ export async function POST(req: NextRequest) {
         const mapped = refundStatus === 'SUCCESS' ? 'processed' : refundStatus === 'CANCELLED' ? 'failed' : 'pending';
 
         // Try medicine order first
-        const medOrder = await MedicineOrder.findOne({ 'payment.refundId': refundId });
+        const medOrder = await MedicineOrder.findOne({ 'payment.refundId': refundId }).select('_id').lean();
         if (medOrder) {
-          (medOrder.payment as any).refundStatus = mapped;
-          if (mapped === 'processed') (medOrder.payment as any).refundCompletedAt = new Date();
-          medOrder.markModified('payment');
-          await medOrder.save();
+          await MedicineOrder.collection.updateOne(
+            { _id: (medOrder as any)._id },
+            { $set: {
+              'payment.refundStatus': mapped,
+              ...(mapped === 'processed' ? { 'payment.refundCompletedAt': new Date() } : {}),
+            }}
+          );
         } else {
           // Try consultation appointment
-          const appt = await ConsultationAppointment.findOne({ 'payment.refundId': refundId });
+          const appt = await ConsultationAppointment.findOne({ 'payment.refundId': refundId }).select('_id').lean();
           if (appt) {
-            (appt.payment as any).refundStatus = mapped;
-            appt.markModified('payment');
-            await appt.save();
+            await ConsultationAppointment.collection.updateOne(
+              { _id: (appt as any)._id },
+              { $set: { 'payment.refundStatus': mapped } }
+            );
           }
         }
       }
