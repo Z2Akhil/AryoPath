@@ -31,7 +31,7 @@ interface Appointment {
   appointmentDate: string;
   appointmentTime: string;
   consultationMode: 'video' | 'audio';
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'refunded';
   finalAmount: number;
   meetLink?: string;
   prescription?: Prescription;
