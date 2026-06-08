@@ -233,7 +233,7 @@ const Header = ({ children }: HeaderProps) => {
     toast.info(`${label} is coming soon — stay tuned!`, 3000);
   };
   const showSearchBar = pathname === '/';
-  const cartCount = (cart?.items?.length || 0) + (medicineCartCount || 0);
+  const cartCount = user ? ((cart?.items?.length || 0) + (medicineCartCount || 0)) : 0;
   const { settings, loading } = useSiteSettings();
   const { openAuth } = useAuthModal();
   const router = useRouter();

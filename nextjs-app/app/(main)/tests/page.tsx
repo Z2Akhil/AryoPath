@@ -44,7 +44,7 @@ interface TestsPageProps {
 export default async function TestsPage({ limit, showHeader, mobileScroll }: TestsPageProps) {
     await connectToDatabase();
 
-    const fetchLimit = limit || 12;
+    const fetchLimit = limit || 20;
 
     const isHomeWidget = !!limit;
     const SELECT = 'name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster isFeatured featuredOrder';

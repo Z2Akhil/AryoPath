@@ -46,7 +46,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const [medicineCart, setMedicineCart] = useState<MedicineCartItem[]>(loadMedicineCartFromStorage);
     const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    useEffect(() => { loadCart(); }, [user]);
+    useEffect(() => {
+        loadCart();
+        if (!user) {
+            setMedicineCart([]);
+            if (typeof window !== 'undefined') localStorage.removeItem(MEDICINE_CART_KEY);
+        }
+    }, [user]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;

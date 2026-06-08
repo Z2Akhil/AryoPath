@@ -107,10 +107,9 @@ const Pagination: React.FC<PaginationProps> = ({
             className="h-9 pl-2 pr-6 text-xs rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:border-blue-400 appearance-none"
             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center', backgroundSize: '14px' }}
           >
-            <option value={12}>12 / page</option>
-            <option value={25}>25 / page</option>
-            <option value={50}>50 / page</option>
-            <option value={100}>100 / page</option>
+            <option value={20}>20 / page</option>
+            <option value={40}>40 / page</option>
+            <option value={60}>60 / page</option>
           </select>
 
           {/* Page buttons */}
@@ -133,10 +132,9 @@ const Pagination: React.FC<PaginationProps> = ({
             className="h-9 pl-2 pr-6 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:border-blue-400 appearance-none"
             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center', backgroundSize: '14px' }}
           >
-            <option value={12}>12</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
+            <option value={20}>20</option>
+            <option value={40}>40</option>
+            <option value={60}>60</option>
           </select>
           <span className="text-sm text-gray-500">per page</span>
         </div>

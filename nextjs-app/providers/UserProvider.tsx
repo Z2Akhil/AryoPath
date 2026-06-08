@@ -1,10 +1,19 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, UserContextType } from '@/types';
 import { authApi } from '@/lib/api/authApi';
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
+
+const isTokenExpired = (token: string): boolean => {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.exp * 1000 < Date.now();
+    } catch {
+        return true;
+    }
+};
 
 export const useUser = () => {
     const context = useContext(UserContext);
@@ -22,6 +31,12 @@ function getErrorMessage(error: unknown): string {
 export const UserProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(() => {
         if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('authToken');
+            if (!token || isTokenExpired(token)) {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('user');
+                return null;
+            }
             const savedUser = localStorage.getItem('user');
             if (savedUser) {
                 try { return JSON.parse(savedUser); } catch { return null; }
@@ -83,6 +98,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         localStorage.removeItem('authToken');
         setUser(null);
     };
+
+    useEffect(() => {
+        const handleExpiry = () => logout();
+        window.addEventListener('auth:session-expired', handleExpiry);
+        return () => window.removeEventListener('auth:session-expired', handleExpiry);
+    }, []);
 
     const updateProfile = async (data: Partial<User>) => {
         try {

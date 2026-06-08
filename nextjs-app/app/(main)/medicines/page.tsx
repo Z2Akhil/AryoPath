@@ -55,7 +55,7 @@ function MedicinesContent() {
     try {
       const res = await medicineApi.list({
         page,
-        limit: 12,
+        limit: 20,
         search: search || undefined,
         category: filters.category || undefined,
         type: filters.type || undefined,
@@ -174,24 +174,43 @@ function MedicinesContent() {
 
                   {/* Pagination */}
                   {totalPages > 1 && (
-                    <div className="flex items-center justify-between mt-8">
-                      <p className="text-sm text-gray-400">Page {page} of {totalPages}</p>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setPage(p => Math.max(1, p - 1))}
-                          disabled={page === 1}
-                          className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50 disabled:opacity-40 transition-colors"
-                        >
-                          <ChevronLeft className="h-4 w-4" /> Prev
-                        </button>
-                        <button
-                          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                          disabled={page === totalPages}
-                          className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50 disabled:opacity-40 transition-colors"
-                        >
-                          Next <ChevronRight className="h-4 w-4" />
-                        </button>
-                      </div>
+                    <div className="flex items-center justify-center gap-1.5 mt-8 flex-wrap">
+                      <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="flex items-center gap-1 px-3 py-2 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                      >
+                        <ChevronLeft className="h-4 w-4" /> Prev
+                      </button>
+                      {(() => {
+                        const window = 2;
+                        const start = Math.max(1, page - window);
+                        const end = Math.min(totalPages, page + window);
+                        const pages: (number | '...')[] = [];
+                        if (start > 1) { pages.push(1); if (start > 2) pages.push('...'); }
+                        for (let i = start; i <= end; i++) pages.push(i);
+                        if (end < totalPages) { if (end < totalPages - 1) pages.push('...'); pages.push(totalPages); }
+                        return pages.map((p, i) =>
+                          p === '...'
+                            ? <span key={`ellipsis-${i}`} className="px-2 py-2 text-gray-400 text-sm">…</span>
+                            : <button
+                                key={p}
+                                onClick={() => setPage(p as number)}
+                                className={`min-w-[36px] px-3 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+                                  page === p
+                                    ? 'bg-teal-600 text-white border-teal-600'
+                                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                                }`}
+                              >{p}</button>
+                        );
+                      })()}
+                      <button
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={page === totalPages}
+                        className="flex items-center gap-1 px-3 py-2 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                      >
+                        Next <ChevronRight className="h-4 w-4" />
+                      </button>
                     </div>
                   )}
                 </>

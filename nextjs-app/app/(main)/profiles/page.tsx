@@ -47,7 +47,7 @@ interface ProfilesPageProps {
 export default async function ProfilesPage({ limit, showHeader, mobileScroll }: ProfilesPageProps) {
     await connectToDatabase();
 
-    const fetchLimit = limit || 12;
+    const fetchLimit = limit || 20;
 
     const isHomeWidget = !!limit;
     const SELECT = 'name type code customPricing customImage thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster isFeatured featuredOrder';
