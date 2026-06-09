@@ -86,7 +86,8 @@ export interface MedicineOrderPayment {
   cfPaymentId?: string;
   amount:    number;
   currency:  string;
-  status: 'pending' | 'paid' | 'failed' | 'refunded';
+  method?: 'online' | 'cod';
+  status: 'pending' | 'paid' | 'failed' | 'refunded' | 'cod_pending';
   paidAt?: string;
   refundId?: string;
   refundAmount?: number;

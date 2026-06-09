@@ -184,7 +184,8 @@ export default function RefundPolicyPage() {
                 <Section color="border-orange-500" title="Refund Timeline">
                     <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
                         <Row label="Online payment (UPI / Card / Net Banking)" value="5–7 business days" sub="Depends on your bank processing time." />
-                        <Row label="COD orders" value="Not applicable — we do not offer COD" />
+                        <Row label="COD orders (cancelled before shipment)" value="No refund applicable" sub="No payment was collected at time of order." />
+                        <Row label="COD orders (return after delivery)" value="Bank transfer within 5–7 business days" sub="Refund processed once we receive the returned item." />
                     </div>
                     <p className="text-sm text-gray-500 mt-3">
                         You will receive an email as soon as your refund is initiated. If you don&apos;t see it within 7 business

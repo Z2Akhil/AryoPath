@@ -63,9 +63,14 @@ const PaymentSchema = new Schema(
     cfPaymentId: { type: String, default: '' },
     amount:   { type: Number, default: 0 },
     currency: { type: String, default: 'INR' },
+    method: {
+      type: String,
+      enum: ['online', 'cod'],
+      default: 'online',
+    },
     status: {
       type: String,
-      enum: ['pending', 'paid', 'failed', 'refunded'],
+      enum: ['pending', 'paid', 'failed', 'refunded', 'cod_pending'],
       default: 'pending',
     },
     paidAt: { type: Date },

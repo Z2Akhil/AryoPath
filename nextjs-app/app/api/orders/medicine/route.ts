@@ -37,7 +37,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { items, shippingAddress, grandTotal, prescriptions: uploadedPrescriptions } = body;
+    const { items, shippingAddress, grandTotal, prescriptions: uploadedPrescriptions, paymentMethod } = body;
+    const isCod = paymentMethod === 'cod';
 
     if (!items?.length || !shippingAddress || !grandTotal) {
       return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
@@ -91,7 +92,7 @@ export async function POST(req: NextRequest) {
       userId: (user as any)._id,
       items: enrichedItems,
       shippingAddress,
-      status: 'pending_payment',
+      status: isCod ? 'confirmed' : 'pending_payment',
       requiresPrescription,
       prescriptions: savedPrescriptions as any,
       subtotal,
@@ -99,10 +100,15 @@ export async function POST(req: NextRequest) {
       totalAmount,
       deliveryCharge,
       grandTotal: computedGrandTotal,
-      payment: { amount: computedGrandTotal, currency: 'INR', status: 'pending' },
+      payment: {
+        amount: computedGrandTotal,
+        currency: 'INR',
+        method: isCod ? 'cod' : 'online',
+        status: isCod ? 'cod_pending' : 'pending',
+      },
       estimatedDelivery: estimatedDelivery as any,
-      // Auto-delete if payment is never completed within 30 minutes
-      expiresAt: new Date(Date.now() + 30 * 60 * 1000) as any,
+      // COD orders are confirmed immediately — no TTL expiry
+      expiresAt: isCod ? null : (new Date(Date.now() + 30 * 60 * 1000) as any),
     });
 
     const saved = order as any;

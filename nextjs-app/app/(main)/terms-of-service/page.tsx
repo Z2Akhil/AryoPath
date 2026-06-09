@@ -91,7 +91,7 @@ export default function TermsOfServicePage() {
                         <li>Prescription medicines require a valid prescription uploaded at checkout. We may cancel orders if prescriptions are invalid or missing.</li>
                         <li>Delivery is handled by <strong>Delhivery</strong>. Estimated delivery times are indicative and may vary.</li>
                         <li>You may cancel before shipment or request a return within 7 days of delivery. See our <a href="/refund-policy" className="text-blue-600 underline">Refund Policy</a> for details.</li>
-                        <li>We do not offer cash-on-delivery. All orders must be paid online at checkout.</li>
+                        <li>We offer Cash on Delivery (COD) for medicine orders. COD orders are confirmed immediately. If you cancel a COD order before shipment, no refund is applicable as no payment was collected. For returns after delivery, a refund will be issued once the item is received by us.</li>
                     </ul>
                 </Section>
 

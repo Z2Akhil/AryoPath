@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { CreditCard, Loader2, MapPin, Phone, User, AlertTriangle, FileText, Truck, Tag, Lock } from 'lucide-react';
+import { CreditCard, Loader2, MapPin, Phone, User, AlertTriangle, FileText, Truck, Tag, Lock, Banknote } from 'lucide-react';
 import { useCart } from '@/providers/CartProvider';
 import { useSiteSettings } from '@/providers/SiteSettingsProvider';
 import { useToast } from '@/providers/ToastProvider';
@@ -36,6 +36,7 @@ export default function MedicineCheckoutForm() {
   const toast = useToast();
   const [prescriptions, setPrescriptions] = useState<PrescriptionType[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'online' | 'cod'>('online');
 
   const medicineItems = medicineCart;
 
@@ -59,7 +60,6 @@ export default function MedicineCheckoutForm() {
 
     setProcessing(true);
     try {
-      // Step 1: Create medicine order (pending_payment)
       const orderPayload = {
         items: medicineItems.map(i => ({
           slug: i.slug,
@@ -71,6 +71,7 @@ export default function MedicineCheckoutForm() {
         shippingAddress: addressData,
         grandTotal,
         prescriptions: prescriptions.map(p => ({ url: p.url, publicId: p.publicId })),
+        paymentMethod,
       };
 
       const orderRes = await medicineOrderApi.createOrder(orderPayload);
@@ -79,7 +80,15 @@ export default function MedicineCheckoutForm() {
       const medicineOrderId = orderRes.data._id;
       const internalOrderId = orderRes.data.orderId;
 
-      // Step 2: Create Cashfree order
+      // COD — order confirmed immediately, skip Cashfree
+      if (paymentMethod === 'cod') {
+        clearMedicineCart();
+        toast.success('Order placed successfully! Pay on delivery.');
+        router.push(`/medicines/order-success?orderId=${internalOrderId}`);
+        return;
+      }
+
+      // Online payment — Cashfree flow
       const cfRes = await medicineOrderApi.createCashfreeOrder(
         grandTotal,
         internalOrderId,
@@ -89,8 +98,6 @@ export default function MedicineCheckoutForm() {
       if (!cfRes.success) throw new Error('Payment initialization failed. Please try again.');
 
       const { cfOrderId, paymentSessionId } = cfRes.data;
-
-      // Step 3: Load Cashfree SDK and open checkout
       const cashfree = await loadCashfree();
 
       const result = await cashfree.checkout({
@@ -99,15 +106,13 @@ export default function MedicineCheckoutForm() {
       });
 
       if ((result as any).error) {
-        // User cancelled or payment failed — delete the pending order immediately
-        medicineOrderApi.cancelPendingOrder(internalOrderId).catch(() => {/* silent — TTL will clean up anyway */});
+        medicineOrderApi.cancelPendingOrder(internalOrderId).catch(() => {});
         const errMsg = (result as any).error?.message || 'Payment failed or was cancelled.';
         if (errMsg !== 'cancelled') toast.error(errMsg);
         return;
       }
 
       if ((result as any).paymentDetails || (result as any).redirect) {
-        // Step 4: Verify payment on server
         const verifyRes = await medicineOrderApi.verifyPayment({ cfOrderId, medicineOrderId });
         if (!verifyRes.success) throw new Error('Payment verification failed. Please contact support.');
 
@@ -274,7 +279,59 @@ export default function MedicineCheckoutForm() {
         </p>
       </div>
 
-      {/* Pay Now button */}
+      {/* Payment Method */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h2 className="text-base font-extrabold text-gray-900 mb-4">Payment Method</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setPaymentMethod('online')}
+            className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
+              paymentMethod === 'online'
+                ? 'border-teal-500 bg-teal-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${paymentMethod === 'online' ? 'bg-teal-100' : 'bg-gray-100'}`}>
+              <CreditCard className={`h-5 w-5 ${paymentMethod === 'online' ? 'text-teal-600' : 'text-gray-400'}`} />
+            </div>
+            <div>
+              <p className={`text-sm font-bold ${paymentMethod === 'online' ? 'text-teal-700' : 'text-gray-700'}`}>Pay Online</p>
+              <p className="text-xs text-gray-400">UPI, Cards, NetBanking</p>
+            </div>
+            {paymentMethod === 'online' && (
+              <div className="ml-auto w-4 h-4 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0">
+                <div className="w-1.5 h-1.5 rounded-full bg-white" />
+              </div>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPaymentMethod('cod')}
+            className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
+              paymentMethod === 'cod'
+                ? 'border-teal-500 bg-teal-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${paymentMethod === 'cod' ? 'bg-teal-100' : 'bg-gray-100'}`}>
+              <Banknote className={`h-5 w-5 ${paymentMethod === 'cod' ? 'text-teal-600' : 'text-gray-400'}`} />
+            </div>
+            <div>
+              <p className={`text-sm font-bold ${paymentMethod === 'cod' ? 'text-teal-700' : 'text-gray-700'}`}>Cash on Delivery</p>
+              <p className="text-xs text-gray-400">Pay when delivered</p>
+            </div>
+            {paymentMethod === 'cod' && (
+              <div className="ml-auto w-4 h-4 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0">
+                <div className="w-1.5 h-1.5 rounded-full bg-white" />
+              </div>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Submit button */}
       <button
         type="submit"
         disabled={processing || medicineItems.length === 0}
@@ -282,12 +339,16 @@ export default function MedicineCheckoutForm() {
       >
         {processing
           ? <><Loader2 className="h-5 w-5 animate-spin" /> Processing...</>
+          : paymentMethod === 'cod'
+          ? <><Banknote className="h-5 w-5" /> Place Order · Pay ₹{grandTotal.toFixed(0)} on Delivery</>
           : <><CreditCard className="h-5 w-5" /> Pay ₹{grandTotal.toFixed(0)} · Secure Checkout</>
         }
       </button>
-      <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1">
-        <Lock className="h-3 w-3" /> Secured by Cashfree · UPI, Cards, NetBanking accepted
-      </p>
+      {paymentMethod === 'online' && (
+        <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1">
+          <Lock className="h-3 w-3" /> Secured by Cashfree · UPI, Cards, NetBanking accepted
+        </p>
+      )}
     </form>
   );
 }
