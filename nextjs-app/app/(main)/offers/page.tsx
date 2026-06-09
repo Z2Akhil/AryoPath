@@ -40,7 +40,7 @@ export default async function OffersPage({ limit, showHeader, mobileScroll }: Of
     const fetchLimit = limit || 20;
 
     const isHomeWidget = !!limit;
-    const SELECT = 'name type code customPricing thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category thyrocareData.childs imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster isFeatured featuredOrder';
+    const SELECT = 'name type code customPricing customImage thyrocareData.rate thyrocareData.testCount thyrocareData.fasting thyrocareData.category thyrocareData.childs imageLocation thyrocareData.imageLocation imageMaster thyrocareData.imageMaster isFeatured featuredOrder';
 
     let offerDocs: any[];
     const totalCount = await Offer.countDocuments({ isActive: true });
@@ -71,9 +71,10 @@ export default async function OffersPage({ limit, showHeader, mobileScroll }: Of
         childs: o.thyrocareData?.childs ? JSON.parse(JSON.stringify(o.thyrocareData.childs)) : [],
         fasting: o.thyrocareData?.fasting || '',
         category: o.thyrocareData?.category || '',
+        customImage: o.customImage?.url ? { url: o.customImage.url, publicId: o.customImage.publicId } : null,
         imageLocation: o.imageLocation || null,
         imageMaster: o.imageMaster ? JSON.parse(JSON.stringify(o.imageMaster)) : null,
-        thyrocareData: o.thyrocareData ? { 
+        thyrocareData: o.thyrocareData ? {
             imageLocation: o.thyrocareData.imageLocation || null,
             imageMaster: o.thyrocareData.imageMaster ? JSON.parse(JSON.stringify(o.thyrocareData.imageMaster)) : null
         } : null,

@@ -173,7 +173,7 @@ const AdminTable: React.FC<AdminTableProps> = ({ data, onDataUpdate }) => {
     }, [searchTerm, sortOption]);
 
     const hideCategory = localData.length > 0 && localData[0]?.type === "OFFER";
-    const showImageCol = localData.length > 0 && (localData[0]?.type === "PROFILE" || localData[0]?.type === "POP");
+    const showImageCol = localData.length > 0 && (localData[0]?.type === "PROFILE" || localData[0]?.type === "POP" || localData[0]?.type === "OFFER");
 
     const headings = [
         "ID",
@@ -402,7 +402,7 @@ const AdminTable: React.FC<AdminTableProps> = ({ data, onDataUpdate }) => {
                                 const isOrphaned = item.isInThyrocare === false;
                                 const isActive = item.isActive !== false;
                                 const isDisabled = isOrphaned || !isActive;
-                                const isProfile = item.type === 'PROFILE' || item.type === 'POP';
+                                const isProfile = item.type === 'PROFILE' || item.type === 'POP' || item.type === 'OFFER';
 
                                 return (
                                     <tr

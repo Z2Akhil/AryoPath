@@ -59,6 +59,10 @@ export interface IOffer extends Document {
     sellingPrice: number;
     isCustomized: boolean;
   };
+  customImage?: {
+    url: string;
+    publicId: string;
+  };
   isActive: boolean;
   isFeatured: boolean;
   featuredOrder: number;
@@ -131,6 +135,10 @@ const OfferSchema = new Schema<IOffer, IOfferModel>(
       sellingPrice: { type: Number, default: 0 },
       isCustomized: { type: Boolean, default: false }
     },
+    customImage: {
+      url: { type: String, default: '' },
+      publicId: { type: String, default: '' },
+    },
     isActive: { type: Boolean, default: true },
     isFeatured: { type: Boolean, default: false, index: true },
     featuredOrder: { type: Number, default: 0 },
@@ -176,6 +184,7 @@ OfferSchema.methods.getCombinedData = function () {
     childs: this.thyrocareData?.childs || [],
     imageLocation: this.thyrocareData?.imageLocation,
     imageMaster: this.thyrocareData?.imageMaster || [],
+    customImage: this.customImage?.url ? this.customImage : null,
     testCount: this.thyrocareData?.testCount,
     bookedCount: this.thyrocareData?.bookedCount,
     specimenType: this.thyrocareData?.specimenType,
