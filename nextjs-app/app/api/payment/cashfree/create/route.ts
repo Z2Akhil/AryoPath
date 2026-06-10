@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { amount, currency = 'INR', orderRef, customerName, customerPhone } = body;
+        const { amount, currency = 'INR', orderRef, customerName, customerPhone, customerEmail } = body;
 
         if (!amount || amount <= 0) {
             return NextResponse.json({ success: false, message: 'Invalid amount' }, { status: 400 });
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
         const userId = (user as any)._id.toString();
         const cfOrderId = `ayro_${orderRef || 'pay'}_${Date.now()}`;
         const phone = customerPhone || (user as any).mobileNumber || '9999999999';
-        const email = (user as any).email || `user_${userId}@ayropath.in`;
+        const email = customerEmail || (user as any).email || `user_${userId}@ayropath.in`;
         const name  = customerName || `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim() || 'Customer';
 
         const cfRes = await fetch(`${CF_BASE}/pg/orders`, {

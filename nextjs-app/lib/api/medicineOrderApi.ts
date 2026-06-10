@@ -10,8 +10,8 @@ interface OrderItem {
 }
 
 const medicineOrderApi = {
-  createCashfreeOrder: async (amount: number, orderRef?: string, customerName?: string, customerPhone?: string) => {
-    const res = await axiosInstance.post('/payment/cashfree/create', { amount, currency: 'INR', orderRef, customerName, customerPhone });
+  createCashfreeOrder: async (amount: number, orderRef?: string, customerName?: string, customerPhone?: string, customerEmail?: string) => {
+    const res = await axiosInstance.post('/payment/cashfree/create', { amount, currency: 'INR', orderRef, customerName, customerPhone, customerEmail });
     return res.data as { success: boolean; data: { cfOrderId: string; paymentSessionId: string; amount: number; currency: string } };
   },
 

@@ -5,6 +5,7 @@ import User from '@/lib/models/User';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import Medicine from '@/lib/models/Medicine';
 import SiteSettings from '@/lib/models/SiteSettings';
+import { getMedicineOrderEmail, sendMedicineConfirmedEmail } from '@/lib/services/transactionalEmailService';
 
 const FREE_DELIVERY_THRESHOLD = 1000; // must match MedicineCheckoutForm
 
@@ -112,6 +113,11 @@ export async function POST(req: NextRequest) {
     });
 
     const saved = order as any;
+
+    if (isCod) {
+      getMedicineOrderEmail(saved).then(email => sendMedicineConfirmedEmail(saved, email)).catch(console.error);
+    }
+
     return NextResponse.json({ success: true, data: { _id: saved._id, orderId: saved.orderId } }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to create order';

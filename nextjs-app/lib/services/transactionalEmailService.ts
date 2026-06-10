@@ -150,7 +150,7 @@ export async function sendConsultCancelledEmail(appt: any): Promise<void> {
 
 export async function sendConsultRefundInitiatedEmail(appt: any): Promise<void> {
   if (!appt.patientEmail) return;
-  const amount = `₹${Number(appt.payment?.refundAmount ?? appt.finalAmount ?? 0).toLocaleString('en-IN')}`;
+  const amount = `₹${Number(appt.payment?.refundAmount || appt.finalAmount || 0).toLocaleString('en-IN')}`;
   const html = await render('consult-refund-initiated', {
     patientName: appt.patientName,
     doctorName: appt.doctorName,
@@ -320,7 +320,7 @@ export async function sendMedicineReturnRequestedEmail(order: any, toEmail: stri
 
 export async function sendMedicineRefundInitiatedEmail(order: any, toEmail: string): Promise<void> {
   if (!toEmail) return;
-  const amount = `₹${Number((order.payment as any)?.refundAmount ?? order.grandTotal ?? 0).toLocaleString('en-IN')}`;
+  const amount = `₹${Number((order.payment as any)?.refundAmount || order.grandTotal || 0).toLocaleString('en-IN')}`;
   const html = await render('medicine-refund-initiated', {
     fullName: order.shippingAddress?.fullName ?? '',
     orderId: order.orderId,

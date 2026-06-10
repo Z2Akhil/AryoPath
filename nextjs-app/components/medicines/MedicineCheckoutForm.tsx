@@ -82,9 +82,9 @@ export default function MedicineCheckoutForm() {
 
       // COD — order confirmed immediately, skip Cashfree
       if (paymentMethod === 'cod') {
-        clearMedicineCart();
         toast.success('Order placed successfully! Pay on delivery.');
-        router.push(`/medicines/order-success?orderId=${internalOrderId}`);
+        router.push(`/medicines/orders/${internalOrderId}`);
+        clearMedicineCart();
         return;
       }
 
@@ -93,7 +93,8 @@ export default function MedicineCheckoutForm() {
         grandTotal,
         internalOrderId,
         addressData.fullName,
-        addressData.mobile
+        addressData.mobile,
+        addressData.email || undefined
       );
       if (!cfRes.success) throw new Error('Payment initialization failed. Please try again.');
 
@@ -116,9 +117,9 @@ export default function MedicineCheckoutForm() {
         const verifyRes = await medicineOrderApi.verifyPayment({ cfOrderId, medicineOrderId });
         if (!verifyRes.success) throw new Error('Payment verification failed. Please contact support.');
 
-        clearMedicineCart();
         toast.success('Order placed successfully!');
-        router.push(`/medicines/order-success?orderId=${internalOrderId}`);
+        router.push(`/medicines/orders/${internalOrderId}`);
+        clearMedicineCart();
       }
     } catch (error: any) {
       if (error.message !== 'cancelled') {
