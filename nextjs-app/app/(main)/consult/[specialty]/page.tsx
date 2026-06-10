@@ -255,10 +255,15 @@ export default function SpecialtyPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const isAll = specialty === 'all';
+
   useEffect(() => {
     setLoading(true);
     setError('');
-    fetch(`/api/doctors?specialty=${encodeURIComponent(specialization)}`)
+    const url = isAll
+      ? '/api/doctors'
+      : `/api/doctors?specialty=${encodeURIComponent(specialization)}`;
+    fetch(url)
       .then((r) => r.json())
       .then((data) => {
         if (data.success) {
@@ -269,7 +274,7 @@ export default function SpecialtyPage({
       })
       .catch(() => setError('Failed to load doctors'))
       .finally(() => setLoading(false));
-  }, [specialization]);
+  }, [specialization, isAll]);
 
   // Interleave promo banners after every 2 doctor cards
   const renderList = () => {
@@ -297,7 +302,7 @@ export default function SpecialtyPage({
             <ChevronRight className="w-5 h-5 text-gray-600 rotate-180" />
           </button>
           <div>
-            <h1 className="text-lg font-extrabold text-gray-900">{specialization}</h1>
+            <h1 className="text-lg font-extrabold text-gray-900">{isAll ? 'All Doctors' : specialization}</h1>
             {!loading && (
               <p className="text-xs text-gray-500">
                 {doctors.length} doctor{doctors.length !== 1 ? 's' : ''} available

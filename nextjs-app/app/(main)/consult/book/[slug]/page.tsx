@@ -13,7 +13,6 @@ import {
   ChevronUp,
   Video,
   Phone,
-  Tag,
   CheckCircle,
   Upload,
   X,
@@ -285,11 +284,6 @@ export default function BookingPage({
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [consultMode, setConsultMode] = useState<'video' | 'audio'>('video');
   const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('');
-  const [couponInput, setCouponInput] = useState('');
-  const [couponApplied, setCouponApplied] = useState('');
-  const [couponDiscount, setCouponDiscount] = useState(0);
-  const [couponError, setCouponError] = useState('');
-  const [couponSuccess, setCouponSuccess] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [uploadedFiles, setUploadedFiles] = useState<{ url: string; publicId: string; name: string }[]>([]);
@@ -340,37 +334,7 @@ export default function BookingPage({
 
   // Pricing calculations
   const fee = doctor?.consultationFee || 0;
-  const finalAmount = Math.max(0, fee - couponDiscount);
-
-  // Coupon apply
-  function applyCoupon() {
-    setCouponError('');
-    setCouponSuccess('');
-    const code = couponInput.trim().toUpperCase();
-    if (code === 'AYRO20') {
-      const disc = Math.round(fee * 0.2);
-      setCouponDiscount(disc);
-      setCouponApplied(code);
-      setCouponSuccess(`Coupon applied! You save ₹${disc}`);
-    } else if (code === 'FIRST100') {
-      const disc = Math.min(100, fee);
-      setCouponDiscount(disc);
-      setCouponApplied(code);
-      setCouponSuccess(`Coupon applied! You save ₹${disc}`);
-    } else {
-      setCouponError('Invalid coupon code');
-      setCouponDiscount(0);
-      setCouponApplied('');
-    }
-  }
-
-  function removeCoupon() {
-    setCouponInput('');
-    setCouponApplied('');
-    setCouponDiscount(0);
-    setCouponError('');
-    setCouponSuccess('');
-  }
+  const finalAmount = fee;
 
   // File upload with XHR progress
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -459,7 +423,6 @@ export default function BookingPage({
       consultationMode: consultMode,
       appointmentDate: selectedDate,
       appointmentTime: selectedTime,
-      couponCode: couponApplied || undefined,
       reportUrls: uploadedFiles.map(({ url, publicId }) => ({ url, publicId })),
       ...(payment ?? {}),
     };
@@ -493,7 +456,7 @@ export default function BookingPage({
     if (!selectedDate) { toastError('Please select a date'); return; }
     if (!selectedTime) { toastError('Please select a time slot'); return; }
 
-    // Free consultation (coupon makes it zero)
+    // Free consultation
     if (finalAmount === 0) {
       setSubmitting(true);
       try {
@@ -977,54 +940,7 @@ export default function BookingPage({
           </div>
         </div>
 
-        {/* ── SECTION 6: Coupon Code ───────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
-            Coupon Code
-          </p>
-          {couponApplied ? (
-            <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
-              <Tag className="w-4 h-4 text-green-600 shrink-0" />
-              <div className="flex-1">
-                <p className="text-xs font-bold text-green-700">{couponApplied} applied</p>
-                <p className="text-xs text-green-600">{couponSuccess}</p>
-              </div>
-              <button
-                type="button"
-                onClick={removeCoupon}
-                className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors"
-              >
-                Remove
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={couponInput}
-                onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(''); }}
-                placeholder="Enter coupon code"
-                className={`flex-1 border rounded-xl px-4 py-2.5 text-sm outline-none transition-colors font-mono uppercase ${
-                  couponError
-                    ? 'border-red-300 bg-red-50'
-                    : 'border-gray-200 focus:border-blue-400 bg-gray-50 focus:bg-white'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={applyCoupon}
-                disabled={!couponInput.trim()}
-                className="px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Apply
-              </button>
-            </div>
-          )}
-          {couponError && <p className="text-xs text-red-500 mt-2">{couponError}</p>}
-          <p className="text-[10px] text-gray-400 mt-2">Try: AYRO20 (20% off) · FIRST100 (₹100 off)</p>
-        </div>
-
-        {/* ── SECTION 7: Bill Summary ──────────────────────────────────── */}
+        {/* ── SECTION 6: Bill Summary ─────────────────────────────────── */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
             Bill Summary
@@ -1038,12 +954,6 @@ export default function BookingPage({
               <span className="text-gray-600">Platform Discount</span>
               <span className="font-semibold text-green-600">FREE</span>
             </div>
-            {couponApplied && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Coupon ({couponApplied})</span>
-                <span className="font-semibold text-green-600">-₹{couponDiscount}</span>
-              </div>
-            )}
             <div className="border-t border-gray-100 pt-3 flex justify-between">
               <span className="text-sm font-bold text-gray-900">Total Payable</span>
               <span className="text-lg font-black text-gray-900">₹{finalAmount}</span>
