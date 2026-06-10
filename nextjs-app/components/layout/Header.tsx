@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { ShoppingCart, Menu, X, User, LogOut, ChevronDown, Settings, Stethoscope } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, LogOut, ChevronDown, Settings, Stethoscope, ShoppingBag, FlaskConical, Pill } from 'lucide-react';
 import { useSiteSettings } from '@/providers/SiteSettingsProvider';
 import { useCart } from '@/providers/CartProvider';
 import { useAuthModal } from '@/providers/AuthModalProvider';
@@ -43,6 +43,7 @@ interface DesktopNavProps {
 
 const DesktopNav = ({ user, onLogin, onLogout }: DesktopNavProps) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [ordersExpanded, setOrdersExpanded] = useState(false);
   const router = useRouter();
 
   const handleLogoutClick = () => {
@@ -85,6 +86,32 @@ const DesktopNav = ({ user, onLogin, onLogout }: DesktopNavProps) => {
                 >
                   <Stethoscope className="w-4 h-4" /> My Appointments
                 </Link>
+                <button
+                  onClick={() => setOrdersExpanded(o => !o)}
+                  className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span className="flex-1 text-left">My Orders</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${ordersExpanded ? 'rotate-180' : ''}`} />
+                </button>
+                {ordersExpanded && (
+                  <>
+                    <Link
+                      href="/orders?type=tests"
+                      onClick={() => { setIsDropdownOpen(false); setOrdersExpanded(false); }}
+                      className="flex items-center gap-2.5 pl-8 pr-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                    >
+                      <FlaskConical className="w-3.5 h-3.5" /> Lab Tests
+                    </Link>
+                    <Link
+                      href="/orders?type=medicines"
+                      onClick={() => { setIsDropdownOpen(false); setOrdersExpanded(false); }}
+                      className="flex items-center gap-2.5 pl-8 pr-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                    >
+                      <Pill className="w-3.5 h-3.5" /> Medicines
+                    </Link>
+                  </>
+                )}
                 <div className="border-t border-gray-100 my-1" />
                 <button
                   onClick={handleLogoutClick}
@@ -118,6 +145,7 @@ interface MobileDrawerProps {
 }
 
 const MobileDrawer = ({ open, user, mounted, onLogin, onLogout, onClose }: MobileDrawerProps) => {
+  const [mobileOrdersOpen, setMobileOrdersOpen] = useState(false);
   const toast = useToast();
   const handleComingSoon = (label: string) => { toast.info(`${label} is coming soon — stay tuned!`, 3000); onClose(); };
   // Defer user-dependent rendering until client is mounted to avoid hydration mismatch
@@ -192,6 +220,23 @@ const MobileDrawer = ({ open, user, mounted, onLogin, onLogout, onClose }: Mobil
                   <Link href="/account/appointments" onClick={onClose} className="block px-4 py-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium text-sm">
                     My Appointments
                   </Link>
+                  <button
+                    onClick={() => setMobileOrdersOpen(o => !o)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium text-sm"
+                  >
+                    <span>My Orders</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${mobileOrdersOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {mobileOrdersOpen && (
+                    <>
+                      <Link href="/orders?type=tests" onClick={() => { onClose(); setMobileOrdersOpen(false); }} className="flex items-center gap-2 pl-8 pr-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all text-sm">
+                        <FlaskConical className="w-4 h-4" /> Lab Tests
+                      </Link>
+                      <Link href="/orders?type=medicines" onClick={() => { onClose(); setMobileOrdersOpen(false); }} className="flex items-center gap-2 pl-8 pr-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all text-sm">
+                        <Pill className="w-4 h-4" /> Medicines
+                      </Link>
+                    </>
+                  )}
                   <button
                     onClick={() => { onLogout(); onClose(); }}
                     className="w-full text-left block px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-all font-medium text-sm"

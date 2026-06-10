@@ -7,7 +7,7 @@ import { useUser } from '@/providers/UserProvider';
 import {
     User, Edit3, Save, Phone, Mail,
     AlertCircle, CheckCircle, X, Loader,
-    FlaskConical, Pill, Stethoscope, ChevronRight,
+    FlaskConical, Pill, Stethoscope, ChevronRight, ShoppingBag, ChevronDown,
 } from 'lucide-react';
 
 export default function AccountPage() {
@@ -17,6 +17,7 @@ export default function AccountPage() {
     useEffect(() => { setMounted(true); }, []);
 
     const [isEditing, setIsEditing]       = useState(false);
+    const [ordersOpen, setOrdersOpen]     = useState(false);
     const [firstName, setFirstName]       = useState('');
     const [lastName, setLastName]         = useState('');
     const [email, setEmail]               = useState('');
@@ -173,39 +174,52 @@ export default function AccountPage() {
                     </div>
                 </div>
 
-                {/* My Orders */}
+                {/* My Orders — expandable */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="px-4 py-3.5 border-b border-gray-50">
-                        <h2 className="text-sm font-bold text-gray-800">My Orders</h2>
-                    </div>
-                    <div className="divide-y divide-gray-50">
-                        <Link
-                            href="/orders?type=tests"
-                            className="flex items-center gap-3 px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
-                        >
-                            <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
-                                <FlaskConical className="w-4.5 h-4.5 text-blue-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-800">Lab Tests</p>
-                                <p className="text-xs text-gray-400 mt-0.5">View your test bookings & reports</p>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
-                        </Link>
-                        <Link
-                            href="/orders?type=medicines"
-                            className="flex items-center gap-3 px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
-                        >
-                            <div className="w-9 h-9 bg-teal-50 rounded-xl flex items-center justify-center shrink-0">
-                                <Pill className="w-4.5 h-4.5 text-teal-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-800">Medicines</p>
-                                <p className="text-xs text-gray-400 mt-0.5">Track your medicine deliveries</p>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
-                        </Link>
-                    </div>
+                    <button
+                        onClick={() => setOrdersOpen(o => !o)}
+                        className="w-full flex items-center gap-3 px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    >
+                        <div className="w-9 h-9 bg-orange-50 rounded-xl flex items-center justify-center shrink-0">
+                            <ShoppingBag className="w-4.5 h-4.5 text-orange-500" />
+                        </div>
+                        <div className="flex-1 min-w-0 text-left">
+                            <p className="text-sm font-semibold text-gray-800">My Orders</p>
+                            <p className="text-xs text-gray-400 mt-0.5">Lab tests & medicine deliveries</p>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${ordersOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {ordersOpen && (
+                        <div className="border-t border-gray-50 divide-y divide-gray-50">
+                            <Link
+                                href="/orders?type=tests"
+                                className="flex items-center gap-3 pl-8 pr-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                            >
+                                <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
+                                    <FlaskConical className="w-4 h-4 text-blue-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-gray-800">Lab Tests</p>
+                                    <p className="text-xs text-gray-400 mt-0.5">Bookings & reports</p>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+                            </Link>
+                            <Link
+                                href="/orders?type=medicines"
+                                className="flex items-center gap-3 pl-8 pr-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                            >
+                                <div className="w-8 h-8 bg-teal-50 rounded-xl flex items-center justify-center shrink-0">
+                                    <Pill className="w-4 h-4 text-teal-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-gray-800">Medicines</p>
+                                    <p className="text-xs text-gray-400 mt-0.5">Deliveries & tracking</p>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+                            </Link>
+                        </div>
+                    )}
                 </div>
 
                 {/* My Appointments */}
