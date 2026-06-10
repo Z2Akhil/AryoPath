@@ -1,49 +1,50 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 
 const PORTAL_URL = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/doctor`;
 
-// Singleton pooled transporter — reuses connections, avoids rapid-reconnect throttling
-let _transporter: nodemailer.Transporter | null = null;
-let _transporterPort: number | null = null;
-function getTransporter(): nodemailer.Transporter {
-  const currentPort = Number(process.env.SMTP_PORT || '465');
-  if (!_transporter || _transporterPort !== currentPort) {
-    _transporter = null;
-    _transporterPort = currentPort;
-    _transporter = nodemailer.createTransport({
-      pool: true,           // reuse connections
-      maxConnections: 3,
-      maxMessages: 100,
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || '465'),
-      secure: (process.env.SMTP_PORT || '465') === '465',
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-      tls: { rejectUnauthorized: false },
-      connectionTimeout: 30000,
-      greetingTimeout:   15000,
-      socketTimeout:     30000,
-    } as any);
-  }
-  return _transporter!;
+const FROM = `${process.env.SMTP_FROM_NAME || 'Ayropath'} <${process.env.FROM_EMAIL || 'admin@ayropath.com'}>`;
+
+function getResend(): Resend {
+  return new Resend(process.env.RESEND_API_KEY);
 }
 
-async function sendMail(to: string, subject: string, html: string): Promise<void> {
+function getSmtpTransporter() {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT || '465'),
+    secure: (process.env.SMTP_PORT || '465') === '465',
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    tls: { rejectUnauthorized: false },
+  });
+}
+
+async function sendMail(to: string, subject: string, html: string, attempt = 1): Promise<void> {
   if (!to) return;
   try {
-    const r = await getTransporter().sendMail({
-      from: `"${process.env.SMTP_FROM_NAME || 'Ayropath'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
-      to, subject, html,
-    });
-    console.log(`[Email] Sent to ${to}: ${r.messageId}`);
-  } catch (err) {
-    console.error(`[Email] Failed to ${to}:`, err);
+    const { data, error } = await getResend().emails.send({ from: FROM, to, subject, html });
+    if (error) throw error;
+    console.log(`[Email/Resend] Sent to ${to}: ${data?.id}`);
+  } catch (resendErr: any) {
+    const isRateLimit = resendErr?.statusCode === 429 || /rate.?limit|too many/i.test(resendErr?.message ?? '');
+    if (isRateLimit && attempt < 3) {
+      await new Promise(r => setTimeout(r, 300 * attempt));
+      return sendMail(to, subject, html, attempt + 1);
+    }
+    console.warn(`[Email/Resend] Failed (attempt ${attempt}), falling back to SMTP:`, resendErr?.message ?? resendErr);
+    try {
+      const r = await getSmtpTransporter().sendMail({ from: FROM, to, subject, html });
+      console.log(`[Email/SMTP] Sent to ${to}: ${r.messageId}`);
+    } catch (smtpErr) {
+      console.error(`[Email/SMTP] Also failed to ${to}:`, smtpErr);
+    }
   }
 }
 
 function formatTime12h(time: string): string {
-  if (/AM|PM/i.test(time)) return time; // already 12h
+  if (/AM|PM/i.test(time)) return time;
   const m = time.match(/^(\d{1,2}):(\d{2})$/);
   if (!m) return time;
   let h = parseInt(m[1], 10);
@@ -217,7 +218,6 @@ export async function sendDoctorAppointmentCancelledEmail(appt: any): Promise<vo
 }
 
 // ── Medicine Orders ───────────────────────────────────────────────────────────
-// (cancel / return / refund)
 
 export async function getMedicineOrderEmail(order: any): Promise<string> {
   if (order.shippingAddress?.email) return order.shippingAddress.email;

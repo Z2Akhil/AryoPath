@@ -29,6 +29,7 @@
     "react-icons": "^5.5.0",
     "react-slick": "^0.31.0",
     "recharts": "^3.7.0",
+    "resend": "^6.12.4",
     "slick-carousel": "^1.8.1",
     "validator": "^13.15.26",
     "zod": "^4.4.3"
