@@ -3,8 +3,9 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import {
-  Video, Phone, Zap, Wifi, WifiOff,
+  Video, Phone,
   Sun, Cloud, Moon, CheckSquare, Square,
+  Star, Users, Smile,
 } from 'lucide-react';
 import {
   DoctorFormValues,
@@ -130,9 +131,6 @@ export default function ConsultationTab() {
   const modes: ConsultationMode[]    = watch('consultationModes') ?? [];
   const availableDays: string[]      = watch('availableDays') ?? [];
   const selectedSlots: string[]      = watch('availableTimeSlots') ?? [];
-  const instantConsultation          = watch('instantConsultation');
-  const isOnline                     = watch('isOnline');
-
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
   const toggleMode = (mode: ConsultationMode) => {
@@ -368,41 +366,62 @@ export default function ConsultationTab() {
         </div>
       </div>
 
-      {/* ── Status Toggles ── */}
+      {/* ── Doctor Stats ── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-7">
         <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-5">
-          Live Status
+          Doctor Stats
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${isOnline ? 'border-teal-200 bg-teal-50/40' : 'border-gray-100 bg-gray-50'}`}>
-            <div className="flex items-center gap-3">
-              {isOnline
-                ? <Wifi className="h-5 w-5 text-teal-500" />
-                : <WifiOff className="h-5 w-5 text-gray-400" />}
-              <div>
-                <p className="text-sm font-semibold text-gray-700">Online Status</p>
-                <p className="text-xs text-gray-400">{isOnline ? 'Accepting bookings' : 'Currently offline'}</p>
-              </div>
-            </div>
-            <Toggle checked={isOnline} onChange={(v) => setValue('isOnline', v, { shouldDirty: true })} />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Star Rating */}
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700">
+              <Star className="h-4 w-4 text-amber-400" /> Star Rating
+            </label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              max="5"
+              {...register('rating')}
+              placeholder="e.g. 4.8"
+              className={inputCls}
+            />
+            <p className="text-[10px] text-gray-400">0 – 5.0 scale</p>
           </div>
 
-          <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${instantConsultation ? 'border-amber-200 bg-amber-50/40' : 'border-gray-100 bg-gray-50'}`}>
-            <div className="flex items-center gap-3">
-              <Zap className={`h-5 w-5 ${instantConsultation ? 'text-amber-500' : 'text-gray-400'}`} />
-              <div>
-                <p className="text-sm font-semibold text-gray-700">Instant Consult</p>
-                <p className="text-xs text-gray-400">Available for immediate bookings</p>
-              </div>
-            </div>
-            <Toggle
-              checked={instantConsultation}
-              onChange={(v) => setValue('instantConsultation', v, { shouldDirty: true })}
-              color="bg-amber-500"
+          {/* Total patients */}
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700">
+              <Users className="h-4 w-4 text-blue-500" /> Patients Consulted
+            </label>
+            <input
+              type="number"
+              min="0"
+              {...register('totalPatientsConsulted')}
+              placeholder="e.g. 1200"
+              className={inputCls}
             />
+            <p className="text-[10px] text-gray-400">Total consultations done</p>
+          </div>
+
+          {/* Happy % */}
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700">
+              <Smile className="h-4 w-4 text-green-500" /> Happy Patients %
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              {...register('happyPatientPercentage')}
+              placeholder="e.g. 97"
+              className={inputCls}
+            />
+            <p className="text-[10px] text-gray-400">0 – 100%</p>
           </div>
         </div>
       </div>
+
 
     </div>
   );

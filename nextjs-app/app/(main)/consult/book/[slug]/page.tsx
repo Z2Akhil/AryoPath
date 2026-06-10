@@ -58,12 +58,12 @@ interface DatePill {
   isToday: boolean;
 }
 
-function getNext7Days(): DatePill[] {
+function getNext30Days(): DatePill[] {
   const result: DatePill[] = [];
   const today = new Date();
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 30; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
     const yyyy = d.getFullYear();
@@ -292,7 +292,9 @@ export default function BookingPage({
   const [openPeriods, setOpenPeriods] = useState<Record<string, boolean>>({ Morning: true, Afternoon: true, Evening: true });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dates = getNext7Days();
+  const allDates = getNext30Days();
+  const availableDays: string[] = doctor?.availableDays ?? [];
+  const dates = allDates.filter((d) => availableDays.includes(d.dayAbbr));
 
   const {
     register,
@@ -310,9 +312,13 @@ export default function BookingPage({
       .then((r) => r.json())
       .then((data) => {
         if (data.success) {
-          setDoctor(data.data);
-          // Default date to today
-          setSelectedDate(dates[0].fullDate);
+          const doc: Doctor = data.data;
+          setDoctor(doc);
+          // Default to first available working day
+          const allD = getNext30Days();
+          const avDays: string[] = doc.availableDays ?? [];
+          const filtered = allD.filter((d) => avDays.includes(d.dayAbbr));
+          if (filtered.length > 0) setSelectedDate(filtered[0].fullDate);
         } else {
           setFetchError('Doctor not found');
         }
@@ -592,6 +598,9 @@ export default function BookingPage({
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
             Select Date
           </p>
+          {dates.length === 0 ? (
+            <p className="text-sm text-gray-400 py-2">No available slots in the next 7 days.</p>
+          ) : null}
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {dates.map((d) => {
               const selected = selectedDate === d.fullDate;

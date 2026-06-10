@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, CheckCircle, Video, Phone, ChevronRight } from 'lucide-react';
+import { ArrowRight, CheckCircle, Video, Phone, ChevronRight, Star, Users, Smile } from 'lucide-react';
 import connectToDatabase from '@/lib/db/mongoose';
 import Doctor from '@/lib/models/Doctor';
 import ConsultFAQ from './ConsultFAQ';
@@ -109,6 +109,32 @@ function DoctorCard({ doc }: { doc: any }) {
         </div>
       </div>
 
+      {/* Stats row */}
+      {(doc.rating > 0 || doc.totalPatientsConsulted > 0 || doc.happyPatientPercentage > 0) && (
+        <div className="flex items-center gap-3 flex-wrap">
+          {doc.rating > 0 && (
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-600">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+              {doc.rating}
+            </span>
+          )}
+          {doc.totalPatientsConsulted > 0 && (
+            <span className="flex items-center gap-1 text-[11px] text-gray-500">
+              <Users className="w-3 h-3 text-blue-400" />
+              {doc.totalPatientsConsulted >= 1000
+                ? `${(doc.totalPatientsConsulted / 1000).toFixed(1)}K`
+                : doc.totalPatientsConsulted} patients
+            </span>
+          )}
+          {doc.happyPatientPercentage > 0 && (
+            <span className="flex items-center gap-1 text-[11px] text-green-600">
+              <Smile className="w-3 h-3" />
+              {doc.happyPatientPercentage}% happy
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Modes + fee */}
       <div className="flex items-center justify-between pt-2 border-t border-gray-100">
         <div className="flex gap-1.5">
@@ -166,7 +192,7 @@ export default async function ConsultPage() {
   const [totalDoctors, doctorDocs, rawSpecs] = await Promise.all([
     Doctor.countDocuments(activeFilter),
     Doctor.find({ ...activeFilter, isFeatured: true })
-      .select('name specialization experience consultationFee consultationModes profilePhoto isVerified isOnline slug qualifications languages')
+      .select('name specialization experience consultationFee consultationModes profilePhoto isVerified isOnline slug qualifications languages rating totalPatientsConsulted happyPatientPercentage')
       .sort({ experience: -1 })
       .limit(10)
       .lean(),

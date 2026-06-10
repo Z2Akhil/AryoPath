@@ -52,6 +52,9 @@ const DoctorSchema = new Schema<DoctorDocument>(
     availableTimeSlots: [{ type: String }],
     maxPatientsPerDay: { type: Number, default: 20 },
     isOnline: { type: Boolean, default: true },
+    rating: { type: Number, default: 0, min: 0, max: 5 },
+    totalPatientsConsulted: { type: Number, default: 0 },
+    happyPatientPercentage: { type: Number, default: 0, min: 0, max: 100 },
 
     // Content
     conditionsTreated: [{ type: String }],

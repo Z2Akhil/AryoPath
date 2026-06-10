@@ -78,6 +78,9 @@ export interface Doctor {
   availableTimeSlots: string[];
   maxPatientsPerDay: number;
   isOnline: boolean;
+  rating: number;
+  totalPatientsConsulted: number;
+  happyPatientPercentage: number;
   conditionsTreated: string[];
   symptomsTreated: string[];
   treatmentsOffered: string[];
@@ -130,6 +133,9 @@ export const doctorSchema = z.object({
   availableTimeSlots: z.array(z.string()).default([]),
   maxPatientsPerDay: z.coerce.number().min(1).default(20),
   isOnline: z.boolean().default(true),
+  rating: z.coerce.number().min(0).max(5).default(0),
+  totalPatientsConsulted: z.coerce.number().min(0).default(0),
+  happyPatientPercentage: z.coerce.number().min(0).max(100).default(0),
 
   conditionsTreated: z.array(z.string()).default([]),
   symptomsTreated: z.array(z.string()).default([]),
@@ -182,6 +188,9 @@ export const DOCTOR_FORM_DEFAULTS: DoctorFormValues = {
   availableTimeSlots: [],
   maxPatientsPerDay: 20,
   isOnline: true,
+  rating: 0,
+  totalPatientsConsulted: 0,
+  happyPatientPercentage: 0,
   conditionsTreated: [],
   symptomsTreated: [],
   treatmentsOffered: [],
