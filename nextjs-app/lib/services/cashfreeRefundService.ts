@@ -34,10 +34,13 @@ export async function initiateRefund(
     });
     const data = await res.json();
     if (!res.ok) {
+      console.error('[Cashfree Refund] Failed:', res.status, JSON.stringify(data));
       return { refundId, status: 'failed', error: data?.message || 'Cashfree refund failed' };
     }
+    console.log('[Cashfree Refund] Success:', JSON.stringify(data));
     return { refundId: data.refund_id || refundId, status: data.refund_status || 'PENDING' };
   } catch (err: any) {
+    console.error('[Cashfree Refund] Exception:', err.message);
     return { refundId, status: 'failed', error: err.message };
   }
 }

@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
                 city: user.city,
                 state: user.state,
                 isVerified: user.isVerified,
-                emailVerified: user.emailVerified,
+                
                 createdAt: user.createdAt
             }
         });
@@ -148,7 +148,6 @@ export async function PUT(req: NextRequest) {
 
                 updateData.email = email.toLowerCase();
                 // Reset email verification status if email changes
-                updateData.emailVerified = false;
             }
         }
 
@@ -184,7 +183,7 @@ export async function PUT(req: NextRequest) {
                 city: updatedUser.city,
                 state: updatedUser.state,
                 isVerified: updatedUser.isVerified,
-                emailVerified: updatedUser.emailVerified,
+                
                 createdAt: updatedUser.createdAt
             }
         });

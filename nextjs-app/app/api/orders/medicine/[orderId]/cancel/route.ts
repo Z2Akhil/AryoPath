@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   let refundInitiated = false;
   const payment = (order.payment as any);
   const isPaid   = payment?.status === 'paid' && payment?.cfOrderId;
-  const noRefund = payment?.refundId; // already has a refund — don't double-fire
+  const noRefund = payment?.refundId && payment?.refundStatus !== 'failed'; // allow retry on failed refunds
 
   if (isPaid && !noRefund) {
     const { refundId, status } = await initiateRefund(

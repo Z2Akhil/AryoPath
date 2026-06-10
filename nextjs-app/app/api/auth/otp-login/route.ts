@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
                 mobileNumber: user.mobileNumber,
                 email: user.email,
                 isVerified: user.isVerified,
-                emailVerified: user.emailVerified,
+                
             },
         });
     } catch (error) {

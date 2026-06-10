@@ -6,15 +6,19 @@ const PORTAL_URL = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000
 
 // Singleton pooled transporter — reuses connections, avoids rapid-reconnect throttling
 let _transporter: nodemailer.Transporter | null = null;
+let _transporterPort: number | null = null;
 function getTransporter(): nodemailer.Transporter {
-  if (!_transporter) {
+  const currentPort = Number(process.env.SMTP_PORT || '465');
+  if (!_transporter || _transporterPort !== currentPort) {
+    _transporter = null;
+    _transporterPort = currentPort;
     _transporter = nodemailer.createTransport({
       pool: true,           // reuse connections
       maxConnections: 3,
       maxMessages: 100,
       host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || '587'),
-      secure: false,
+      port: Number(process.env.SMTP_PORT || '465'),
+      secure: (process.env.SMTP_PORT || '465') === '465',
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
       tls: { rejectUnauthorized: false },
       connectionTimeout: 30000,

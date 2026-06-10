@@ -1,5 +1,4 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import bcrypt from 'bcryptjs';
 import validator from 'validator';
 
 export interface AddressDocument {
@@ -21,21 +20,16 @@ export interface UserDocument extends Document {
     email?: string;
     googleId?: string;
     authProvider: 'local' | 'google';
-    emailVerified: boolean;
-    emailVerificationToken?: string;
-    emailVerificationExpires?: Date;
     address?: string;
     city?: string;
     state?: string;
     addresses: AddressDocument[];
-    password?: string;
     isVerified: boolean;
     isActive: boolean;
     migrationStatus: 'pending' | 'in_progress' | 'completed' | 'not_required';
     lastMigrationReminder?: Date;
     createdAt: Date;
     updatedAt: Date;
-    comparePassword(userPassword: string): Promise<boolean>;
 }
 
 export interface IUserModel extends Model<UserDocument> { }
@@ -102,12 +96,6 @@ const userSchema = new Schema<UserDocument, IUserModel>({
         enum: ["local", "google"],
         default: "local",
     },
-    emailVerified: {
-        type: Boolean,
-        default: false,
-    },
-    emailVerificationToken: String,
-    emailVerificationExpires: Date,
     address: {
         type: String,
         trim: true,
@@ -124,11 +112,6 @@ const userSchema = new Schema<UserDocument, IUserModel>({
         maxlength: [50, 'State cannot exceed 50 characters']
     },
     addresses: { type: [addressSchema], default: [] },
-    password: {
-        type: String,
-        minlength: [6, "Password must be atleast 6 character long."],
-        select: false,
-    },
     isVerified: {
         type: Boolean,
         default: false,
@@ -158,18 +141,8 @@ const userSchema = new Schema<UserDocument, IUserModel>({
 });
 
 userSchema.pre("save", async function (this: UserDocument) {
-    if (!this.isModified("password")) return;
-
-    if (this.password) {
-        this.password = await bcrypt.hash(this.password, 12);
-    }
     this.updatedAt = new Date();
 });
-
-userSchema.methods.comparePassword = async function (this: UserDocument, userPassword: string) {
-    if (!this.password) return false;
-    return await bcrypt.compare(userPassword, this.password);
-};
 
 const User = (mongoose.models.User as IUserModel) || mongoose.model<UserDocument, IUserModel>("User", userSchema);
 

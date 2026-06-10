@@ -6,7 +6,7 @@ export interface OTPDocument extends Document {
     email?: string;
     otp: string;
     verificationId?: string;
-    purpose: 'verification' | 'forgot_password' | 'email_verification' | 'forgot_password_email' | 'login';
+    purpose: 'verification' | 'forgot_password' | 'login';
     expiresAt: Date;
     attempts: number;
     isUsed: boolean;
@@ -48,7 +48,7 @@ const otpSchema = new Schema<OTPDocument, IOTPModel>({
     },
     purpose: {
         type: String,
-        enum: ["verification", "forgot_password", "email_verification", "forgot_password_email", "login"],
+        enum: ["verification", "forgot_password", "login"],
         required: true,
     },
     expiresAt: {
