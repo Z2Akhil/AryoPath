@@ -21,7 +21,6 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
     confirmed:           { label: 'Confirmed',        color: 'bg-blue-100 text-blue-700' },
     prescription_required: { label: 'Rx Required',   color: 'bg-orange-100 text-orange-700' },
     prescription_verified: { label: 'Rx Verified',   color: 'bg-teal-100 text-teal-700' },
-    packed:              { label: 'Packed',           color: 'bg-indigo-100 text-indigo-700' },
     shipped:             { label: 'Shipped',          color: 'bg-purple-100 text-purple-700' },
     out_for_delivery:    { label: 'Out for Delivery', color: 'bg-cyan-100 text-cyan-700' },
     delivered:           { label: 'Delivered',        color: 'bg-green-100 text-green-700' },

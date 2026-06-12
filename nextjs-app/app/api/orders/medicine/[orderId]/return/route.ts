@@ -21,13 +21,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
 
   await connectDB();
   const { orderId } = await params;
-  const { reason } = await req.json().catch(() => ({}));
+  const { reason, refundDetails } = await req.json().catch(() => ({}));
 
   if (!reason?.trim())
     return NextResponse.json({ success: false, error: 'Return reason is required' }, { status: 400 });
 
   const order = await MedicineOrder.findOne({ orderId, userId });
   if (!order) return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+
+  const isCod = (order.payment as any)?.method === 'cod' || (order.payment as any)?.status === 'cod_pending';
+
+  // COD orders must provide refund details (UPI or bank)
+  if (isCod) {
+    if (!refundDetails?.type || !['upi', 'bank'].includes(refundDetails.type))
+      return NextResponse.json({ success: false, error: 'Refund details required for cash-on-delivery orders' }, { status: 400 });
+    if (refundDetails.type === 'upi' && !refundDetails.upiId?.trim())
+      return NextResponse.json({ success: false, error: 'UPI ID is required' }, { status: 400 });
+    if (refundDetails.type === 'bank' && (!refundDetails.accountNumber?.trim() || !refundDetails.ifsc?.trim() || !refundDetails.accountName?.trim()))
+      return NextResponse.json({ success: false, error: 'Account number, IFSC, and account holder name are required' }, { status: 400 });
+  }
 
   if (order.status !== 'delivered')
     return NextResponse.json({ success: false, error: 'Only delivered orders can be returned' }, { status: 400 });
@@ -46,14 +58,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
       error: `Return window closed. Returns accepted within ${RETURN_WINDOW_DAYS} days of delivery.`,
     }, { status: 400 });
 
-  order.status = 'return_requested';
-  (order as any).returnRequest = {
-    requestedAt: new Date(),
-    reason: reason.trim(),
-    status: 'pending',
-  };
-
-  await order.save();
+  // Use raw collection update to bypass Mongoose sub-doc casting/stripping
+  await MedicineOrder.collection.updateOne(
+    { _id: order._id },
+    { $set: {
+      status: 'return_requested',
+      returnRequest: {
+        requestedAt: new Date(),
+        reason: reason.trim(),
+        status: 'pending',
+        ...(refundDetails ? { refundDetails } : {}),
+      },
+    }}
+  );
 
   getMedicineOrderEmail(order).then(email => sendMedicineReturnRequestedEmail(order, email)).catch(console.error);
 

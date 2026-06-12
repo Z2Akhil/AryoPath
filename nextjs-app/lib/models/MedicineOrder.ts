@@ -87,18 +87,31 @@ const PaymentSchema = new Schema(
   { _id: false }
 );
 
+const ReturnRefundDetailsSchema = new Schema(
+  {
+    type:          { type: String, enum: ['upi', 'bank'], default: 'upi' },
+    upiId:         { type: String, default: '' },
+    accountNumber: { type: String, default: '' },
+    ifsc:          { type: String, default: '' },
+    accountName:   { type: String, default: '' },
+  },
+  { _id: false }
+);
+
 const ReturnRequestSchema = new Schema(
   {
-    requestedAt: { type: Date },
-    reason:      { type: String, default: '' },
+    requestedAt:   { type: Date },
+    reason:        { type: String, default: '' },
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected', 'received'],
+      enum: ['pending', 'approved', 'rejected', 'received', 'refund_sent'],
       default: 'pending',
     },
-    approvedAt:  { type: Date },
-    receivedAt:  { type: Date },
-    adminNotes:  { type: String, default: '' },
+    approvedAt:    { type: Date },
+    receivedAt:    { type: Date },
+    adminNotes:    { type: String, default: '' },
+    refundDetails: { type: ReturnRefundDetailsSchema },
+    refundSentAt:  { type: Date },
   },
   { _id: false }
 );
@@ -109,7 +122,6 @@ const STATUS_VALUES: MedicineOrderStatus[] = [
   'confirmed',
   'prescription_required',
   'prescription_verified',
-  'packed',
   'shipped',
   'out_for_delivery',
   'delivered',

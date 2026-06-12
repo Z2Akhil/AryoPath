@@ -9,7 +9,7 @@ import {
   sendMedicineRefundInitiatedEmail,
 } from '@/lib/services/transactionalEmailService';
 
-const CANCELLABLE_STATUSES = ['confirmed', 'prescription_required', 'prescription_verified', 'packed'];
+const CANCELLABLE_STATUSES = ['confirmed', 'prescription_required', 'prescription_verified'];
 
 function getUserId(req: NextRequest): string | null {
   const token = req.headers.get('authorization')?.replace('Bearer', '').trim();

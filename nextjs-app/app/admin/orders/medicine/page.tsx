@@ -26,7 +26,6 @@ const STATUS: Record<MedicineOrderStatus, { label: string; cls: string }> = {
   confirmed:             { label: 'Confirmed',         cls: 'bg-blue-50 text-blue-700 border-blue-200' },
   prescription_required: { label: 'Rx Required',      cls: 'bg-orange-50 text-orange-700 border-orange-200' },
   prescription_verified: { label: 'Rx Verified',      cls: 'bg-amber-50 text-amber-700 border-amber-200' },
-  packed:                { label: 'Packed',            cls: 'bg-purple-50 text-purple-700 border-purple-200' },
   shipped:               { label: 'Shipped',           cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
   out_for_delivery:      { label: 'Out for Delivery', cls: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
   delivered:             { label: 'Delivered',         cls: 'bg-green-50 text-green-700 border-green-200' },
@@ -37,10 +36,11 @@ const STATUS: Record<MedicineOrderStatus, { label: string; cls: string }> = {
 };
 
 const PAYMENT_STATUS_CFG: Record<string, { label: string; cls: string }> = {
-  pending:  { label: 'COD – Pending',  cls: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-  paid:     { label: 'Paid',           cls: 'bg-green-50 text-green-700 border-green-200' },
-  failed:   { label: 'Failed',         cls: 'bg-red-50 text-red-600 border-red-200' },
-  refunded: { label: 'Refunded',       cls: 'bg-gray-50 text-gray-500 border-gray-200' },
+  pending:     { label: 'Pending',      cls: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+  cod_pending: { label: 'COD',          cls: 'bg-orange-50 text-orange-700 border-orange-200' },
+  paid:        { label: 'Paid',         cls: 'bg-green-50 text-green-700 border-green-200' },
+  failed:      { label: 'Failed',       cls: 'bg-red-50 text-red-600 border-red-200' },
+  refunded:    { label: 'Refunded',     cls: 'bg-gray-50 text-gray-500 border-gray-200' },
 };
 
 const StatusBadge = ({ status }: { status: MedicineOrderStatus }) => {
@@ -62,9 +62,11 @@ const makeDownloadUrl = (url: string) => url.replace('/upload/', '/upload/fl_att
 function ReturnActionPanel({ order, onSave }: { order: any; onSave: (o: any) => void }) {
   const [loading, setLoading] = React.useState(false);
   const [notes, setNotes]     = React.useState('');
-  const ret = order.returnRequest;
+  const ret   = order.returnRequest;
+  const isCod = order.payment?.method === 'cod' || order.payment?.status === 'cod_pending';
+  const rd    = ret?.refundDetails;
 
-  const handleAction = async (action: 'approve' | 'reject' | 'received') => {
+  const handleAction = async (action: 'approve' | 'reject' | 'received' | 'mark_refunded') => {
     setLoading(true);
     try {
       const res = await adminMedicineOrderApi.returnAction(order.orderId, action, notes);
@@ -74,9 +76,30 @@ function ReturnActionPanel({ order, onSave }: { order: any; onSave: (o: any) => 
   };
 
   return (
-    <div className="border border-orange-200 rounded-xl p-3 mt-2">
-      <p className="text-xs font-bold text-orange-700 mb-1">Return Request — <span className="capitalize">{ret.status}</span></p>
-      <p className="text-xs text-gray-600 mb-2"><strong>Reason:</strong> {ret.reason}</p>
+    <div className="border border-orange-200 rounded-xl p-3 mt-2 space-y-2">
+      <p className="text-xs font-bold text-orange-700">Return Request — <span className="capitalize">{ret.status.replace('_', ' ')}</span></p>
+      <p className="text-xs text-gray-600"><strong>Reason:</strong> {ret.reason}</p>
+
+      {/* COD refund details */}
+      {isCod && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 space-y-0.5">
+          <p className="text-[10px] font-black text-amber-700 uppercase tracking-wide">Refund Details (COD)</p>
+          {rd ? (
+            rd.type === 'upi' ? (
+              <p className="text-xs text-gray-800 font-semibold">UPI: <span className="font-mono">{rd.upiId}</span></p>
+            ) : (
+              <>
+                <p className="text-xs text-gray-800"><strong>Account:</strong> <span className="font-mono">{rd.accountNumber}</span></p>
+                <p className="text-xs text-gray-800"><strong>IFSC:</strong> {rd.ifsc}</p>
+                <p className="text-xs text-gray-800"><strong>Name:</strong> {rd.accountName}</p>
+              </>
+            )
+          ) : (
+            <p className="text-xs text-amber-700 italic">No refund details provided — contact customer on {order.shippingAddress?.mobile || 'file'}</p>
+          )}
+        </div>
+      )}
+
       {ret.status === 'pending' && (
         <div className="space-y-2">
           <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Admin notes (optional)" className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none" />
@@ -87,7 +110,19 @@ function ReturnActionPanel({ order, onSave }: { order: any; onSave: (o: any) => 
         </div>
       )}
       {ret.status === 'approved' && (
-        <button onClick={() => handleAction('received')} disabled={loading} className="w-full py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg disabled:opacity-50">Mark Item Received → Refund</button>
+        <button onClick={() => handleAction('received')} disabled={loading} className="w-full py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg disabled:opacity-50">
+          Mark Item Received{isCod ? '' : ' → Refund'}
+        </button>
+      )}
+      {/* COD only: after marking received (or approved), admin manually transfers then marks done */}
+      {['received', 'approved'].includes(ret.status) && isCod && (
+        <div className="space-y-2">
+          <p className="text-xs text-amber-700 font-semibold">Transfer money to the details above, then mark refund sent.</p>
+          <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Transaction reference (optional)" className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none" />
+          <button onClick={() => handleAction('mark_refunded')} disabled={loading} className="w-full py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg disabled:opacity-50">
+            Mark Refund Sent ✓
+          </button>
+        </div>
       )}
     </div>
   );
@@ -116,13 +151,16 @@ function OrderModal({
   const [reason, setReason] = useState(order.cancellationReason ?? '');
   const [awb, setAwb]       = useState((order as any).awb ?? '');
   const [saving, setSaving] = useState(false);
+
+  // Sync local status when order prop updates (e.g. after ReturnActionPanel marks refunded)
+  useEffect(() => { setStatus(order.status); }, [order.status]);
   const [refreshing, setRefreshing] = useState(false);
   const [trackingHistory, setTrackingHistory] = useState<CourierEvent[]>((order as any).courierStatusHistory ?? []);
   const [courierStatus, setCourierStatus]     = useState((order as any).courierStatus ?? '');
   const [courierUpdatedAt, setCourierUpdatedAt] = useState((order as any).courierStatusUpdatedAt ?? '');
   const toast = useToast();
 
-  const showAwbField = ['packed', 'shipped', 'out_for_delivery', 'delivered'].includes(status);
+  const showAwbField = ['shipped', 'out_for_delivery', 'delivered'].includes(status);
   const hasAwb = !!(order as any).awb || !!awb.trim();
 
   const customer     = order.userId;
@@ -522,7 +560,10 @@ function OrderModal({
                 onChange={e => setStatus(e.target.value as MedicineOrderStatus)}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               >
-                {(Object.keys(STATUS) as MedicineOrderStatus[]).map(s => {
+                {(Object.keys(STATUS) as MedicineOrderStatus[]).filter(s => {
+                  if (!order.requiresPrescription && ['prescription_required', 'prescription_verified'].includes(s)) return false;
+                  return true;
+                }).map(s => {
                   const managed = ['return_requested', 'return_received', 'refunded'].includes(s);
                   return (
                     <option key={s} value={s} disabled={managed}>
@@ -653,7 +694,7 @@ export default function MedicineOrdersPage() {
 
   const totalOrders = Object.values(statusCounts).reduce((a, b) => a + b, 0);
   const delivered   = statusCounts['delivered'] ?? 0;
-  const inTransit   = (statusCounts['packed'] ?? 0) + (statusCounts['shipped'] ?? 0) + (statusCounts['out_for_delivery'] ?? 0);
+  const inTransit   = (statusCounts['shipped'] ?? 0) + (statusCounts['out_for_delivery'] ?? 0);
   const rxPending   = statusCounts['prescription_required'] ?? 0;
   const confirmed   = statusCounts['confirmed'] ?? 0;
 

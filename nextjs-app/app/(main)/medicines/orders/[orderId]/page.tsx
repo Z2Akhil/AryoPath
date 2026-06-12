@@ -16,7 +16,6 @@ import MedicineOrderReceipt from '@/components/orders/MedicineOrderReceipt';
 
 const MILESTONE_STEPS: { status: MedicineOrder['status']; label: string; icon: React.ReactNode }[] = [
   { status: 'confirmed',          label: 'Confirmed',        icon: <CheckCircle2 className="h-3 w-3" /> },
-  { status: 'packed',             label: 'Packed',           icon: <Package className="h-3 w-3" /> },
   { status: 'shipped',            label: 'Shipped',          icon: <Truck className="h-3 w-3" /> },
   { status: 'out_for_delivery',   label: 'Out for Delivery', icon: <MapPin className="h-3 w-3" /> },
   { status: 'delivered',          label: 'Delivered',        icon: <CheckCircle2 className="h-3 w-3" /> },
@@ -24,7 +23,7 @@ const MILESTONE_STEPS: { status: MedicineOrder['status']; label: string; icon: R
 
 const STATUS_RANK: Record<string, number> = {
   confirmed: 1, prescription_required: 1, prescription_verified: 1,
-  packed: 2, shipped: 3, out_for_delivery: 4, delivered: 5,
+  shipped: 2, out_for_delivery: 3, delivered: 4,
 };
 
 function getMilestoneIndex(status: string): number {
@@ -54,6 +53,11 @@ export default function MedicineOrderTrackingPage() {
   const [confirmReturn, setConfirmReturn]   = useState(false);
   const [returnReason, setReturnReason]     = useState('');
   const [submittingReturn, setSubmittingReturn] = useState(false);
+  const [refundType, setRefundType]         = useState<'upi' | 'bank'>('upi');
+  const [upiId, setUpiId]                   = useState('');
+  const [accountNumber, setAccountNumber]   = useState('');
+  const [ifsc, setIfsc]                     = useState('');
+  const [accountName, setAccountName]       = useState('');
 
   const handleCancelOrder = async () => {
     setCancelling(true);
@@ -77,13 +81,21 @@ export default function MedicineOrderTrackingPage() {
 
   const handleReturnRequest = async () => {
     if (!returnReason.trim()) return;
+    const isCod = order?.payment?.method === 'cod' || (order?.payment as any)?.status === 'cod_pending';
+    if (isCod && refundType === 'upi' && !upiId.trim()) { alert('Enter your UPI ID'); return; }
+    if (isCod && refundType === 'bank' && (!accountNumber.trim() || !ifsc.trim() || !accountName.trim())) { alert('Fill all bank details'); return; }
     setSubmittingReturn(true);
     const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const refundDetails = isCod
+      ? refundType === 'upi'
+        ? { type: 'upi', upiId: upiId.trim() }
+        : { type: 'bank', accountNumber: accountNumber.trim(), ifsc: ifsc.trim().toUpperCase(), accountName: accountName.trim() }
+      : undefined;
     try {
       const res = await fetch(`/api/orders/medicine/${orderId}/return`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ reason: returnReason }),
+        body: JSON.stringify({ reason: returnReason, ...(refundDetails ? { refundDetails } : {}) }),
       }).then(r => r.json());
       if (res.success) {
         const updated = await medicineOrderApi.getByOrderId(orderId);
@@ -404,7 +416,7 @@ export default function MedicineOrderTrackingPage() {
           })()}
 
           {/* Cancel order */}
-          {['confirmed','prescription_required','prescription_verified','packed'].includes(order.status) && (
+          {['confirmed','prescription_required','prescription_verified'].includes(order.status) && (
             <div className="mt-3">
               {confirmCancel ? (
                 <div className="border border-red-100 rounded-xl p-3 space-y-2">
@@ -439,6 +451,43 @@ export default function MedicineOrderTrackingPage() {
                     rows={3}
                     className="w-full text-xs border border-gray-200 rounded-lg p-2 resize-none focus:outline-none focus:ring-1 focus:ring-orange-400"
                   />
+
+                  {/* COD refund details */}
+                  {(order.payment?.method === 'cod' || (order.payment as any)?.status === 'cod_pending') && (
+                    <div className="space-y-2 pt-1">
+                      <p className="text-xs font-bold text-gray-700">Refund to:</p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setRefundType('upi')}
+                          className={`flex-1 py-1.5 text-xs font-bold rounded-lg border transition-colors ${refundType === 'upi' ? 'bg-orange-500 text-white border-orange-500' : 'border-gray-200 text-gray-600'}`}
+                        >UPI</button>
+                        <button
+                          type="button"
+                          onClick={() => setRefundType('bank')}
+                          className={`flex-1 py-1.5 text-xs font-bold rounded-lg border transition-colors ${refundType === 'bank' ? 'bg-orange-500 text-white border-orange-500' : 'border-gray-200 text-gray-600'}`}
+                        >Bank Account</button>
+                      </div>
+                      {refundType === 'upi' ? (
+                        <input
+                          value={upiId}
+                          onChange={e => setUpiId(e.target.value)}
+                          placeholder="yourname@upi"
+                          className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                        />
+                      ) : (
+                        <div className="space-y-1.5">
+                          <input value={accountName} onChange={e => setAccountName(e.target.value)} placeholder="Account holder name"
+                            className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-orange-400" />
+                          <input value={accountNumber} onChange={e => setAccountNumber(e.target.value)} placeholder="Account number"
+                            className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-orange-400" />
+                          <input value={ifsc} onChange={e => setIfsc(e.target.value.toUpperCase())} placeholder="IFSC code"
+                            className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-orange-400 font-mono" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex gap-2">
                     <button onClick={handleReturnRequest} disabled={submittingReturn || !returnReason.trim()} className="flex-1 py-2 bg-orange-500 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1 disabled:opacity-50">
                       {submittingReturn ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} Submit Return

@@ -31,7 +31,7 @@ const adminMedicineOrderApi = {
     return res.data;
   },
 
-  returnAction: async (orderId: string, action: 'approve' | 'reject' | 'received', adminNotes?: string): Promise<{ success: boolean; order: MedicineOrder }> => {
+  returnAction: async (orderId: string, action: 'approve' | 'reject' | 'received' | 'mark_refunded', adminNotes?: string): Promise<{ success: boolean; order: MedicineOrder }> => {
     const res = await adminAxios.post(`/admin/orders/medicine/${orderId}/return-action`, { action, adminNotes });
     return res.data;
   },

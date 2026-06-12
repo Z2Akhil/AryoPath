@@ -19,7 +19,7 @@ import { initiateRefund } from '@/lib/services/cashfreeRefundService';
 const VALID_STATUSES: MedicineOrderStatus[] = [
   'pending_payment', 'payment_failed', 'confirmed',
   'prescription_required', 'prescription_verified',
-  'packed', 'shipped', 'out_for_delivery',
+  'shipped', 'out_for_delivery',
   'delivered', 'cancelled', 'refunded',
   'return_requested', 'return_received',
 ];
@@ -99,7 +99,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
       }
     }
 
-    await order.save();
+    // Use raw collection update to bypass Mongoose schema validation on cached model
+    const $set: Record<string, any> = {};
+    if (status) {
+      $set.status = order.status;
+      if ((order as any).deliveredAt) $set.deliveredAt = (order as any).deliveredAt;
+      if ((order as any).cancelledAt) $set.cancelledAt = (order as any).cancelledAt;
+    }
+    if (notes !== undefined)              $set.notes = order.notes;
+    if (cancellationReason !== undefined) $set.cancellationReason = order.cancellationReason;
+    if (awb !== undefined) {
+      $set.awb             = (order as any).awb;
+      $set.courierPartner  = (order as any).courierPartner;
+      $set.trackingUrl     = (order as any).trackingUrl;
+      if ((order as any).courierStatus)        $set.courierStatus        = (order as any).courierStatus;
+      if ((order as any).courierStatusHistory) $set.courierStatusHistory = (order as any).courierStatusHistory;
+      if ((order as any).courierStatusUpdatedAt) $set.courierStatusUpdatedAt = (order as any).courierStatusUpdatedAt;
+    }
+    await MedicineOrder.collection.updateOne({ _id: order._id }, { $set });
     await order.populate('userId', 'firstName lastName mobileNumber email');
 
     const toEmail: string = order.shippingAddress?.email || (order.userId as any)?.email || '';

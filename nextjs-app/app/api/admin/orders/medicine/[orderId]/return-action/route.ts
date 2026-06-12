@@ -22,14 +22,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   const { orderId } = await params;
   const { action, adminNotes = '' } = await req.json();
 
-  if (!['approve', 'reject', 'received'].includes(action))
+  console.log(`[return-action] orderId=${orderId} action=${action}`);
+
+  if (!['approve', 'reject', 'received', 'mark_refunded'].includes(action))
     return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
 
   const order = await MedicineOrder.findOne({ orderId });
-  if (!order) return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+  console.log(`[return-action] found=${!!order} status=${order?.status}`);
 
-  if (!['return_requested'].includes(order.status) && action !== 'received')
-    return NextResponse.json({ success: false, error: 'Order is not in return_requested state' }, { status: 400 });
+  if (!order) return NextResponse.json({ success: false, error: 'Order not found', orderId }, { status: 404 });
+
+  if (!['return_requested'].includes(order.status) && !['received', 'mark_refunded'].includes(action))
+    return NextResponse.json({ success: false, error: `Order status is '${order.status}', expected return_requested` }, { status: 400 });
 
   const ret = (order as any).returnRequest;
   if (!ret) return NextResponse.json({ success: false, error: 'No return request found' }, { status: 400 });
@@ -83,8 +87,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
         order.grandTotal,
         'Return received — full refund'
       );
-      await MedicineOrder.collection.updateOne(
-        { _id: order._id },
+      const onlineReceived = await MedicineOrder.findOneAndUpdate(
+        { orderId },
         { $set: {
           'returnRequest.status':      'received',
           'returnRequest.receivedAt':  new Date(),
@@ -94,15 +98,50 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
           'payment.refundAmount':      order.grandTotal,
           'payment.refundStatus':      status === 'failed' ? 'failed' : 'initiated',
           'payment.refundInitiatedAt': new Date(),
-        }}
-      );
+        }},
+        { new: true }
+      ).populate('userId', 'firstName lastName mobileNumber email').lean();
       getMedicineOrderEmail(order).then(email => sendMedicineRefundInitiatedEmail(order, email)).catch(console.error);
+      return NextResponse.json({ success: true, order: onlineReceived });
     } else {
-      await order.save();
+      const receivedOrder = await MedicineOrder.findOneAndUpdate(
+        { orderId },
+        { $set: {
+          status: 'return_received',
+          'returnRequest.status':     'received',
+          'returnRequest.receivedAt': new Date(),
+          ...(adminNotes ? { 'returnRequest.adminNotes': adminNotes } : {}),
+        }},
+        { new: true }
+      ).populate('userId', 'firstName lastName mobileNumber email').lean();
+      return NextResponse.json({ success: true, order: receivedOrder });
     }
-    // early return to avoid double save below
-    await order.populate('userId', 'firstName lastName mobileNumber email');
-    return NextResponse.json({ success: true, order });
+  }
+
+  // COD return: admin manually transferred money → mark as refunded
+  if (action === 'mark_refunded') {
+    const payment = order.payment as any;
+    if (payment?.method !== 'cod' && payment?.status !== 'cod_pending')
+      return NextResponse.json({ success: false, error: 'mark_refunded is only for COD orders' }, { status: 400 });
+    if (!['return_requested', 'return_received'].includes(order.status))
+      return NextResponse.json({ success: false, error: 'Order is not in a returnable state' }, { status: 400 });
+
+    const updated = await MedicineOrder.findOneAndUpdate(
+      { orderId },
+      { $set: {
+        status:                       'refunded',
+        'returnRequest.status':       'refund_sent',
+        'returnRequest.refundSentAt': new Date(),
+        'returnRequest.receivedAt':   (order as any).returnRequest?.receivedAt ?? new Date(),
+        ...(adminNotes ? { 'returnRequest.adminNotes': adminNotes } : {}),
+      }},
+      { new: true }
+    ).populate('userId', 'firstName lastName mobileNumber email').lean();
+
+    console.log(`[mark_refunded] orderId=${orderId} updated.status=${(updated as any)?.status}`);
+
+    getMedicineOrderEmail(order).then(email => sendMedicineRefundInitiatedEmail(order, email)).catch(console.error);
+    return NextResponse.json({ success: true, order: updated });
   }
 
   await order.save();

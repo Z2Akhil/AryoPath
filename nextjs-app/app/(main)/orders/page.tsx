@@ -24,7 +24,6 @@ const MED_STATUS_CFG: Record<MedicineOrderStatus, { label: string; color: string
     confirmed:             { label: 'Confirmed',           color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-200',      icon: <CheckCircle className="h-3 w-3" /> },
     prescription_required: { label: 'Rx Required',        color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200',  icon: <AlertCircle className="h-3 w-3" /> },
     prescription_verified: { label: 'Rx Verified',        color: 'text-amber-700',  bg: 'bg-amber-50 border-amber-200',    icon: <CheckCircle className="h-3 w-3" /> },
-    packed:                { label: 'Packed',              color: 'text-purple-700', bg: 'bg-purple-50 border-purple-200',  icon: <Package className="h-3 w-3" /> },
     shipped:               { label: 'Shipped',             color: 'text-indigo-700', bg: 'bg-indigo-50 border-indigo-200',  icon: <Truck className="h-3 w-3" /> },
     out_for_delivery:      { label: 'Out for Delivery',   color: 'text-cyan-700',   bg: 'bg-cyan-50 border-cyan-200',      icon: <MapPin className="h-3 w-3" /> },
     delivered:             { label: 'Delivered',           color: 'text-green-700',  bg: 'bg-green-50 border-green-200',    icon: <CheckCircle className="h-3 w-3" /> },
@@ -75,7 +74,7 @@ function MedicineOrderCard({ order }: { order: MedicineOrder }) {
                 className="shrink-0 flex items-center gap-1.5 px-4 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-bold rounded-xl border border-teal-200 transition-colors"
             >
                 <Truck className="h-3.5 w-3.5" />
-                {['shipped', 'out_for_delivery', 'packed'].includes(order.status) ? 'Track' : 'View'}
+                {['shipped', 'out_for_delivery'].includes(order.status) ? 'Track' : 'View'}
             </Link>
         </div>
     );

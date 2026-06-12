@@ -8,7 +8,6 @@ export type MedicineOrderStatus =
   | 'confirmed'
   | 'prescription_required'
   | 'prescription_verified'
-  | 'packed'
   | 'shipped'
   | 'out_for_delivery'
   | 'delivered'
@@ -23,7 +22,6 @@ export const ORDER_STATUS_LABELS: Record<MedicineOrderStatus, string> = {
   confirmed: 'Order Confirmed',
   prescription_required: 'Prescription Required',
   prescription_verified: 'Prescription Verified',
-  packed: 'Packed',
   shipped: 'Shipped',
   out_for_delivery: 'Out for Delivery',
   delivered: 'Delivered',
@@ -96,13 +94,23 @@ export interface MedicineOrderPayment {
   refundCompletedAt?: string;
 }
 
+export interface ReturnRefundDetails {
+  type: 'upi' | 'bank';
+  upiId?: string;
+  accountNumber?: string;
+  ifsc?: string;
+  accountName?: string;
+}
+
 export interface ReturnRequest {
   requestedAt?: string;
   reason: string;
-  status: 'pending' | 'approved' | 'rejected' | 'received';
+  status: 'pending' | 'approved' | 'rejected' | 'received' | 'refund_sent';
   approvedAt?: string;
   receivedAt?: string;
   adminNotes?: string;
+  refundDetails?: ReturnRefundDetails;
+  refundSentAt?: string;
 }
 
 // ─── Main Order Interface ──────────────────────────────────────────────────────
