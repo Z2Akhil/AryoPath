@@ -95,30 +95,35 @@ function PrintableReceipt({
 
   return (
     <>
-      {/* Print styles — injected into <head> via style tag */}
+      {/* Print styles */}
       <style>{`
         @media print {
-          body > * { display: none !important; }
-          #lab-receipt-print { display: block !important; position: fixed; inset: 0; background: white; z-index: 9999; }
-          .no-print { display: none !important; }
+          body * { visibility: hidden; }
+          #receipt-printable, #receipt-printable * { visibility: visible; }
+          #receipt-actionbar { display: none !important; }
+          #receipt-printable {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            background: white;
+            padding: 20px;
+          }
           @page { margin: 12mm; size: A4; }
         }
       `}</style>
 
       {/* Overlay */}
-      <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center overflow-auto py-8 no-print" onClick={onClose} />
+      <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center overflow-auto py-8" onClick={onClose} />
 
       {/* Receipt */}
-      <div
-        id="lab-receipt-print"
-        className="fixed inset-0 z-50 flex items-start justify-center overflow-auto py-8 pointer-events-none"
-      >
+      <div className="fixed inset-0 z-50 flex items-start justify-center overflow-auto py-8 pointer-events-none">
         <div
           className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl pointer-events-auto"
           onClick={e => e.stopPropagation()}
         >
-          {/* Action bar */}
-          <div className="no-print flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          {/* Action bar — hidden on print via visibility rule */}
+          <div id="receipt-actionbar" className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <p className="text-sm font-bold text-gray-600">Receipt Preview</p>
             <div className="flex items-center gap-3">
               <button
@@ -133,8 +138,8 @@ function PrintableReceipt({
             </div>
           </div>
 
-          {/* Receipt body */}
-          <div className="p-8 space-y-6" style={{ fontFamily: 'Georgia, serif' }}>
+          {/* Receipt body — this is what prints */}
+          <div id="receipt-printable" className="p-8 space-y-6" style={{ fontFamily: 'Georgia, serif' }}>
 
             {/* Header */}
             <div className="border-b-2 border-gray-200 pb-5">
