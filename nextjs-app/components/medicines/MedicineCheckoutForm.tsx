@@ -39,6 +39,7 @@ export default function MedicineCheckoutForm() {
   const [paymentMethod, setPaymentMethod] = useState<'online' | 'cod'>('online');
 
   const medicineItems = medicineCart;
+  const hasRxItems = medicineItems.some(i => i.prescriptionRequired);
 
   const subtotal       = medicineItems.reduce((s, i) => s + i.mrp * i.quantity, 0);
   const totalDiscount  = medicineItems.reduce((s, i) => s + (i.mrp - i.offerPrice) * i.quantity, 0);
@@ -214,20 +215,22 @@ export default function MedicineCheckoutForm() {
         </div>
       </div>
 
-      {/* Prescription Upload */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <div className="flex items-center gap-2 mb-2">
-          <FileText className="h-5 w-5 text-orange-500" />
-          <h2 className="text-base font-extrabold text-gray-900">Prescription</h2>
-          <span className="text-[10px] font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100">
-            Required for Rx medicines
-          </span>
+      {/* Prescription Upload — only shown when cart has Rx items */}
+      {hasRxItems && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <FileText className="h-5 w-5 text-orange-500" />
+            <h2 className="text-base font-extrabold text-gray-900">Prescription</h2>
+            <span className="text-[10px] font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100">
+              Required for Rx medicines
+            </span>
+          </div>
+          <p className="text-xs text-gray-400 mb-4">
+            Upload a valid prescription from a registered medical practitioner. Accepted formats: JPG, PNG, PDF (max 10MB each).
+          </p>
+          <PrescriptionUpload value={prescriptions} onChange={setPrescriptions} />
         </div>
-        <p className="text-xs text-gray-400 mb-4">
-          Upload a valid prescription from a registered medical practitioner. Accepted formats: JPG, PNG, PDF (max 10MB each).
-        </p>
-        <PrescriptionUpload value={prescriptions} onChange={setPrescriptions} />
-      </div>
+      )}
 
       {/* Order Summary */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
@@ -273,12 +276,14 @@ export default function MedicineCheckoutForm() {
       </div>
 
       {/* Warning for Rx */}
-      <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-100 rounded-2xl">
-        <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-        <p className="text-xs font-medium text-amber-700">
-          Orders containing prescription medicines will be verified before dispatch. Delivery may be delayed if prescription is invalid.
-        </p>
-      </div>
+      {hasRxItems && (
+        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-100 rounded-2xl">
+          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <p className="text-xs font-medium text-amber-700">
+            Orders containing prescription medicines will be verified before dispatch. Delivery may be delayed if prescription is invalid.
+          </p>
+        </div>
+      )}
 
       {/* Payment Method */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">

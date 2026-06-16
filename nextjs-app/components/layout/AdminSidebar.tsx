@@ -7,7 +7,7 @@ import {
     Home, BarChart3, Package, Users, Bell,
     Settings, UserCircle, ChevronLeft, ChevronRight,
     ChevronDown, ChevronUp, Stethoscope, Layers, UserCog, Star,
-    ClipboardList,
+    ClipboardList, Printer,
 } from 'lucide-react';
 import { useAdminAuth } from '@/providers/AdminAuthProvider';
 import { PERMISSIONS } from '@/lib/constants/permissions';
@@ -254,6 +254,12 @@ const AdminSidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, analyticsOp
                             {!collapsed && <span className="ml-3">Notifications</span>}
                         </Link>
                     )}
+
+                    {/* Lab Receipt Generator */}
+                    <Link href="/admin/lab-receipt" className={navLinkClass('/admin/lab-receipt')} title="Lab Receipt">
+                        <Printer className="h-5 w-5" />
+                        {!collapsed && <span className="ml-3">Lab Receipt</span>}
+                    </Link>
 
                     {/* Services — admin + staff with SERVICES_VIEW */}
                     {showServices && (

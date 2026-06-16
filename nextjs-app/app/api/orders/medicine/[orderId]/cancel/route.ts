@@ -74,6 +74,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
     }
   }
 
+  // Stamp reason on in-memory order so email template uses it (DB already updated above)
+  (order as any).cancellationReason = reason;
   getMedicineOrderEmail(order).then(email => sendMedicineCancelledEmail(order, email)).catch(console.error);
 
   return NextResponse.json({ success: true, refundInitiated });

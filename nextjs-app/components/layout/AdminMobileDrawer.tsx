@@ -197,6 +197,11 @@ const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
                                 </Link>
                             )}
 
+                            {/* Lab Receipt Generator */}
+                            <Link href="/admin/lab-receipt" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
+                                Lab Receipt
+                            </Link>
+
                             {/* Services — admin + staff with SERVICES_VIEW */}
                             {showServices && (
                                 <Link href="/admin/settings/services" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">

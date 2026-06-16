@@ -47,7 +47,7 @@ export async function POST(
                     userId: recipient.userId,
                     email: recipient.email,
                     success: result.success,
-                    messageId: result.messageId,
+                    messageId: (result as any).messageId,
                     error: result.error
                 };
             })
