@@ -82,6 +82,7 @@ export default function MedicineDetailPage() {
     addMedicineToCart({
       slug: medicine.slug, name: medicine.name,
       mrp: medicine.mrp, offerPrice: medicine.offerPrice, type: medicine.type,
+      prescriptionRequired: medicine.prescriptionRequired ?? false,
     });
     toast.success('Added to cart');
   };

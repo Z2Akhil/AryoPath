@@ -45,6 +45,7 @@ export default function MedicineCard({ medicine }: MedicineCardProps) {
       mrp: medicine.mrp,
       offerPrice: medicine.offerPrice,
       type: medicine.type,
+      prescriptionRequired: medicine.prescriptionRequired ?? false,
     });
     toast.success('Added to cart');
   };
