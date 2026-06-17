@@ -160,8 +160,12 @@ function OrderModal({
   const [courierUpdatedAt, setCourierUpdatedAt] = useState((order as any).courierStatusUpdatedAt ?? '');
   const toast = useToast();
 
+  const [shipping, setShipping] = useState(false);
+  const [shipWeight, setShipWeight] = useState('500');
+
   const showAwbField = ['shipped', 'out_for_delivery', 'delivered'].includes(status);
   const hasAwb = !!(order as any).awb || !!awb.trim();
+  const canShip = ['confirmed', 'prescription_verified'].includes(order.status) && !(order as any).awb;
 
   const customer     = order.userId;
   const customerName = `${customer?.firstName ?? ''} ${customer?.lastName ?? ''}`.trim() || 'Unknown';
@@ -190,6 +194,28 @@ function OrderModal({
       toast.error('Failed to update order');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleShip = async () => {
+    setShipping(true);
+    try {
+      const res = await adminMedicineOrderApi.shipOrder(order.orderId, {
+        weightGrams: Number(shipWeight) || 500,
+        schedulePickup: true,
+      });
+      if (res.success) {
+        toast.success(`Shipment created · AWB ${res.awb}`);
+        setAwb(res.awb ?? '');
+        setStatus('shipped');
+        onSave({ ...order, ...(res.order ?? {}), awb: res.awb, status: 'shipped' } as any);
+      } else {
+        toast.error(res.error || 'Failed to create shipment');
+      }
+    } catch (e: any) {
+      toast.error(e?.response?.data?.error || 'Failed to create shipment');
+    } finally {
+      setShipping(false);
     }
   };
 
@@ -573,6 +599,38 @@ function OrderModal({
                 })}
               </select>
             </div>
+
+            {canShip && (
+              <div className="border border-teal-200 bg-teal-50/50 rounded-xl p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-teal-600" />
+                  <p className="text-xs font-black text-teal-700 uppercase tracking-wide">Create Delhivery Shipment</p>
+                </div>
+                <p className="text-[11px] text-gray-500">
+                  Generates AWB automatically, marks order shipped, schedules pickup &amp; emails the customer.
+                </p>
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <label className="text-[10px] font-bold text-gray-400 block mb-1">Weight (grams)</label>
+                    <input
+                      type="number"
+                      value={shipWeight}
+                      onChange={e => setShipWeight(e.target.value)}
+                      min={50}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+                    />
+                  </div>
+                  <button
+                    onClick={handleShip}
+                    disabled={shipping}
+                    className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors"
+                  >
+                    {shipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />}
+                    {shipping ? 'Creating…' : 'Ship Order'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {showAwbField && (
               <div>

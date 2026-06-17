@@ -5,7 +5,7 @@ import { adminOrStaffAuth } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/constants/permissions';
 import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
-import { trackShipment } from '@/lib/services/delhiveryService';
+import { trackShipment, cancelShipment } from '@/lib/services/delhiveryService';
 import type { MedicineOrderStatus } from '@/types/medicineOrder';
 import {
   sendMedicineConfirmedEmail,
@@ -126,6 +126,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
 
     if (status === 'cancelled') {
       sendMedicineCancelledEmail(order, toEmail).catch(console.error);
+
+      // If a Delhivery shipment was already created, cancel it too
+      if ((order as any).awb) {
+        const cancelRes = await cancelShipment((order as any).awb);
+        if (!cancelRes.success) {
+          console.warn(`[Ship] Delhivery cancel failed for AWB ${(order as any).awb}: ${cancelRes.error}`);
+        }
+      }
 
       // Auto-refund if paid online and no refund already in progress
       const payment = order.payment as any;

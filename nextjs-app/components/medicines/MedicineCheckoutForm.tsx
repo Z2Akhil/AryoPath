@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { CreditCard, Loader2, MapPin, Phone, User, AlertTriangle, FileText, Truck, Tag, Lock, Banknote } from 'lucide-react';
+import { CreditCard, Loader2, MapPin, Phone, User, AlertTriangle, FileText, Truck, Tag, Lock, Banknote, CheckCircle2, XCircle } from 'lucide-react';
 import { useCart } from '@/providers/CartProvider';
 import { useSiteSettings } from '@/providers/SiteSettingsProvider';
 import { useToast } from '@/providers/ToastProvider';
@@ -49,13 +49,40 @@ export default function MedicineCheckoutForm() {
   const deliveryCharge = totalAmount >= FREE_DELIVERY_THRESHOLD ? 0 : courierCharge;
   const grandTotal     = totalAmount + deliveryCharge;
 
-  const { register, handleSubmit, formState: { errors } } = useForm<CheckoutAddressValues>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<CheckoutAddressValues>({
     resolver: zodResolver(checkoutAddressSchema) as any,
   });
+
+  // ── Delhivery pincode serviceability check ──
+  const pincode = watch('pincode');
+  const [pinStatus, setPinStatus] = useState<'idle' | 'checking' | 'ok' | 'no'>('idle');
+
+  useEffect(() => {
+    const pin = (pincode ?? '').trim();
+    if (!/^\d{6}$/.test(pin)) { setPinStatus('idle'); return; }
+
+    let cancelled = false;
+    setPinStatus('checking');
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/delhivery/pincode/${pin}`).then(r => r.json());
+        if (cancelled) return;
+        setPinStatus(res.serviceable ? 'ok' : 'no');
+      } catch {
+        if (!cancelled) setPinStatus('idle'); // network error → don't block
+      }
+    }, 500); // debounce typing
+
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [pincode]);
 
   const onSubmit = async (addressData: CheckoutAddressValues) => {
     if (medicineItems.length === 0) {
       toast.error('Your cart is empty');
+      return;
+    }
+    if (pinStatus === 'no') {
+      toast.error('We don\'t deliver to this pincode yet. Please use a serviceable address.');
       return;
     }
 
@@ -190,8 +217,25 @@ export default function MedicineCheckoutForm() {
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
               Pincode <span className="text-red-500">*</span>
             </label>
-            <input {...register('pincode')} placeholder="110001" maxLength={6} className={field} />
+            <div className="relative">
+              <input {...register('pincode')} placeholder="110001" maxLength={6} className={`${field} pr-10`} />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {pinStatus === 'checking' && <Loader2 className="h-4 w-4 text-gray-400 animate-spin" />}
+                {pinStatus === 'ok'  && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                {pinStatus === 'no'  && <XCircle className="h-4 w-4 text-red-500" />}
+              </div>
+            </div>
             {errors.pincode && <p className="text-xs text-red-500 mt-1">{errors.pincode.message}</p>}
+            {pinStatus === 'ok' && (
+              <p className="text-xs text-green-600 font-semibold mt-1 flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" /> Delivery available at this pincode
+              </p>
+            )}
+            {pinStatus === 'no' && (
+              <p className="text-xs text-red-500 font-semibold mt-1">
+                Sorry, we don&apos;t deliver to this pincode yet.
+              </p>
+            )}
           </div>
 
           <div>
@@ -340,11 +384,13 @@ export default function MedicineCheckoutForm() {
       {/* Submit button */}
       <button
         type="submit"
-        disabled={processing || medicineItems.length === 0}
+        disabled={processing || medicineItems.length === 0 || pinStatus === 'no' || pinStatus === 'checking'}
         className="w-full flex items-center justify-center gap-3 py-4 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-2xl text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-200"
       >
         {processing
           ? <><Loader2 className="h-5 w-5 animate-spin" /> Processing...</>
+          : pinStatus === 'no'
+          ? <><AlertTriangle className="h-5 w-5" /> Pincode not serviceable</>
           : paymentMethod === 'cod'
           ? <><Banknote className="h-5 w-5" /> Place Order · Pay ₹{grandTotal.toFixed(0)} on Delivery</>
           : <><CreditCard className="h-5 w-5" /> Pay ₹{grandTotal.toFixed(0)} · Secure Checkout</>

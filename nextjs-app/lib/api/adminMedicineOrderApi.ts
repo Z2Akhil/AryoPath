@@ -35,6 +35,17 @@ const adminMedicineOrderApi = {
     const res = await adminAxios.post(`/admin/orders/medicine/${orderId}/return-action`, { action, adminNotes });
     return res.data;
   },
+
+  shipOrder: async (orderId: string, data?: { weightGrams?: number; schedulePickup?: boolean }): Promise<{
+    success: boolean;
+    awb?: string;
+    trackingUrl?: string;
+    order?: MedicineOrder;
+    error?: string;
+  }> => {
+    const res = await adminAxios.post(`/admin/orders/medicine/${orderId}/ship`, data ?? {});
+    return res.data;
+  },
 };
 
 export default adminMedicineOrderApi;

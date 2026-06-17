@@ -50,6 +50,8 @@ export default function MedicineOrderTrackingPage() {
   // Cancel / Return state
   const [confirmCancel, setConfirmCancel]   = useState(false);
   const [cancelling, setCancelling]         = useState(false);
+  const [cancelReason, setCancelReason]     = useState('');
+  const [cancelReasonOther, setCancelReasonOther] = useState('');
   const [confirmReturn, setConfirmReturn]   = useState(false);
   const [returnReason, setReturnReason]     = useState('');
   const [submittingReturn, setSubmittingReturn] = useState(false);
@@ -60,18 +62,22 @@ export default function MedicineOrderTrackingPage() {
   const [accountName, setAccountName]       = useState('');
 
   const handleCancelOrder = async () => {
+    const finalReason = (cancelReason === 'Other' ? cancelReasonOther.trim() : cancelReason).trim();
+    if (!finalReason) { alert('Please select a reason for cancellation'); return; }
     setCancelling(true);
     const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     try {
       const res = await fetch(`/api/orders/medicine/${orderId}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ reason: 'Cancelled by customer' }),
+        body: JSON.stringify({ reason: finalReason }),
       }).then(r => r.json());
       if (res.success) {
         const updated = await medicineOrderApi.getByOrderId(orderId);
         if (updated.success) setOrder(updated.data);
         setConfirmCancel(false);
+        setCancelReason('');
+        setCancelReasonOther('');
       } else {
         alert(res.error || 'Failed to cancel order');
       }
@@ -415,17 +421,45 @@ export default function MedicineOrderTrackingPage() {
             );
           })()}
 
-          {/* Cancel order */}
-          {['confirmed','prescription_required','prescription_verified'].includes(order.status) && (
+          {/* Cancel order — pre-shipment always; shipped only while courier hasn't picked it up yet */}
+          {(() => {
+            const cs = ((order as any).courierStatus ?? '').toLowerCase().trim();
+            const notYetPicked = cs === '' || cs === 'manifested';
+            return ['confirmed','prescription_required','prescription_verified'].includes(order.status)
+              || (order.status === 'shipped' && notYetPicked);
+          })() && (
             <div className="mt-3">
               {confirmCancel ? (
                 <div className="border border-red-100 rounded-xl p-3 space-y-2">
-                  <p className="text-xs text-gray-600">Cancel this order? A refund will be initiated if you paid online.</p>
+                  <p className="text-xs text-gray-600 font-medium">Why are you cancelling this order?</p>
+                  <select
+                    value={cancelReason}
+                    onChange={e => setCancelReason(e.target.value)}
+                    className="w-full text-xs border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-red-400 bg-white"
+                  >
+                    <option value="" disabled>Select a reason…</option>
+                    <option value="Ordered by mistake">Ordered by mistake</option>
+                    <option value="Found a better price elsewhere">Found a better price elsewhere</option>
+                    <option value="Delivery is taking too long">Delivery is taking too long</option>
+                    <option value="No longer need the item">No longer need the item</option>
+                    <option value="Wrong item / quantity selected">Wrong item / quantity selected</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  {cancelReason === 'Other' && (
+                    <textarea
+                      value={cancelReasonOther}
+                      onChange={e => setCancelReasonOther(e.target.value)}
+                      placeholder="Tell us the reason…"
+                      rows={2}
+                      className="w-full text-xs border border-gray-200 rounded-lg p-2 resize-none focus:outline-none focus:ring-1 focus:ring-red-400"
+                    />
+                  )}
+                  <p className="text-xs text-gray-500">A refund will be initiated if you paid online.</p>
                   <div className="flex gap-2">
-                    <button onClick={handleCancelOrder} disabled={cancelling} className="flex-1 py-2 bg-red-600 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1">
+                    <button onClick={handleCancelOrder} disabled={cancelling} className="flex-1 py-2 bg-red-600 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1 disabled:opacity-50">
                       {cancelling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />} Yes, Cancel
                     </button>
-                    <button onClick={() => setConfirmCancel(false)} className="flex-1 py-2 border border-gray-200 text-gray-600 text-xs font-bold rounded-lg">Keep Order</button>
+                    <button onClick={() => { setConfirmCancel(false); setCancelReason(''); setCancelReasonOther(''); }} className="flex-1 py-2 border border-gray-200 text-gray-600 text-xs font-bold rounded-lg">Keep Order</button>
                   </div>
                 </div>
               ) : (

@@ -3,13 +3,22 @@ import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import { initiateRefund } from '@/lib/services/cashfreeRefundService';
+import { cancelShipment } from '@/lib/services/delhiveryService';
 import {
   getMedicineOrderEmail,
   sendMedicineCancelledEmail,
   sendMedicineRefundInitiatedEmail,
 } from '@/lib/services/transactionalEmailService';
 
-const CANCELLABLE_STATUSES = ['confirmed', 'prescription_required', 'prescription_verified'];
+// Pre-shipment statuses — always cancellable.
+const PRE_SHIP_STATUSES = ['confirmed', 'prescription_required', 'prescription_verified'];
+
+// A shipped order is still cancellable ONLY while Delhivery hasn't picked it up yet.
+// Delhivery reports its own courier status; '' (just created) or 'Manifested' = not picked.
+function isNotYetPicked(courierStatus?: string): boolean {
+  const s = (courierStatus ?? '').toLowerCase().trim();
+  return s === '' || s === 'manifested';
+}
 
 function getUserId(req: NextRequest): string | null {
   const token = req.headers.get('authorization')?.replace('Bearer', '').trim();
@@ -31,21 +40,53 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   const order = await MedicineOrder.findOne({ orderId, userId });
   if (!order) return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
 
-  if (!CANCELLABLE_STATUSES.includes(order.status))
+  const courierStatus = (order as any).courierStatus as string | undefined;
+  const awb           = (order as any).awb as string | undefined;
+
+  const isPreShip          = PRE_SHIP_STATUSES.includes(order.status);
+  const isShippedCancelable = order.status === 'shipped' && isNotYetPicked(courierStatus);
+
+  if (!isPreShip && !isShippedCancelable)
     return NextResponse.json({
       success: false,
       error: 'Order cannot be cancelled at this stage. If shipped, you may request a return after delivery.',
     }, { status: 400 });
 
-  // Atomically claim cancellation — prevents race condition on double-submit
+  // ── For a shipped order with a real AWB, cancel the Delhivery shipment FIRST.
+  // If Delhivery can't cancel (already picked up), abort BEFORE touching status/refund.
+  if (order.status === 'shipped' && awb) {
+    const cancelRes = await cancelShipment(awb);
+    if (!cancelRes.success) {
+      console.warn(`[Cancel] Delhivery cancel failed for AWB ${awb}: ${cancelRes.error}`);
+      return NextResponse.json({
+        success: false,
+        error: 'This order has already been picked up by the courier and can no longer be cancelled. You can return it after delivery.',
+      }, { status: 409 });
+    }
+  }
+
+  // ── Atomically claim cancellation — prevents race (double-submit / webhook flipping status).
+  // Filter matches exactly the condition that made the order cancellable above.
+  const claimFilter: any = { _id: order._id };
+  if (isPreShip) {
+    claimFilter.status = { $in: PRE_SHIP_STATUSES };
+  } else {
+    claimFilter.status = 'shipped';
+    claimFilter.$or = [
+      { courierStatus: { $in: ['', null] } },
+      { courierStatus: { $regex: /^manifested$/i } },
+    ];
+  }
+
   const claimed = await MedicineOrder.collection.findOneAndUpdate(
-    { _id: order._id, status: { $in: CANCELLABLE_STATUSES } },
+    claimFilter,
     { $set: { status: 'cancelled', cancelledAt: new Date(), cancellationReason: reason } }
   );
   if (!claimed) return NextResponse.json({ success: false, error: 'Order already processed' }, { status: 409 });
 
+  // ── Refund (unchanged logic) — only for paid online orders.
   let refundInitiated = false;
-  const payment = (order.payment as any);
+  const payment  = (order.payment as any);
   const isPaid   = payment?.status === 'paid' && payment?.cfOrderId;
   const noRefund = payment?.refundId && payment?.refundStatus !== 'failed'; // allow retry on failed refunds
 
