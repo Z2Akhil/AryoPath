@@ -19,7 +19,8 @@ interface ThyrocareProduct {
 const syncLocks: Record<string, boolean> = {};
 
 export async function GET(req: NextRequest) {
-    const auth = await adminOrStaffAuth(req, PERMISSIONS.PRODUCTS_VIEW);
+    // Lab receipt staff also need to read the catalog (products + prices) to build receipts.
+    const auth = await adminOrStaffAuth(req, [PERMISSIONS.PRODUCTS_VIEW, PERMISSIONS.LAB_RECEIPT_VIEW]);
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
     }

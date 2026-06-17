@@ -50,6 +50,7 @@ const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
     const showNotifications = isAdmin || hasPermission(PERMISSIONS.NOTIFICATIONS_VIEW);
     const showHomepage      = isAdmin || hasPermission(PERMISSIONS.HOMEPAGE_EDIT);
     const showServices      = isAdmin || hasPermission(PERMISSIONS.SERVICES_VIEW);
+    const showLabReceipt    = isAdmin || hasPermission(PERMISSIONS.LAB_RECEIPT_VIEW);
 
     return (
         <>
@@ -197,10 +198,12 @@ const AdminMobileDrawer: React.FC<MobileDrawerProps> = ({
                                 </Link>
                             )}
 
-                            {/* Lab Receipt Generator */}
-                            <Link href="/admin/lab-receipt" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
-                                Lab Receipt
-                            </Link>
+                            {/* Lab Receipt Generator — admin + staff with LAB_RECEIPT_VIEW */}
+                            {showLabReceipt && (
+                                <Link href="/admin/lab-receipt" onClick={onClose} className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium">
+                                    Lab Receipt
+                                </Link>
+                            )}
 
                             {/* Services — admin + staff with SERVICES_VIEW */}
                             {showServices && (

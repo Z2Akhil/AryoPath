@@ -17,10 +17,6 @@ const FAQS = [
     a: 'Yes, our doctors issue valid digital prescriptions after every consultation, accepted at all major pharmacies across India.',
   },
   {
-    q: 'What is the free follow-up policy?',
-    a: 'You can consult the same doctor again within 7 days for the same health issue, completely free of charge.',
-  },
-  {
     q: 'What if no doctor is available immediately?',
     a: 'You can schedule an appointment for a future slot. We also offer instant consultation with doctors who are currently online.',
   },

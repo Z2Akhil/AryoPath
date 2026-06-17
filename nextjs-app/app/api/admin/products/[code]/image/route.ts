@@ -19,7 +19,7 @@ async function resolveCollection(code: string): Promise<'profiles' | 'offers' | 
 
 // PATCH — upload or replace image (profile or offer)
 export async function PATCH(req: NextRequest, { params }: Params) {
-    const auth = await adminOrStaffAuth(req, PERMISSIONS.PRODUCTS_VIEW);
+    const auth = await adminOrStaffAuth(req, PERMISSIONS.PRODUCTS_EDIT);
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
     }
@@ -73,7 +73,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 // DELETE — remove custom image
 export async function DELETE(req: NextRequest, { params }: Params) {
-    const auth = await adminOrStaffAuth(req, PERMISSIONS.PRODUCTS_VIEW);
+    const auth = await adminOrStaffAuth(req, PERMISSIONS.PRODUCTS_EDIT);
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
     }

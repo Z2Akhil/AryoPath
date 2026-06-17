@@ -355,7 +355,7 @@ export default function LabReceiptPage() {
 
   const validBeneficiaries = beneficiaries.filter(b => b.name.trim() && b.age.trim());
 
-  if (!isAdmin && !hasPermission(PERMISSIONS.PRODUCTS_VIEW)) return <AccessDenied />;
+  if (!isAdmin && !hasPermission(PERMISSIONS.LAB_RECEIPT_VIEW)) return <AccessDenied />;
 
   return (
     <div className="space-y-6">

@@ -78,6 +78,7 @@ const AdminSidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, analyticsOp
     const showUsers         = isAdmin || hasPermission(PERMISSIONS.USERS_VIEW);
     const showNotifications = isAdmin || hasPermission(PERMISSIONS.NOTIFICATIONS_VIEW);
     const showServices      = isAdmin || hasPermission(PERMISSIONS.SERVICES_VIEW);
+    const showLabReceipt    = isAdmin || hasPermission(PERMISSIONS.LAB_RECEIPT_VIEW);
 
     return (
         <>
@@ -255,11 +256,13 @@ const AdminSidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, analyticsOp
                         </Link>
                     )}
 
-                    {/* Lab Receipt Generator */}
-                    <Link href="/admin/lab-receipt" className={navLinkClass('/admin/lab-receipt')} title="Lab Receipt">
-                        <Printer className="h-5 w-5" />
-                        {!collapsed && <span className="ml-3">Lab Receipt</span>}
-                    </Link>
+                    {/* Lab Receipt Generator — admin + staff with LAB_RECEIPT_VIEW */}
+                    {showLabReceipt && (
+                        <Link href="/admin/lab-receipt" className={navLinkClass('/admin/lab-receipt')} title="Lab Receipt">
+                            <Printer className="h-5 w-5" />
+                            {!collapsed && <span className="ml-3">Lab Receipt</span>}
+                        </Link>
+                    )}
 
                     {/* Services — admin + staff with SERVICES_VIEW */}
                     {showServices && (

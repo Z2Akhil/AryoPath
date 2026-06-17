@@ -218,7 +218,7 @@ export default async function ConsultPage() {
               Talk to a Doctor from Home
             </h1>
             <p className="text-blue-100 text-sm mb-4">
-              Verified specialists · Digital prescription · Free follow-up
+              Verified specialists · Digital prescription
             </p>
             <Link
               href="/consult/general-physician"
@@ -226,10 +226,6 @@ export default async function ConsultPage() {
             >
               <Video className="w-4 h-4" /> Consult Now
             </Link>
-          </div>
-          {/* Decorative circle */}
-          <div className="hidden sm:flex w-24 h-24 rounded-full bg-white/10 items-center justify-center text-5xl shrink-0">
-            🩺
           </div>
         </div>
       </div>
@@ -334,7 +330,7 @@ export default async function ConsultPage() {
               { n: totalDoctors > 0 ? `${totalDoctors}+` : '50+', label: 'Verified Doctors',    icon: '👨‍⚕️' },
               { n: '50K+',                                          label: 'Consultations Done', icon: '✅' },
               { n: '4.8★',                                          label: 'Average Rating',     icon: '⭐' },
-              { n: '7 Days',                                        label: 'Free Follow-up',     icon: '🔄' },
+              { n: '100%',                                          label: 'Private & Secure',   icon: '🔒' },
             ].map(({ n, label, icon }) => (
               <div key={label} className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 flex items-center gap-3 shadow-sm">
                 <span className="text-xl shrink-0">{icon}</span>
@@ -392,7 +388,6 @@ export default async function ConsultPage() {
                 'Consult verified specialists from any device, anytime',
                 'Get a digital prescription valid at all major pharmacies',
                 'Private and confidential — end-to-end encrypted sessions',
-                'Free follow-up consultation within 7 days of booking',
                 'Book same-day appointments, no waiting rooms',
               ].map((point) => (
                 <li key={point} className="flex items-start gap-2">

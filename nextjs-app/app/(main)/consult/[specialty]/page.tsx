@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { BadgeCheck, Zap, RefreshCw, Star, ChevronRight } from 'lucide-react';
+import { BadgeCheck, Zap, Star, ChevronRight } from 'lucide-react';
 import { Doctor } from '@/types/doctor';
 
 // ─── Specialty slug → display name map ────────────────────────────────────────
@@ -108,7 +108,7 @@ function DoctorSkeleton() {
 function PromoBanner({ index }: { index: number }) {
   const banners = [
     { bg: 'bg-emerald-50 border-emerald-100', text: '💊 Get medicines delivered at home', cta: 'Shop on Medicines', href: '/medicines' },
-    { bg: 'bg-blue-50 border-blue-100', text: '🆓 Free follow-up within 7 days', cta: 'Book now', href: '/consult' },
+    { bg: 'bg-blue-50 border-blue-100', text: '🧪 Book lab tests at home', cta: 'Explore Tests', href: '/tests' },
   ];
   const b = banners[index % banners.length];
   return (
@@ -197,9 +197,6 @@ function DoctorCard({ doctor }: { doctor: Doctor }) {
             <Zap className="w-2.5 h-2.5" /> Instant
           </span>
         )}
-        <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-teal-600 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded-full">
-          <RefreshCw className="w-2.5 h-2.5" /> Free Follow-up
-        </span>
         {doctor.languages?.length > 0 && (
           <span className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-full">
             {doctor.languages.slice(0, 2).join(' · ')}

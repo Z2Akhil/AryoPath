@@ -31,6 +31,9 @@ export const PERMISSIONS = {
   // Services settings
   SERVICES_VIEW:      'services.view',
 
+  // Lab Receipt generator (full access — single permission)
+  LAB_RECEIPT_VIEW:   'lab_receipt.view',
+
   // Legacy — kept for backward compat, not shown in staff form
   ORDERS_VIEW:        'orders.view',
   ORDERS_EDIT:        'orders.edit',
@@ -56,6 +59,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'appointments.view':  'View Appointments',
   'appointments.edit':  'Edit Appointments',
   'services.view':      'View & Edit Services',
+  'lab_receipt.view':   'Generate Lab Receipts',
   // legacy
   'orders.view':        'View Orders (legacy)',
   'orders.edit':        'Edit Orders (legacy)',
@@ -112,6 +116,11 @@ export const PERMISSION_GROUPS = [
     label: 'Services',
     description: 'Service settings & configuration',
     permissions: [PERMISSIONS.SERVICES_VIEW],
+  },
+  {
+    label: 'Lab Receipt',
+    description: 'Generate lab test receipts for customers',
+    permissions: [PERMISSIONS.LAB_RECEIPT_VIEW],
   },
 ] as const;
 

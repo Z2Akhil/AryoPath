@@ -125,7 +125,7 @@ export function getAdminContext(auth: (AdminOrStaffAuthResult | AdminAuthResult)
 
 export async function adminOrStaffAuth(
     req: NextRequest,
-    requiredPermission?: Permission
+    requiredPermission?: Permission | Permission[]
 ): Promise<AdminOrStaffAuthResult> {
     const adminResult = await adminAuth(req);
     if (adminResult.authenticated) {
@@ -134,8 +134,13 @@ export async function adminOrStaffAuth(
 
     const staffResult = await staffAuth(req);
     if (staffResult.authenticated) {
-        if (requiredPermission && !staffResult.permissions.includes(requiredPermission)) {
-            return { authenticated: false, error: 'Insufficient permissions', status: 403 };
+        if (requiredPermission) {
+            // Any-of check: staff needs at least one of the required permissions.
+            const required = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission];
+            const allowed = required.some(p => staffResult.permissions.includes(p));
+            if (!allowed) {
+                return { authenticated: false, error: 'Insufficient permissions', status: 403 };
+            }
         }
         return { authenticated: true, role: 'staff', staff: staffResult.staff, permissions: staffResult.permissions };
     }

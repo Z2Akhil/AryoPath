@@ -17,7 +17,6 @@ import {
   Upload,
   X,
   Loader2,
-  RefreshCw,
   ExternalLink,
 } from 'lucide-react';
 import { useToast } from '@/providers/ToastProvider';
@@ -595,13 +594,20 @@ export default function BookingPage({
 
         {/* ── SECTION 2: Select Date ───────────────────────────────────── */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <style>{`
+            .date-scroll::-webkit-scrollbar { height: 6px; }
+            .date-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 9999px; }
+            .date-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+            .date-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+            .date-scroll { scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9; }
+          `}</style>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
             Select Date
           </p>
           {dates.length === 0 ? (
             <p className="text-sm text-gray-400 py-2">No available slots in the next 7 days.</p>
           ) : null}
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-3 date-scroll">
             {dates.map((d) => {
               const selected = selectedDate === d.fullDate;
               return (
@@ -967,10 +973,6 @@ export default function BookingPage({
               <span className="text-sm font-bold text-gray-900">Total Payable</span>
               <span className="text-lg font-black text-gray-900">₹{finalAmount}</span>
             </div>
-          </div>
-          <div className="mt-3 bg-green-50 border border-green-100 rounded-xl px-4 py-2.5 flex items-center gap-2">
-            <RefreshCw className="w-4 h-4 text-green-600 shrink-0" />
-            <p className="text-xs font-semibold text-green-700">Free Follow-up included (within 7 days)</p>
           </div>
         </div>
 
