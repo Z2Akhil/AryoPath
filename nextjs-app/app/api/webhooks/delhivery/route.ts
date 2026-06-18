@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import type { MedicineOrderStatus } from '@/types/medicineOrder';
@@ -19,39 +19,77 @@ function mapCourierStatus(courierStatus: string): MedicineOrderStatus | null {
   return null;
 }
 
+interface NormalizedScan {
+  awb: string;
+  status: string;
+  statusType: string;
+  activity: string;
+  location: string;
+  timestamp: Date;
+}
+
+// Normalises a single scan from Delhivery into a flat shape.
+// Handles the DEFAULT nested payload  { Shipment: { Status: { Status, StatusType, StatusLocation, Instructions, StatusDateTime }, AWB } }
+// AND legacy/custom flat payloads     { waybill, status, instructions, city, timestamp }.
+function normalizeScan(pkg: any): NormalizedScan | null {
+  if (!pkg || typeof pkg !== 'object') return null;
+
+  // Default payload wraps everything under "Shipment".
+  const shp = pkg.Shipment ?? pkg.shipment ?? pkg;
+
+  // Status may be a nested object (default) or a flat string (custom).
+  const statusObj = shp.Status && typeof shp.Status === 'object' ? shp.Status : null;
+
+  const awbRaw =
+    shp.AWB ?? shp.awb ?? shp.waybill ??
+    pkg.AWB ?? pkg.awb ?? pkg.waybill;
+  if (!awbRaw) return null;
+
+  const status =
+    statusObj?.Status ??
+    (typeof shp.Status === 'string' ? shp.Status : undefined) ??
+    shp.status ?? pkg.status ?? '';
+
+  const statusType =
+    statusObj?.StatusType ?? shp.StatusType ?? pkg.statusType ?? pkg.status_type ?? '';
+
+  const activity =
+    statusObj?.Instructions ?? shp.Instructions ?? pkg.instructions ?? pkg.activity ?? '';
+
+  const location =
+    statusObj?.StatusLocation ?? shp.StatusLocation ?? pkg.city ?? pkg.City ?? pkg.location ?? '';
+
+  const tsRaw =
+    statusObj?.StatusDateTime ?? shp.StatusDateTime ?? pkg.timestamp ?? pkg.status_time ?? shp.PickUpDate;
+  const parsed = tsRaw ? new Date(tsRaw) : new Date();
+  const timestamp = isNaN(parsed.getTime()) ? new Date() : parsed;
+
+  return {
+    awb: String(awbRaw),
+    status: String(status),
+    statusType: String(statusType),
+    activity: String(activity),
+    location: String(location),
+    timestamp,
+  };
+}
+
 // Delhivery pushes status updates here.
-// Register this URL in the Delhivery seller dashboard as the webhook endpoint.
-export async function POST(req: NextRequest) {
+// Applies all scans to their orders. Runs AFTER the 200 response is sent
+// (via Next.js `after()`), so Delhivery never waits on DB work — keeps P99 low
+// and avoids the 500 ms timeout that would make them drop scans.
+async function processScans(rawPackages: any[]): Promise<void> {
   try {
-    // Optional: verify shared secret from Delhivery
-    const secret = process.env.DELHIVERY_WEBHOOK_SECRET;
-    if (secret) {
-      const incomingSecret = req.headers.get('x-delhivery-secret') ?? req.nextUrl.searchParams.get('secret');
-      if (incomingSecret !== secret) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-    }
-
-    const body = await req.json();
-
-    // Delhivery scan push payload: { waybill, status, statusType, instructions, city, state, timestamp }
-    // May arrive as a single object or wrapped in a packages/shipments array
-    const packages: any[] = body?.packages ?? body?.shipments ?? (Array.isArray(body) ? body : [body]);
-
     await connectDB();
 
-    for (const pkg of packages) {
-      const awb = pkg?.waybill ?? pkg?.AWB ?? pkg?.awb;
-      if (!awb) continue;
+    for (const pkg of rawPackages) {
+      const scan = normalizeScan(pkg);
+      if (!scan || !scan.awb) continue;
 
-      const order = await MedicineOrder.findOne({ awb: String(awb) });
+      const order = await MedicineOrder.findOne({ awb: scan.awb });
       if (!order) continue;
 
-      const status    = pkg?.status ?? pkg?.Status ?? '';
-      const statusType = pkg?.statusType ?? pkg?.status_type ?? '';
-      const activity  = pkg?.instructions ?? pkg?.activity ?? '';
-      const location  = pkg?.city ?? pkg?.City ?? pkg?.location ?? '';
-      const timestamp = new Date(pkg?.timestamp ?? pkg?.status_time ?? Date.now());
+      const { status, statusType, activity, location, timestamp } = scan;
 
       (order as any).courierStatus = status;
       (order as any).courierStatusUpdatedAt = new Date();
@@ -73,10 +111,36 @@ export async function POST(req: NextRequest) {
 
       await order.save();
     }
+  } catch (err) {
+    console.error('[Delhivery webhook] processScans error:', err);
+  }
+}
+
+// Register this URL in the Delhivery seller dashboard as the webhook endpoint.
+// Responds 200 immediately, then processes scans asynchronously via after().
+export async function POST(req: NextRequest) {
+  try {
+    // Verify shared secret from Delhivery (fast, before responding)
+    const secret = process.env.DELHIVERY_WEBHOOK_SECRET;
+    if (secret) {
+      const incomingSecret = req.headers.get('x-delhivery-secret') ?? req.nextUrl.searchParams.get('secret');
+      if (incomingSecret !== secret) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+    }
+
+    const body = await req.json();
+
+    // May arrive as a single object (default { Shipment: {...} }) or wrapped in a packages/shipments array.
+    const rawPackages: any[] = body?.packages ?? body?.shipments ?? (Array.isArray(body) ? body : [body]);
+
+    // Heavy DB work runs AFTER the response is flushed — Delhivery gets 200 instantly.
+    after(() => processScans(rawPackages));
 
     return NextResponse.json({ received: true });
   } catch (err) {
     console.error('[Delhivery webhook]', err);
-    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
+    // Body parse failed — still return 200 so Delhivery doesn't retry a malformed push.
+    return NextResponse.json({ received: true });
   }
 }
