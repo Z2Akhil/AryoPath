@@ -3,12 +3,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useUser } from '@/providers/UserProvider';
 import { useToast } from '@/providers/ToastProvider';
-import { CheckCircle2, Loader2, Mail, RefreshCw, User } from 'lucide-react';
+import { CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 
 interface LoginFormProps {
     onClose: () => void;
-    onSwitchToRegister?: () => void;
-    onForgotPassword?: () => void;
 }
 
 // Six individual OTP boxes with auto-advance, backspace, paste support
@@ -94,27 +92,22 @@ const OtpBoxes = ({
 };
 
 export default function LoginForm({ onClose }: LoginFormProps) {
-    const { loginWithOTP, registerWithOTP, requestOTP } = useUser();
-    const { success: toastSuccess } = useToast();
+    const { loginWithOTP, requestOTP } = useUser();
+    const { success: toastSuccess, info: toastInfo } = useToast();
 
-    // Phases within one single card
-    const [phase, setPhase] = useState<'number' | 'otp' | 'name'>('number');
+    // Two phases: enter mobile → enter OTP → done
+    const [phase, setPhase] = useState<'number' | 'otp'>('number');
 
     const [mobile, setMobile] = useState('');
     const [otpValue, setOtpValue] = useState('      '); // 6 spaces = 6 empty boxes
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [showEmail, setShowEmail] = useState(false);
 
     const [sendingOtp, setSendingOtp] = useState(false);
     const [verifying, setVerifying] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
     const [otpSent, setOtpSent] = useState(false);
     const [timer, setTimer] = useState(0);
     const [error, setError] = useState('');
 
     const otpRef = useRef<HTMLDivElement>(null);
-    const nameRef = useRef<HTMLInputElement>(null);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const startTimer = (seconds = 60) => {
@@ -135,6 +128,7 @@ export default function LoginForm({ onClose }: LoginFormProps) {
         if (mobile.length === 10 && phase === 'number' && !sendingOtp && !otpSent) {
             sendOtp();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mobile]);
 
     // Auto-verify when all 6 OTP digits are filled
@@ -143,15 +137,13 @@ export default function LoginForm({ onClose }: LoginFormProps) {
         if (filled && phase === 'otp' && !verifying) {
             verifyOtp();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [otpValue]);
 
     // Scroll OTP section into view
     useEffect(() => {
         if (phase === 'otp') {
             setTimeout(() => otpRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
-        }
-        if (phase === 'name') {
-            setTimeout(() => nameRef.current?.focus(), 200);
         }
     }, [phase]);
 
@@ -188,11 +180,17 @@ export default function LoginForm({ onClose }: LoginFormProps) {
         setVerifying(true);
         try {
             const result = await loginWithOTP(mobile, otpValue.trim());
-            if (result.success && !result.isNewUser) {
-                toastSuccess('Signed in!');
+            if (result.success) {
+                if (result.isNewUser) {
+                    // New user auto-created — signed in, nudge to complete profile
+                    toastSuccess('Welcome to AyroPath! 🎉');
+                    setTimeout(() => {
+                        toastInfo('Complete your profile in Account settings for a better experience.', 6000);
+                    }, 800);
+                } else {
+                    toastSuccess('Signed in!');
+                }
                 onClose();
-            } else if (result.success && result.isNewUser) {
-                setPhase('name');
             } else {
                 setOtpValue('      ');
                 setError(result.message || 'Incorrect OTP. Try again.');
@@ -203,26 +201,7 @@ export default function LoginForm({ onClose }: LoginFormProps) {
         } finally {
             setVerifying(false);
         }
-    }, [mobile, otpValue, loginWithOTP, onClose, toastSuccess]);
-
-    const handleSubmitName = async () => {
-        if (!name.trim()) { setError('Please enter your name'); return; }
-        setError('');
-        setSubmitting(true);
-        try {
-            const result = await registerWithOTP(mobile, name.trim(), showEmail && email.trim() ? email.trim() : undefined);
-            if (result.success) {
-                toastSuccess('Welcome to AyroPath!');
-                onClose();
-            } else {
-                setError(result.message || 'Registration failed. Try again.');
-            }
-        } catch {
-            setError('Something went wrong. Please try again.');
-        } finally {
-            setSubmitting(false);
-        }
-    };
+    }, [mobile, otpValue, loginWithOTP, onClose, toastSuccess, toastInfo]);
 
     const changeMobile = () => {
         setMobile('');
@@ -237,7 +216,7 @@ export default function LoginForm({ onClose }: LoginFormProps) {
             {/* Branding */}
             <div>
                 <h2 className="text-xl font-bold text-gray-900">Sign in / Sign up</h2>
-                <p className="text-sm text-gray-500 mt-0.5">Enter your mobile to continue</p>
+                <p className="text-sm text-gray-500 mt-0.5">Enter your mobile number to continue</p>
             </div>
 
             {/* Mobile field — always visible */}
@@ -283,96 +262,36 @@ export default function LoginForm({ onClose }: LoginFormProps) {
             </div>
 
             {/* OTP section — slides in after OTP sent */}
-            {(phase === 'otp' || phase === 'name') && (
+            {phase === 'otp' && (
                 <div ref={otpRef} className="space-y-4 animate-in slide-in-from-bottom-2 duration-300">
                     <div className="space-y-3">
                         <p className="text-sm text-gray-500 text-center">
-                            {phase === 'otp'
-                                ? verifying ? 'Verifying…' : 'Enter the 6-digit OTP sent to your number'
-                                : <span className="text-green-600 font-medium flex items-center justify-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Mobile verified</span>
-                            }
+                            {verifying ? 'Verifying…' : 'Enter the 6-digit OTP sent to your number'}
                         </p>
 
                         <OtpBoxes
                             value={otpValue}
                             onChange={setOtpValue}
-                            disabled={verifying || phase === 'name'}
+                            disabled={verifying}
                         />
 
-                        {phase === 'otp' && (
-                            <div className="text-center">
-                                {verifying ? (
-                                    <span className="text-xs text-gray-400 flex items-center justify-center gap-1.5">
-                                        <Loader2 className="w-3 h-3 animate-spin" /> Verifying…
-                                    </span>
-                                ) : (
-                                    <button
-                                        onClick={resendOtp}
-                                        disabled={timer > 0}
-                                        className="text-xs text-blue-600 hover:underline disabled:text-gray-400 disabled:no-underline flex items-center gap-1 mx-auto"
-                                    >
-                                        <RefreshCw className="w-3 h-3" />
-                                        {timer > 0 ? `Resend in ${timer}s` : 'Resend OTP'}
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Name section — slides in for new users */}
-            {phase === 'name' && (
-                <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-300">
-                    <div className="h-px bg-gray-100" />
-                    <p className="text-sm font-medium text-gray-700">Looks like you're new here! What should we call you?</p>
-
-                    <div className="relative">
-                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                            ref={nameRef}
-                            type="text"
-                            value={name}
-                            onChange={e => { setName(e.target.value); setError(''); }}
-                            onKeyDown={e => e.key === 'Enter' && !showEmail && handleSubmitName()}
-                            placeholder="Your name"
-                            className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 outline-none text-sm bg-white transition-colors"
-                            disabled={submitting}
-                        />
-                    </div>
-
-                    {!showEmail ? (
-                        <button
-                            type="button"
-                            onClick={() => setShowEmail(true)}
-                            className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline"
-                        >
-                            <Mail className="w-3.5 h-3.5" /> Add email (optional)
-                        </button>
-                    ) : (
-                        <div className="relative">
-                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={e => setEmail(e.target.value)}
-                                placeholder="Email address (optional)"
-                                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 outline-none text-sm bg-white transition-colors"
-                                disabled={submitting}
-                                autoFocus
-                            />
+                        <div className="text-center">
+                            {verifying ? (
+                                <span className="text-xs text-gray-400 flex items-center justify-center gap-1.5">
+                                    <Loader2 className="w-3 h-3 animate-spin" /> Verifying…
+                                </span>
+                            ) : (
+                                <button
+                                    onClick={resendOtp}
+                                    disabled={timer > 0}
+                                    className="text-xs text-blue-600 hover:underline disabled:text-gray-400 disabled:no-underline flex items-center gap-1 mx-auto"
+                                >
+                                    <RefreshCw className="w-3 h-3" />
+                                    {timer > 0 ? `Resend in ${timer}s` : 'Resend OTP'}
+                                </button>
+                            )}
                         </div>
-                    )}
-
-                    <button
-                        onClick={handleSubmitName}
-                        disabled={submitting || !name.trim()}
-                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                        {submitting
-                            ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating account…</>
-                            : 'Get Started →'}
-                    </button>
+                    </div>
                 </div>
             )}
 

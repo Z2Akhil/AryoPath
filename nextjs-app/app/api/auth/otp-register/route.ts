@@ -34,8 +34,8 @@ export async function POST(request: NextRequest) {
             mobileNumber,
             purpose: 'login',
             isUsed: true,
-            updatedAt: { $gte: cutoff },
-        }).sort({ updatedAt: -1 });
+            createdAt: { $gte: cutoff },
+        }).sort({ createdAt: -1 });
 
         if (!verifiedOTP) {
             return NextResponse.json(

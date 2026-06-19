@@ -41,7 +41,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, initialView = 'login' })
                     {view === 'login' && (
                         <LoginForm
                             onClose={onClose}
-                            onSwitchToRegister={() => setView('register')}
                         />
                     )}
                     {view === 'register' && (

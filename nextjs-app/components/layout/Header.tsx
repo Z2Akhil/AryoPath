@@ -63,7 +63,7 @@ const DesktopNav = ({ user, onLogin, onLogout }: DesktopNavProps) => {
               <User className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">
-              {user.firstName}
+              {user.firstName || 'User'}
             </span>
             <ChevronDown className={`w-3.5 h-3.5 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -172,7 +172,7 @@ const MobileDrawer = ({ open, user, mounted, onLogin, onLogout, onClose }: Mobil
                 <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
                   <User className="w-5 h-5 text-white" />
                 </div>
-                <p className="font-semibold text-gray-900">Hi, {resolvedUser.firstName}</p>
+                <p className="font-semibold text-gray-900">Hi, {resolvedUser.firstName || 'User'}</p>
               </div>
             ) : (
               <button

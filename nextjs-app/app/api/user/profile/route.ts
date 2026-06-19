@@ -117,9 +117,9 @@ export async function PUT(req: NextRequest) {
             );
         }
 
-        if (lastName !== undefined && (!lastName.trim() || lastName.trim().length > 50)) {
+        if (lastName !== undefined && lastName.trim().length > 50) {
             return NextResponse.json(
-                { success: false, message: 'Last name must be between 1 and 50 characters' },
+                { success: false, message: 'Last name must be at most 50 characters' },
                 { status: 400 }
             );
         }
@@ -127,7 +127,7 @@ export async function PUT(req: NextRequest) {
         // Build update data
         const updateData: any = {};
         if (firstName !== undefined) updateData.firstName = firstName.trim();
-        if (lastName !== undefined) updateData.lastName = lastName.trim();
+        if (lastName !== undefined) updateData.lastName = lastName.trim(); // empty string allowed (clears last name)
 
         // Email update logic
         if (email !== undefined) {

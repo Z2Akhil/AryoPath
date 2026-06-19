@@ -6,7 +6,10 @@ import SMSService from '@/lib/services/smsService';
 import jwt from 'jsonwebtoken';
 
 // POST /api/auth/otp-login
-// Verify OTP (purpose: 'login'). If user exists → JWT. If new → { isNewUser: true }.
+// Verify OTP (purpose: 'login').
+// Existing user → JWT.
+// New user → auto-create with placeholder name, return JWT + isNewUser:true
+//   (client shows "complete your profile" nudge; user fills name/email from account page).
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
@@ -64,15 +67,18 @@ export async function POST(request: NextRequest) {
         otpRecord.isUsed = true;
         await otpRecord.save();
 
-        const user = await User.findOne({ mobileNumber, isActive: true });
+        let user = await User.findOne({ mobileNumber, isActive: true });
+        let isNewUser = false;
 
         if (!user) {
-            // New user — client should proceed to profile completion step
-            return NextResponse.json({ success: true, isNewUser: true });
-        }
-
-        // Ensure user is marked as verified
-        if (!user.isVerified) {
+            // New user — auto-create with 'User' placeholder. Name/email collected later from account page.
+            isNewUser = true;
+            user = await User.create({
+                firstName: 'User',
+                mobileNumber,
+                isVerified: true,
+            });
+        } else if (!user.isVerified) {
             user.isVerified = true;
             await user.save();
         }
@@ -85,7 +91,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            isNewUser: false,
+            isNewUser,
             token,
             user: {
                 id: user._id,
@@ -94,7 +100,6 @@ export async function POST(request: NextRequest) {
                 mobileNumber: user.mobileNumber,
                 email: user.email,
                 isVerified: user.isVerified,
-                
             },
         });
     } catch (error) {

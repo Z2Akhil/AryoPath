@@ -61,17 +61,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    // Verify OTP → if existing user, sets session and returns success.
-    // If new user, returns { success: true, isNewUser: true } without setting session.
+    // Verify OTP → always sets session (new users are auto-created on the backend).
+    // Returns { success, isNewUser } — caller shows "complete profile" nudge if isNewUser.
     const loginWithOTP = async (mobileNumber: string, otp: string) => {
         try {
             const result = await authApi.otpLogin(mobileNumber, otp);
-            if (result.success && !result.isNewUser && result.user && result.token) {
+            if (result.success && result.user && result.token) {
                 setSession(result.user, result.token);
-                return { success: true, isNewUser: false };
-            }
-            if (result.success && result.isNewUser) {
-                return { success: true, isNewUser: true };
+                return { success: true, isNewUser: !!result.isNewUser };
             }
             return { success: false, message: result.message || 'Login failed' };
         } catch (error) {
