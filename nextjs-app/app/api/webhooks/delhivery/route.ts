@@ -86,30 +86,43 @@ async function processScans(rawPackages: any[]): Promise<void> {
       const scan = normalizeScan(pkg);
       if (!scan || !scan.awb) continue;
 
-      const order = await MedicineOrder.findOne({ awb: scan.awb });
-      if (!order) continue;
+      const { awb, status, statusType, activity, location, timestamp } = scan;
 
-      const { status, statusType, activity, location, timestamp } = scan;
-
-      (order as any).courierStatus = status;
-      (order as any).courierStatusUpdatedAt = new Date();
-
-      const existing: any[] = (order as any).courierStatusHistory ?? [];
-      const alreadyRecorded = existing.some(
-        (e: any) => e.status === status && Math.abs(new Date(e.timestamp).getTime() - timestamp.getTime()) < 60000
+      // Check for duplicate scan (same status within 60 s) without loading the full doc.
+      const existing = await MedicineOrder.findOne(
+        { awb, 'courierStatusHistory.status': status,
+          'courierStatusHistory.timestamp': { $gte: new Date(timestamp.getTime() - 60000), $lte: new Date(timestamp.getTime() + 60000) } },
+        { _id: 1 }
       );
-      if (!alreadyRecorded) {
-        existing.unshift({ status, statusType, activity, location, timestamp });
-        (order as any).courierStatusHistory = existing;
-      }
+
+      const $set: Record<string, any> = {
+        courierStatus: status,
+        courierStatusUpdatedAt: new Date(),
+      };
 
       const mappedStatus = mapCourierStatus(status);
-      if (mappedStatus && order.status !== mappedStatus) {
-        order.status = mappedStatus;
-        if (mappedStatus === 'delivered') (order as any).deliveredAt = timestamp;
+      if (mappedStatus) {
+        $set.status = mappedStatus;
+        if (mappedStatus === 'delivered') $set.deliveredAt = timestamp;
       }
 
-      await order.save();
+      const update: Record<string, any> = { $set };
+
+      // Only push to history if this exact scan isn't already recorded.
+      if (!existing) {
+        update.$push = {
+          courierStatusHistory: {
+            $each: [{ status, statusType, activity, location, timestamp }],
+            $position: 0,
+          },
+        };
+      }
+
+      // updateOne bypasses full Mongoose validation — we only touch courier fields.
+      const result = await MedicineOrder.updateOne({ awb }, update);
+      if (result.matchedCount === 0) {
+        console.warn(`[Delhivery webhook] No order found for AWB: ${awb}`);
+      }
     }
   } catch (err) {
     console.error('[Delhivery webhook] processScans error:', err);
