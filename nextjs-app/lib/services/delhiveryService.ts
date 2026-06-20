@@ -233,6 +233,43 @@ export async function schedulePickup(opts?: {
   }
 }
 
+// ─── Cancel pickup slot ──────────────────────────────────────────────────────
+/**
+ * Cancel a scheduled warehouse pickup by pickup_id.
+ * Called when a shipped (but not yet picked) order is cancelled.
+ */
+export async function cancelPickup(pickupId: string): Promise<CancelResult> {
+  if (!pickupId) return { success: false, error: 'No pickupId provided' };
+
+  if (IS_MOCK) {
+    console.log(`[Delhivery] MOCK mode — fake cancel for pickupId ${pickupId}`);
+    return { success: true };
+  }
+
+  const token = process.env.DELHIVERY_TOKEN;
+  if (!token) return { success: false, error: 'DELHIVERY_TOKEN not set' };
+
+  try {
+    const res = await fetch(`${BASE_URL}/fm/request/cancel/`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ id: pickupId }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    console.log('[Delhivery] cancelPickup response:', JSON.stringify(json));
+
+    if (!res.ok || json?.success === false || json?.status === false) {
+      return { success: false, error: json?.error || json?.rmk || `HTTP ${res.status}` };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[Delhivery] cancelPickup error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
 // ─── Cancel shipment ─────────────────────────────────────────────────────────
 /**
  * Cancel a forward shipment by AWB. Delhivery edit API with cancellation flag.

@@ -74,6 +74,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   let pickup: PickupResult | null = null;
   if (doPickup) {
     pickup = await schedulePickup({ expectedPackages: 1 });
+    // Persist pickupId so we can cancel it if the order is cancelled before pickup
+    if (pickup?.success && pickup.pickupId) {
+      await MedicineOrder.collection.updateOne(
+        { _id: order._id },
+        { $set: { pickupId: pickup.pickupId } }
+      );
+    }
   }
 
   // Email customer with AWB + tracking

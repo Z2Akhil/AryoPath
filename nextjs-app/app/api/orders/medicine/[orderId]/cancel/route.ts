@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import { initiateRefund } from '@/lib/services/cashfreeRefundService';
-import { cancelShipment } from '@/lib/services/delhiveryService';
+import { cancelShipment, cancelPickup } from '@/lib/services/delhiveryService';
 import {
   getMedicineOrderEmail,
   sendMedicineCancelledEmail,
@@ -62,6 +62,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
         success: false,
         error: 'This order has already been picked up by the courier and can no longer be cancelled. You can return it after delivery.',
       }, { status: 409 });
+    }
+
+    // Also cancel the scheduled pickup slot if one was booked
+    const pickupId = (order as any).pickupId as string | undefined;
+    if (pickupId) {
+      const pickupCancelRes = await cancelPickup(pickupId);
+      if (!pickupCancelRes.success) {
+        // Non-fatal — log the warning but don't block the order cancellation
+        console.warn(`[Cancel] Delhivery pickup cancel failed for pickupId ${pickupId}: ${pickupCancelRes.error}`);
+      } else {
+        console.log(`[Cancel] Delhivery pickup ${pickupId} cancelled successfully`);
+      }
     }
   }
 

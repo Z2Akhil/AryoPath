@@ -5,7 +5,7 @@ import { adminOrStaffAuth } from '@/lib/auth';
 import { PERMISSIONS } from '@/lib/constants/permissions';
 import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
-import { trackShipment, cancelShipment } from '@/lib/services/delhiveryService';
+import { trackShipment, cancelShipment, cancelPickup } from '@/lib/services/delhiveryService';
 import type { MedicineOrderStatus } from '@/types/medicineOrder';
 import {
   sendMedicineConfirmedEmail,
@@ -132,6 +132,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
         const cancelRes = await cancelShipment((order as any).awb);
         if (!cancelRes.success) {
           console.warn(`[Ship] Delhivery cancel failed for AWB ${(order as any).awb}: ${cancelRes.error}`);
+        }
+        // Also cancel the scheduled pickup slot if one was booked (non-fatal)
+        const pickupId = (order as any).pickupId as string | undefined;
+        if (pickupId) {
+          const pickupCancelRes = await cancelPickup(pickupId);
+          if (!pickupCancelRes.success) {
+            console.warn(`[Ship] Delhivery pickup cancel failed for pickupId ${pickupId}: ${pickupCancelRes.error}`);
+          } else {
+            console.log(`[Ship] Delhivery pickup ${pickupId} cancelled successfully`);
+          }
         }
       }
 
