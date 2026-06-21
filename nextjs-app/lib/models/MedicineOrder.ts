@@ -158,6 +158,7 @@ const MedicineOrderSchema = new Schema<MedicineOrderDocument>(
     returnRequest: { type: ReturnRequestSchema },
     returnAwb:              { type: String, default: '' },
     awb:                    { type: String, default: '' },
+    pickupId:               { type: String, default: '' },   // Delhivery pickup slot ID (for cancellation)
     courierPartner:         { type: String, default: '' },
     trackingUrl:            { type: String, default: '' },
     courierStatus:          { type: String, default: '' },

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { downloadReport, type Order } from '@/lib/api/ordersApi';
 import LabTestProgress from './LabTestProgress';
+import { useSiteSettings } from '@/providers/SiteSettingsProvider';
 
 export function StatusBadge({ status }: { status: string }) {
     const s = (status || '').toUpperCase();
@@ -22,6 +23,7 @@ export function StatusBadge({ status }: { status: string }) {
 }
 
 export function OrderListItem({ order }: { order: Order }) {
+    const { settings } = useSiteSettings();
     const [expanded, setExpanded] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [dlError, setDlError] = useState<string | null>(null);
@@ -184,13 +186,13 @@ export function OrderListItem({ order }: { order: Order }) {
                     {/* Support actions */}
                     <div className="flex gap-2 pt-1">
                         <a
-                            href="tel:+911234567890"
+                            href={`tel:${settings?.helplineNumber || ''}`}
                             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors"
                         >
                             <Phone className="w-3.5 h-3.5" /> Call Support
                         </a>
                         <a
-                            href="mailto:support@aryopath.com"
+                            href={`mailto:${settings?.email || ''}`}
                             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors"
                         >
                             <Mail className="w-3.5 h-3.5" /> Email

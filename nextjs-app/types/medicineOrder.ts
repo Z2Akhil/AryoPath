@@ -136,6 +136,7 @@ export interface MedicineOrder {
   cancellationReason?: string;
   notes?: string;
   awb?: string;
+  pickupId?: string;
   courierPartner?: string;
   trackingUrl?: string;
   courierStatus?: string;

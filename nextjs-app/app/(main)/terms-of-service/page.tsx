@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getSettingsServer } from '@/lib/api/settingsServer';
 
 export const metadata: Metadata = {
     title: 'Terms of Service',
@@ -22,7 +23,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     );
 }
 
-export default function TermsOfServicePage() {
+export default async function TermsOfServicePage() {
+    const settings = await getSettingsServer();
     return (
         <section className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">
@@ -162,12 +164,16 @@ export default function TermsOfServicePage() {
                 <Section title="14. Contact Us">
                     <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                         <p className="font-semibold text-gray-800 mb-2">Ayropath Technologies</p>
-                        <p className="text-sm text-gray-600">
-                            Email: <a href="mailto:admin@ayropath.com" className="text-blue-600 underline">admin@ayropath.com</a>
-                        </p>
-                        <p className="text-sm text-gray-600">
-                            Phone: <a href="tel:9973956949" className="text-blue-600 underline">9973956949</a>
-                        </p>
+                        {settings?.email && (
+                            <p className="text-sm text-gray-600">
+                                Email: <a href={`mailto:${settings.email}`} className="text-blue-600 underline">{settings.email}</a>
+                            </p>
+                        )}
+                        {settings?.helplineNumber && (
+                            <p className="text-sm text-gray-600">
+                                Phone: <a href={`tel:${settings.helplineNumber}`} className="text-blue-600 underline">{settings.helplineNumber}</a>
+                            </p>
+                        )}
                         <p className="text-sm text-gray-500 mt-1">Support: Mon–Sat, 9 AM – 6 PM IST</p>
                     </div>
                 </Section>

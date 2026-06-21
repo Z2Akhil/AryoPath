@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { downloadReport } from '@/lib/api/ordersApi';
 import type { Order } from '@/lib/api/ordersApi';
+import { useSiteSettings } from '@/providers/SiteSettingsProvider';
 
 interface OrderCardProps {
     order: Order;
@@ -15,6 +16,7 @@ interface OrderCardProps {
 }
 
 const OrderCard: React.FC<OrderCardProps> = ({ order, showContactSupport = true }) => {
+    const { settings } = useSiteSettings();
     const [expanded, setExpanded] = useState(false);
     const [downloadingReport, setDownloadingReport] = useState(false);
     const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -343,14 +345,14 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, showContactSupport = true 
                             <h4 className="font-medium text-gray-700 mb-3">Need Help with this Order?</h4>
                             <div className="flex flex-wrap gap-3">
                                 <a
-                                    href="tel:+911234567890"
+                                    href={`tel:${settings?.helplineNumber || ''}`}
                                     className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
                                 >
                                     <Phone className="h-4 w-4" />
                                     Call Support
                                 </a>
                                 <a
-                                    href="mailto:support@aryopath.com"
+                                    href={`mailto:${settings?.email || ''}`}
                                     className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                                 >
                                     <Mail className="h-4 w-4" />

@@ -13,6 +13,7 @@ import medicineOrderApi from '@/lib/api/medicineOrderApi';
 import { MedicineOrder, UploadedPrescription } from '@/types/medicineOrder';
 import PrescriptionUpload from '@/components/medicines/PrescriptionUpload';
 import MedicineOrderReceipt from '@/components/orders/MedicineOrderReceipt';
+import { useSiteSettings } from '@/providers/SiteSettingsProvider';
 
 const MILESTONE_STEPS: { status: MedicineOrder['status']; label: string; icon: React.ReactNode }[] = [
   { status: 'confirmed',          label: 'Confirmed',        icon: <CheckCircle2 className="h-3 w-3" /> },
@@ -37,6 +38,7 @@ function getMilestoneIndex(status: string): number {
 export default function MedicineOrderTrackingPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const router = useRouter();
+  const { settings } = useSiteSettings();
 
   const [order, setOrder]     = useState<MedicineOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -411,7 +413,7 @@ export default function MedicineOrderTrackingPage() {
             );
             if (rs === 'failed') return (
               <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600 font-medium">
-                Refund failed — please contact support at 9973956949
+                Refund failed — please contact support{settings?.helplineNumber ? ` at ${settings.helplineNumber}` : ''}
               </div>
             );
             return (
@@ -565,7 +567,11 @@ export default function MedicineOrderTrackingPage() {
 
       </div>
 
-      <MedicineOrderReceipt order={order} />
+      <MedicineOrderReceipt
+        order={order}
+        supportEmail={settings?.email}
+        supportPhone={settings?.helplineNumber}
+      />
     </div>
   );
 }

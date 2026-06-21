@@ -1,7 +1,7 @@
 import React from 'react';
 import { MedicineOrder } from '@/types/medicineOrder';
 
-export default function MedicineOrderReceipt({ order }: { order: MedicineOrder }) {
+export default function MedicineOrderReceipt({ order, supportEmail, supportPhone }: { order: MedicineOrder; supportEmail?: string; supportPhone?: string }) {
     const dateStr = new Date(order.createdAt).toLocaleDateString('en-IN', {
         day: 'numeric', month: 'long', year: 'numeric',
     });
@@ -91,7 +91,11 @@ export default function MedicineOrderReceipt({ order }: { order: MedicineOrder }
             {/* Footer */}
             <div style={{ textAlign: 'center', borderTop: '1px solid #e5e7eb', paddingTop: '16px', color: '#9ca3af', fontSize: '11px' }}>
                 <p style={{ margin: '0 0 4px', fontWeight: 600, color: '#6b7280' }}>Thank you for choosing AyroPath!</p>
-                <p style={{ margin: 0 }}>For support: support@ayropath.com</p>
+                {(supportEmail || supportPhone) && (
+                    <p style={{ margin: 0 }}>
+                        For support:{supportPhone && <> 📞 {supportPhone}</>}{supportEmail && supportPhone && ' | '}{supportEmail && <> ✉ {supportEmail}</>}
+                    </p>
+                )}
             </div>
         </div>
     );

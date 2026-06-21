@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getSettingsServer } from '@/lib/api/settingsServer';
 
 export const metadata: Metadata = {
     title: 'Refund Policy',
@@ -42,7 +43,8 @@ function Row({ label, value, sub }: { label: string; value: string; sub?: string
     );
 }
 
-export default function RefundPolicyPage() {
+export default async function RefundPolicyPage() {
+    const settings = await getSettingsServer();
     return (
         <section className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">
@@ -76,7 +78,9 @@ export default function RefundPolicyPage() {
                         <Row label="Duplicate payment" value="Full refund of the extra amount." sub="Usually within 5–7 business days." />
                     </div>
                     <p className="text-sm text-gray-500 mt-3">
-                        For lab test related issues, please contact us at <strong>admin@ayropath.com</strong> or <strong>9973956949</strong>.
+                        For lab test related issues, please contact us
+                        {settings?.email && <> at <strong>{settings.email}</strong></>}
+                        {settings?.helplineNumber && <> or <strong>{settings.helplineNumber}</strong></>}.
                     </p>
                 </Section>
 
@@ -197,8 +201,12 @@ export default function RefundPolicyPage() {
                 <Section color="border-red-500" title="Need Help?">
                     <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                         <p className="font-semibold text-gray-800 mb-2">Ayropath Technologies</p>
-                        <p className="text-sm text-gray-600">📧 Email: <a href="mailto:admin@ayropath.com" className="text-blue-600 underline">admin@ayropath.com</a></p>
-                        <p className="text-sm text-gray-600">📞 Phone: <a href="tel:9973956949" className="text-blue-600 underline">9973956949</a></p>
+                        {settings?.email && (
+                            <p className="text-sm text-gray-600">📧 Email: <a href={`mailto:${settings.email}`} className="text-blue-600 underline">{settings.email}</a></p>
+                        )}
+                        {settings?.helplineNumber && (
+                            <p className="text-sm text-gray-600">📞 Phone: <a href={`tel:${settings.helplineNumber}`} className="text-blue-600 underline">{settings.helplineNumber}</a></p>
+                        )}
                         <p className="text-sm text-gray-500 mt-2">Support available Mon–Sat, 9 AM – 6 PM IST.</p>
                     </div>
                 </Section>

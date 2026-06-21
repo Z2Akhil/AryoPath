@@ -133,8 +133,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
         if (!cancelRes.success) {
           console.warn(`[Ship] Delhivery cancel failed for AWB ${(order as any).awb}: ${cancelRes.error}`);
         }
-        // Also cancel the scheduled pickup slot if one was booked (non-fatal)
-        const pickupId = (order as any).pickupId as string | undefined;
+        // Read pickupId from raw doc (bypasses Mongoose schema stripping)
+        const rawDoc = await MedicineOrder.collection.findOne({ _id: order._id });
+        const pickupId = rawDoc?.pickupId as string | undefined;
         if (pickupId) {
           const pickupCancelRes = await cancelPickup(pickupId);
           if (!pickupCancelRes.success) {
@@ -142,6 +143,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ or
           } else {
             console.log(`[Ship] Delhivery pickup ${pickupId} cancelled successfully`);
           }
+        } else {
+          console.log(`[Ship] No pickupId found for order ${orderId}, skipping pickup cancellation`);
         }
       }
 

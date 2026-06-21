@@ -235,39 +235,33 @@ export async function schedulePickup(opts?: {
 
 // ─── Cancel pickup slot ──────────────────────────────────────────────────────
 /**
- * Cancel a scheduled warehouse pickup by pickup_id.
- * Called when a shipped (but not yet picked) order is cancelled.
+ * Attempt to cancel a scheduled warehouse pickup by pickup_id.
+ *
+ * ⚠️  Delhivery does NOT expose pickup cancellation via their partner API
+ *     (POST /fm/request/cancel/ → 404, DELETE /fm/request/{id}/ → 502).
+ *     This function logs the pickup_id so you can cancel it manually from
+ *     the Delhivery merchant dashboard: https://app.delhivery.com
+ *
+ *     Non-fatal: order cancellation succeeds regardless.
  */
 export async function cancelPickup(pickupId: string): Promise<CancelResult> {
   if (!pickupId) return { success: false, error: 'No pickupId provided' };
 
   if (IS_MOCK) {
-    console.log(`[Delhivery] MOCK mode — fake cancel for pickupId ${pickupId}`);
+    console.log(`[Delhivery] MOCK mode — skip pickup cancel for pickupId ${pickupId}`);
     return { success: true };
   }
 
-  const token = process.env.DELHIVERY_TOKEN;
-  if (!token) return { success: false, error: 'DELHIVERY_TOKEN not set' };
+  // Delhivery partner API does not support pickup cancellation.
+  // Log pickup_id so it can be cancelled manually via the merchant dashboard.
+  console.warn(
+    `[Delhivery] ⚠️  Pickup cancellation not supported via API. ` +
+    `Please cancel pickup ID ${pickupId} manually at https://app.delhivery.com → Pickups → Upcoming Pickups.`
+  );
 
-  try {
-    const res = await fetch(`${BASE_URL}/fm/request/cancel/`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ id: pickupId }),
-    });
-
-    const json = await res.json().catch(() => ({}));
-    console.log('[Delhivery] cancelPickup response:', JSON.stringify(json));
-
-    if (!res.ok || json?.success === false || json?.status === false) {
-      return { success: false, error: json?.error || json?.rmk || `HTTP ${res.status}` };
-    }
-
-    return { success: true };
-  } catch (err: any) {
-    console.error('[Delhivery] cancelPickup error:', err);
-    return { success: false, error: err.message };
-  }
+  // Return success=false so callers know it wasn't auto-cancelled,
+  // but this is treated as non-fatal everywhere it's called.
+  return { success: false, error: 'Pickup cancellation requires manual action in Delhivery dashboard' };
 }
 
 // ─── Cancel shipment ─────────────────────────────────────────────────────────

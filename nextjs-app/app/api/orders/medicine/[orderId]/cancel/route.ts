@@ -40,8 +40,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   const order = await MedicineOrder.findOne({ orderId, userId });
   if (!order) return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
 
-  const courierStatus = (order as any).courierStatus as string | undefined;
-  const awb           = (order as any).awb as string | undefined;
+  // Read fields that may have been set via collection.updateOne() (bypasses Mongoose schema)
+  const rawDoc = await MedicineOrder.collection.findOne({ orderId, userId: order.userId });
+  const courierStatus = rawDoc?.courierStatus as string | undefined;
+  const awb           = rawDoc?.awb as string | undefined;
+  const pickupId      = rawDoc?.pickupId as string | undefined;
 
   const isPreShip          = PRE_SHIP_STATUSES.includes(order.status);
   const isShippedCancelable = order.status === 'shipped' && isNotYetPicked(courierStatus);
@@ -65,7 +68,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
     }
 
     // Also cancel the scheduled pickup slot if one was booked
-    const pickupId = (order as any).pickupId as string | undefined;
     if (pickupId) {
       const pickupCancelRes = await cancelPickup(pickupId);
       if (!pickupCancelRes.success) {
