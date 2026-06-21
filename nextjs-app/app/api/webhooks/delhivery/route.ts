@@ -89,9 +89,11 @@ async function processScans(rawPackages: any[]): Promise<void> {
       const { awb, status, statusType, activity, location, timestamp } = scan;
 
       // Check for duplicate scan (same status within 60 s) without loading the full doc.
+      // `as any` — CourierEvent.timestamp is string in the TS interface (JSON serialisation)
+      // but the Mongoose schema stores Date; the query is correct at runtime.
       const existing = await MedicineOrder.findOne(
         { awb, 'courierStatusHistory.status': status,
-          'courierStatusHistory.timestamp': { $gte: new Date(timestamp.getTime() - 60000), $lte: new Date(timestamp.getTime() + 60000) } },
+          'courierStatusHistory.timestamp': { $gte: new Date(timestamp.getTime() - 60000), $lte: new Date(timestamp.getTime() + 60000) } } as any,
         { _id: 1 }
       );
 
