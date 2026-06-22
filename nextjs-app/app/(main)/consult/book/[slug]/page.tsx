@@ -146,9 +146,16 @@ function isSlotPast(slot: string, selectedDate: string): boolean {
 
 async function loadCashfree() {
   const { load } = await import('@cashfreepayments/cashfree-js');
-  return load({
-    mode: (process.env.NEXT_PUBLIC_CASHFREE_MODE as 'sandbox' | 'production') || 'sandbox',
-  });
+  // Derive mode at runtime from hostname — avoids build-time env var issues
+  // where NEXT_PUBLIC_CASHFREE_MODE may not be inlined during production builds.
+  const isProduction =
+    typeof window !== 'undefined' &&
+    !window.location.hostname.includes('localhost') &&
+    !window.location.hostname.includes('127.0.0.1');
+  const mode: 'sandbox' | 'production' =
+    (process.env.NEXT_PUBLIC_CASHFREE_MODE as 'sandbox' | 'production') ||
+    (isProduction ? 'production' : 'sandbox');
+  return load({ mode });
 }
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────

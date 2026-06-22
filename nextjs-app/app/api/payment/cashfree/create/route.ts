@@ -69,7 +69,12 @@ export async function POST(req: NextRequest) {
         const cfData = await cfRes.json();
 
         if (!cfRes.ok || !cfData.payment_session_id) {
-            console.error('[cashfree/create] Cashfree error:', cfData);
+            console.error('[cashfree/create] Cashfree error:', {
+                status: cfRes.status,
+                env: process.env.CASHFREE_ENV,
+                appId: process.env.CASHFREE_APP_ID?.slice(0, 8) + '...',
+                response: cfData,
+            });
             return NextResponse.json({ success: false, message: cfData.message || 'Failed to create payment order' }, { status: 500 });
         }
 
