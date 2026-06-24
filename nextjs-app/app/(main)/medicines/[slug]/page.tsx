@@ -113,7 +113,7 @@ export default function MedicineDetailPage() {
   );
 
   const images = medicine.images?.length ? medicine.images : (medicine.thumbnail ? [medicine.thumbnail] : []);
-  const savings = medicine.mrp - medicine.offerPrice;
+  const savings = parseFloat((medicine.mrp - medicine.offerPrice).toFixed(2));
 
   // ── Cart controls (shared between sticky bar and desktop panel) ────────────
   const CartControls = ({ compact = false }: { compact?: boolean }) => (
@@ -199,7 +199,7 @@ export default function MedicineDetailPage() {
 
                   {medicine.discountPercentage > 0 && (
                     <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-black px-2.5 py-1 rounded-full">
-                      {medicine.discountPercentage}% OFF
+                      {parseFloat(medicine.discountPercentage.toFixed(2))}% OFF
                     </span>
                   )}
                   {medicine.prescriptionRequired && (
@@ -285,7 +285,7 @@ export default function MedicineDetailPage() {
                 </div>
                 {savings > 0 && (
                   <p className="text-xs text-green-600 font-bold mb-4">
-                    You save ₹{savings} ({medicine.discountPercentage}% off)
+                    You save ₹{savings} ({parseFloat(medicine.discountPercentage.toFixed(2))}% off)
                   </p>
                 )}
 

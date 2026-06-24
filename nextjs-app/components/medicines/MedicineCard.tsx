@@ -81,7 +81,7 @@ export default function MedicineCard({ medicine }: MedicineCardProps) {
 
         {medicine.discountPercentage > 0 && (
           <span className="absolute top-1.5 left-1.5 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none">
-            {medicine.discountPercentage}% OFF
+            {parseFloat(medicine.discountPercentage.toFixed(2))}% OFF
           </span>
         )}
 
