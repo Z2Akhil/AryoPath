@@ -139,11 +139,11 @@ export async function POST(req: NextRequest) {
                 if (response.data.response_status === 1) {
                     return response.data;
                 } else {
-                    require('fs').appendFileSync('/tmp/ayropath-error.log', new Date().toISOString() + ' Thyrocare Rejected Payload: ' + JSON.stringify(response.data) + '\n');
+                    console.error('[book-on-behalf] Thyrocare rejected payload:', JSON.stringify(response.data));
                     throw new Error(response.data.response || 'Thyrocare order creation failed');
                 }
             }).catch(e => {
-                require('fs').appendFileSync('/tmp/ayropath-error.log', new Date().toISOString() + ' Thyrocare Axios Catch: ' + JSON.stringify(e.response?.data || e.message) + '\n');
+                console.error('[book-on-behalf] Thyrocare axios error:', JSON.stringify(e.response?.data || e.message));
                 const thyrocareMsg = e.response?.data?.response?.message || e.response?.data?.response || e.message;
                 throw new Error(typeof thyrocareMsg === 'string' ? thyrocareMsg : JSON.stringify(thyrocareMsg));
             });
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true, message: 'Order created successfully', order });
 
         } catch (thyrocareError: any) {
-            require('fs').appendFileSync('/tmp/ayropath-error.log', new Date().toISOString() + ' Thyrocare Error: ' + (thyrocareError.stack || thyrocareError.message) + '\n');
+            console.error('[book-on-behalf] Thyrocare error:', thyrocareError.stack || thyrocareError.message);
             order.thyrocare.error = thyrocareError.message;
             order.status = 'FAILED';
             await order.save();
@@ -197,8 +197,7 @@ export async function POST(req: NextRequest) {
         }
 
     } catch (error: any) {
-        require('fs').appendFileSync('/tmp/ayropath-error.log', new Date().toISOString() + ' : ' + (error.stack || error.message) + '\n');
-        console.error('Book on behalf error:', error);
-        return NextResponse.json({ success: false, error: error.message || 'Failed to book on behalf', stack: error.stack }, { status: 500 });
+        console.error('[book-on-behalf] Unhandled error:', error.stack || error.message);
+        return NextResponse.json({ success: false, error: error.message || 'Failed to book on behalf' }, { status: 500 });
     }
 }

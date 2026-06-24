@@ -91,12 +91,17 @@ const OrderFilters: React.FC<OrderFiltersProps> = ({
                             onChange={onThyrocareStatusFilterChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                            <option value="">All Status</option>
-                            <option value="YET TO ASSIGN">Yet to Assign</option>
-                            <option value="ASSIGNED">Assigned</option>
-                            <option value="ACCEPTED">Accepted</option>
-                            <option value="SERVICED">Serviced</option>
-                            <option value="DONE">Done</option>
+                            <option value="">All Statuses</option>
+                            <option value="YET TO ASSIGN">Order Booked</option>
+                            <option value="ASSIGNED">Technician Assigned</option>
+                            <option value="ACCEPTED">Technician Accepted</option>
+                            <option value="STARTED">Technician On the Way</option>
+                            <option value="ARRIVED">Technician Arrived</option>
+                            <option value="CONFIRMED">Sample Collected</option>
+                            <option value="SERVICED">Sample at Lab</option>
+                            <option value="DONE">Report Ready</option>
+                            <option value="REPORTED">Report Released</option>
+                            <option value="CANCELLED">Cancelled</option>
                             <option value="FAILED">Failed</option>
                         </select>
                     </div>

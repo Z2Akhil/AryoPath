@@ -13,12 +13,14 @@ const STEPS = [
 
 const STATUS_TO_STEP: Record<string, number> = {
     'YET TO ASSIGN': 0,
+    'Y':             0,
     'ASSIGNED':       1,
     'ACCEPTED':       1,
     'STARTED':        2,
     'ARRIVED':        2,
     'CONFIRMED':      3,
     'SERVICED':       3,
+    'LAB':            3,
     'PARTIAL SERVICED': 3,
     'DONE':           4,
     'REPORTED':       4,
@@ -29,17 +31,19 @@ export default function LabTestProgress({ status }: { status?: string }) {
 
     const normalised = status.toUpperCase().trim();
 
-    if (normalised === 'CANCELLED') {
+    if (['CANCELLED', 'CANCELLATIONREQUEST', 'CANCELTEST'].includes(normalised)) {
         return (
             <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-100 rounded-xl">
                 <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
-                <p className="text-xs font-semibold text-red-700">Order Cancelled by Lab</p>
+                <p className="text-xs font-semibold text-red-700">
+                    {normalised === 'CANCELLED' ? 'Order Cancelled' : 'Cancellation in Progress'}
+                </p>
             </div>
         );
     }
 
     const activeStep = STATUS_TO_STEP[normalised] ?? 0;
-    const isRescheduled = normalised === 'RESCHEDULED';
+    const isRescheduled = ['RESCHEDULED', 'FIX APPOINTMENT'].includes(normalised);
 
     return (
         <div>

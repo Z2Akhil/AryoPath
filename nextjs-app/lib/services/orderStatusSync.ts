@@ -4,14 +4,48 @@ import { ThyrocareService } from './thyrocare';
 import { thyrocareCircuitBreaker } from '../utils/circuitBreaker';
 import { thyrocareRequestQueue } from '../utils/requestQueue';
 
+// ─── User-facing display label map ────────────────────────────────────────
+export const THYROCARE_DISPLAY_LABELS: Record<string, string> = {
+    'YET TO ASSIGN':        'Order Booked',
+    'Y':                    'Order Booked',
+    'ASSIGNED':             'Technician Assigned',
+    'ACCEPTED':             'Technician Accepted',
+    'STARTED':              'Technician On the Way',
+    'ARRIVED':              'Technician Arrived',
+    'CONFIRMED':            'Sample Collected',
+    'SERVICED':             'Sample at Lab',
+    'PARTIAL SERVICED':     'Partially Serviced',
+    'RESCHEDULED':          'Appointment Rescheduled',
+    'FIX APPOINTMENT':      'Appointment Fixed',
+    'DONE':                 'Report Ready',
+    'REPORTED':             'Report Released',
+    'CANCELLED':            'Cancelled',
+    'CANCELLATIONREQUEST':  'Cancellation Requested',
+    'CANCELTEST':           'Cancellation Initiated',
+    'PERSUASION':           'Follow-up in Progress',
+    'CALLBACK':             'Callback Requested',
+    'CHARBI PUSHED':        'Assigned to Partner Technician',
+    'RELEASED':             'Technician Released',
+    'REQUEST TO RELEASE':   'Release Requested',
+    'LAB':                  'Sample at Lab',
+};
+
+export function getDisplayLabel(thyrocareStatus: string): string {
+    return THYROCARE_DISPLAY_LABELS[thyrocareStatus.toUpperCase().trim()] ?? thyrocareStatus;
+}
+
 /**
- * Service for syncing order status from Thyrocare API
+ * Service for syncing order status from Thyrocare API (pull-based fallback).
+ * The primary update mechanism is the Thyrocare webhook at /api/webhooks/thyrocare.
+ * This service is used for:
+ *   1. Manual admin sync (single or bulk)
+ *   2. Cron job fallback every 30 min
  */
 export class OrderStatusSyncService {
     private static apiUrl = process.env.THYROCARE_API_URL || 'https://velso.thyrocare.cloud';
 
     /**
-     * Fetch order status from Thyrocare API for a single order
+     * Fetch order summary from Thyrocare for a single order number
      */
     private static async fetchOrderStatusFromThyrocare(orderNumber: string, apiKey: string) {
         const executeApiCall = async (currentApiKey: string) => {
@@ -21,44 +55,44 @@ export class OrderStatusSyncService {
                 `${this.apiUrl}/api/OrderSummary/OrderSummary`,
                 {
                     OrderNo: orderNumber,
-                    ApiKey: currentApiKey
+                    ApiKey:  currentApiKey,
                 },
                 {
                     headers: { 'Content-Type': 'application/json' },
-                    timeout: 30000
+                    timeout: 30000,
                 }
             );
 
             return response.data;
         };
 
-        return await thyrocareRequestQueue.enqueue(async () => {
-            return await thyrocareCircuitBreaker.execute(() => executeApiCall(apiKey));
-        }, {
-            priority: 'normal',
-            metadata: { type: 'order_status_check', orderNumber }
-        });
+        return await thyrocareRequestQueue.enqueue(
+            async () => thyrocareCircuitBreaker.execute(() => executeApiCall(apiKey)),
+            { priority: 'normal', metadata: { type: 'order_status_check', orderNumber } }
+        );
     }
 
     /**
-     * Sync status for a single order
+     * Sync status for a single order.
+     * Returns { success, statusChanged, oldStatus, newStatus, message }
      */
     static async syncOrderStatus(orderIdOrDoc: string | OrderDocument) {
         try {
-            const order = typeof orderIdOrDoc === 'string'
-                ? await Order.findById(orderIdOrDoc)
-                : orderIdOrDoc;
+            const order =
+                typeof orderIdOrDoc === 'string'
+                    ? await Order.findById(orderIdOrDoc)
+                    : orderIdOrDoc;
 
             if (!order) {
-                throw new Error(`Order not found`);
+                throw new Error('Order not found');
             }
 
             if (!order.thyrocare?.orderNo) {
                 return {
-                    orderId: order._id,
-                    success: false,
-                    message: 'No Thyrocare order number',
-                    statusChanged: false
+                    orderId:       order._id,
+                    success:       false,
+                    message:       'No Thyrocare order number',
+                    statusChanged: false,
                 };
             }
 
@@ -68,45 +102,73 @@ export class OrderStatusSyncService {
                     apiKey
                 );
 
-                // Store full response
+                // Store raw response for debugging
                 order.thyrocare.response = thyrocareResponse;
 
-                let newStatus = order.thyrocare.status;
+                // ── Capture OLD status BEFORE any mutation ──────────────
+                const oldStatus = order.thyrocare.status ?? 'UNKNOWN';
+
+                let newStatus     = oldStatus;
                 let statusChanged = false;
-                let reportUrls: any[] = [];
+                const reportUrls: any[] = [];
 
                 if (thyrocareResponse.response === 'Success') {
-                    // Extract status from orderMaster or data field
-                    let thyrocareStatus = '';
-                    if (thyrocareResponse.orderMaster && thyrocareResponse.orderMaster.length > 0) {
-                        thyrocareStatus = thyrocareResponse.orderMaster[0].status;
+                    // Extract raw status string
+                    let rawThyrocareStatus = '';
+                    if (thyrocareResponse.orderMaster?.length > 0) {
+                        rawThyrocareStatus = thyrocareResponse.orderMaster[0].status ?? '';
 
-                        // Extract reports
-                        if (thyrocareResponse.benMaster && thyrocareResponse.benMaster.length > 0) {
-                            reportUrls = thyrocareResponse.benMaster.map((ben: any) => ({
+                        // Extract report URLs from benMaster
+                        const benMaster: any[] = thyrocareResponse.benMaster ?? [];
+                        for (const ben of benMaster) {
+                            reportUrls.push({
                                 beneficiaryName: ben.name,
-                                leadId: ben.id,
-                                reportUrl: ben.url
-                            }));
+                                leadId:          ben.id,
+                                reportUrl:       ben.url,
+                            });
                         }
                     } else if (thyrocareResponse.data) {
-                        thyrocareStatus = thyrocareResponse.data.status ||
-                            thyrocareResponse.data.OrderStatus ||
-                            thyrocareResponse.data.currentStatus;
+                        rawThyrocareStatus =
+                            thyrocareResponse.data.status ??
+                            thyrocareResponse.data.OrderStatus ??
+                            thyrocareResponse.data.currentStatus ??
+                            '';
                     }
 
-                    if (thyrocareStatus && thyrocareStatus.toUpperCase() !== order.thyrocare.status.toUpperCase()) {
-                        newStatus = thyrocareStatus.toUpperCase();
+                    // ── Normalize to uppercase + trim (FIX: was done only on comparison) ──
+                    const normalizedStatus = rawThyrocareStatus.toUpperCase().trim();
+                    const currentNormalized = (order.thyrocare.status ?? '').toUpperCase().trim();
+
+                    if (normalizedStatus && normalizedStatus !== currentNormalized) {
+                        newStatus     = normalizedStatus;
                         statusChanged = true;
-                        await (order as any).updateThyrocareStatus(newStatus, 'Synced from Thyrocare API');
+
+                        // Update thyrocare sub-doc
+                        order.thyrocare.status = normalizedStatus;
+                        order.thyrocare.statusHistory.push({
+                            status:    normalizedStatus,
+                            timestamp: new Date(),
+                            notes:     'Synced from Thyrocare API',
+                        });
+
+                        // Map to outer Order.status
+                        if (['DONE', 'REPORTED'].includes(normalizedStatus)) {
+                            order.status = 'COMPLETED';
+                        } else if (normalizedStatus === 'CANCELLED') {
+                            order.status = 'CANCELLED';
+                        } else if (order.status === 'PENDING') {
+                            order.status = 'CREATED';
+                        }
                     }
 
-                    // Save reports
-                    if (reportUrls.length > 0) {
-                        for (const report of reportUrls) {
-                            if (report.reportUrl) {
-                                await (order as any).addReport(report.beneficiaryName, report.leadId, report.reportUrl);
-                            }
+                    // Save available report URLs regardless of status change
+                    for (const report of reportUrls) {
+                        if (report.reportUrl) {
+                            await (order as any).addReport(
+                                report.beneficiaryName,
+                                report.leadId,
+                                report.reportUrl
+                            );
                         }
                     }
                 }
@@ -115,34 +177,42 @@ export class OrderStatusSyncService {
                 await order.save();
 
                 return {
-                    orderId: order._id,
-                    orderNumber: order.thyrocare.orderNo,
-                    success: true,
+                    orderId:       order._id,
+                    orderNumber:   order.thyrocare.orderNo,
+                    success:       true,
                     statusChanged,
-                    oldStatus: order.thyrocare.status,
-                    newStatus: newStatus,
-                    message: statusChanged ? 'Status updated' : 'Status unchanged'
+                    oldStatus,          // ✅ captured BEFORE mutation
+                    newStatus,
+                    displayLabel:  getDisplayLabel(newStatus),
+                    message:       statusChanged ? `Status updated: ${oldStatus} → ${newStatus}` : 'Status unchanged',
                 };
             });
 
             return result;
         } catch (error: any) {
-            console.error(`❌ Failed to sync order:`, error);
+            console.error('❌ Failed to sync order:', error);
             return {
-                success: false,
-                message: error.message,
-                statusChanged: false
+                success:       false,
+                message:       error.message,
+                statusChanged: false,
             };
         }
     }
 
     /**
-     * Sync status for all active orders
+     * Sync all active orders that haven't been synced in the last 25 minutes.
+     * Terminal statuses (COMPLETED, CANCELLED) are excluded automatically.
      */
     static async syncAllOrdersStatus() {
+        const twentyFiveMinutesAgo = new Date(Date.now() - 25 * 60 * 1000);
+
         const orders = await Order.find({
             'thyrocare.orderNo': { $exists: true, $ne: null },
-            status: { $nin: ['COMPLETED', 'FAILED', 'CANCELLED'] }
+            status:              { $nin: ['COMPLETED', 'FAILED', 'CANCELLED'] },
+            $or: [
+                { 'thyrocare.lastSyncedAt': { $lt: twentyFiveMinutesAgo } },
+                { 'thyrocare.lastSyncedAt': { $exists: false } },
+            ],
         }).select('_id');
 
         const results: any[] = [];
@@ -151,11 +221,11 @@ export class OrderStatusSyncService {
         }
 
         return {
-            total: orders.length,
-            successful: results.filter(r => r.success).length,
-            failed: results.filter(r => !r.success).length,
+            total:         orders.length,
+            successful:    results.filter(r => r.success).length,
+            failed:        results.filter(r => !r.success).length,
             statusChanged: results.filter(r => r.statusChanged).length,
-            results
+            results,
         };
     }
 }

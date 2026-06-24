@@ -73,6 +73,7 @@ export interface OrderDocument extends Document {
         status: 'PENDING' | 'PAID' | 'FAILED';
     };
     status: 'PENDING' | 'CREATED' | 'FAILED' | 'CANCELLED' | 'COMPLETED';
+    thyrocareDisplayStatus?: string;
     notes?: string;
     source: string;
     createdAt: Date;
@@ -285,6 +286,10 @@ const orderSchema = new Schema<OrderDocument, IOrderModel>({
         enum: ['PENDING', 'CREATED', 'FAILED', 'CANCELLED', 'COMPLETED'],
         default: 'PENDING'
     },
+    thyrocareDisplayStatus: {
+        type: String,
+        default: ''
+    },
     notes: {
         type: String
     },
@@ -314,19 +319,50 @@ orderSchema.statics.generateOrderId = function () {
     return `ORD${timestamp.slice(-6)}${random}`;
 };
 
+const THYROCARE_DISPLAY_LABELS_MODEL: Record<string, string> = {
+    'YET TO ASSIGN':        'Order Booked',
+    'Y':                    'Order Booked',
+    'ASSIGNED':             'Technician Assigned',
+    'ACCEPTED':             'Technician Accepted',
+    'STARTED':              'Technician On the Way',
+    'ARRIVED':              'Technician Arrived',
+    'CONFIRMED':            'Sample Collected',
+    'SERVICED':             'Sample at Lab',
+    'PARTIAL SERVICED':     'Partially Serviced',
+    'RESCHEDULED':          'Appointment Rescheduled',
+    'FIX APPOINTMENT':      'Appointment Fixed',
+    'DONE':                 'Report Ready',
+    'REPORTED':             'Report Released',
+    'CANCELLED':            'Cancelled',
+    'CANCELLATIONREQUEST':  'Cancellation Requested',
+    'CANCELTEST':           'Cancellation Initiated',
+    'PERSUASION':           'Follow-up in Progress',
+    'CALLBACK':             'Callback Requested',
+    'CHARBI PUSHED':        'Assigned to Partner Technician',
+    'LAB':                  'Sample at Lab',
+};
+
 orderSchema.methods.updateThyrocareStatus = async function (this: OrderDocument, newStatus: string, notes = '') {
-    this.thyrocare.status = newStatus;
+    const normalized = newStatus.toUpperCase().trim();
+    this.thyrocare.status = normalized;
     this.thyrocare.statusHistory.push({
-        status: newStatus,
+        status:    normalized,
         timestamp: new Date(),
-        notes: notes
+        notes:     notes,
     });
 
-    if (newStatus === 'DONE') {
+    // Set user-facing display label
+    (this as any).thyrocareDisplayStatus =
+        THYROCARE_DISPLAY_LABELS_MODEL[normalized] ?? normalized;
+
+    // Map to outer Order.status
+    if (['DONE', 'REPORTED'].includes(normalized)) {
         this.status = 'COMPLETED';
-    } else if (newStatus === 'FAILED') {
+    } else if (normalized === 'CANCELLED') {
+        this.status = 'CANCELLED';
+    } else if (normalized === 'FAILED') {
         this.status = 'FAILED';
-    } else if (this.status === 'PENDING' && newStatus !== 'YET TO ASSIGN') {
+    } else if (this.status === 'PENDING') {
         this.status = 'CREATED';
     }
 
@@ -368,11 +404,22 @@ orderSchema.methods.markReportDownloaded = async function (this: OrderDocument, 
 };
 
 orderSchema.methods.getCategorizedStatus = function (this: OrderDocument) {
-    const systemStatus = this.status;
-    const thyrocareStatus = this.thyrocare?.status;
+    const systemStatus    = this.status;
+    const thyrocareStatus = (this.thyrocare?.status ?? '').toUpperCase().trim();
 
-    if (systemStatus === 'COMPLETED' || thyrocareStatus === 'DONE') {
+    if (
+        systemStatus === 'COMPLETED' ||
+        thyrocareStatus === 'DONE'   ||
+        thyrocareStatus === 'REPORTED'
+    ) {
         return 'COMPLETED';
+    }
+
+    if (
+        systemStatus === 'CANCELLED' ||
+        thyrocareStatus === 'CANCELLED'
+    ) {
+        return 'CANCELLED';
     }
 
     if (systemStatus === 'FAILED' || thyrocareStatus === 'FAILED') {
@@ -396,10 +443,20 @@ orderSchema.statics.getCategorizedStats = async function (this: IOrderModel, adm
                                 case: {
                                     $or: [
                                         { $eq: ['$status', 'COMPLETED'] },
-                                        { $eq: ['$thyrocare.status', 'DONE'] }
+                                        { $eq: ['$thyrocare.status', 'DONE'] },
+                                        { $eq: ['$thyrocare.status', 'REPORTED'] }
                                     ]
                                 },
                                 then: 'COMPLETED'
+                            },
+                            {
+                                case: {
+                                    $or: [
+                                        { $eq: ['$status', 'CANCELLED'] },
+                                        { $eq: ['$thyrocare.status', 'CANCELLED'] }
+                                    ]
+                                },
+                                then: 'CANCELLED'
                             },
                             {
                                 case: {
@@ -426,8 +483,9 @@ orderSchema.statics.getCategorizedStats = async function (this: IOrderModel, adm
 
     const stats: Record<string, number> = {
         COMPLETED: 0,
-        FAILED: 0,
-        PENDING: 0
+        CANCELLED: 0,
+        FAILED:    0,
+        PENDING:   0
     };
 
     result.forEach(item => {

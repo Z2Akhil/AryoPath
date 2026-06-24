@@ -5,6 +5,7 @@ import connectToDatabase from '@/lib/db/mongoose';
 import Order from '@/lib/models/Order';
 import AdminSession from '@/lib/models/AdminSession';
 import User from '@/lib/models/User';
+import { ThyrocareService } from '@/lib/services/thyrocare';
 
 // Helper to get user from token
 const getUserFromToken = async (token: string | null) => {
@@ -21,28 +22,32 @@ const getUserFromToken = async (token: string | null) => {
     return null;
 };
 
-// Create order in Thyrocare system
-const createThyrocareOrder = async (order: any, adminSession: any) => {
-    try {
+// Retry Thyrocare order creation via ThyrocareService
+// (circuit breaker + rate-limit queue + auto-token-refresh)
+const createThyrocareOrder = async (order: any) => {
+    return await ThyrocareService.makeRequest(async (apiKey) => {
+        const activeSession = await AdminSession.findOne({ isActive: true }).populate('adminId').lean();
+        const refCode = (activeSession as any)?.adminId?.mobile || '';
+
         const payload = {
-            api_key: adminSession.thyrocareApiKey,
+            api_key: apiKey,
             ref_order_id: order.orderId,
             email: order.contactInfo.email,
             mobile: order.contactInfo.mobile,
             address: `${order.contactInfo.address.street}, ${order.contactInfo.address.city}, ${order.contactInfo.address.state}`,
             appt_date: `${order.appointment.date} ${order.appointment.slot.split(' - ')[0]}`,
             order_by: (order.beneficiaries[0]?.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '') || 'Customer',
-            passon: order.package.discountAmount, // already the total discount for all beneficiaries
+            passon: order.package.discountAmount,
             pay_type: 'POSTPAID',
             pincode: order.contactInfo.address.pincode,
             products: Array.isArray(order.package.code) ? order.package.code.join(',') : order.package.code,
-            ref_code: adminSession.adminId.mobile,
+            ref_code: refCode,
             reports: order.reportsHardcopy,
             service_type: 'HOME',
-            ben_data: order.beneficiaries.map((beneficiary: any) => ({
-                name: beneficiary.name,
-                age: beneficiary.age,
-                gender: beneficiary.gender === 'Male' ? 'M' : beneficiary.gender === 'Female' ? 'F' : 'O'
+            ben_data: order.beneficiaries.map((b: any) => ({
+                name: b.name,
+                age:  b.age,
+                gender: b.gender === 'Male' ? 'M' : b.gender === 'Female' ? 'F' : 'O'
             })),
             coupon: '',
             order_mode: 'DSA-BOOKING-API',
@@ -51,39 +56,22 @@ const createThyrocareOrder = async (order: any, adminSession: any) => {
             phlebo_notes: ''
         };
 
-        console.log('Creating Thyrocare order with payload:', {
-            orderId: order.orderId,
-            package: order.package.code,
-            beneficiaries: order.beneficiaries.length
-        });
-
         const response = await axios.post(
             'https://dx-dsa-service.thyrocare.com/api/booking-master/v2/create-order',
             payload,
-            {
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                timeout: 30000
-            }
+            { headers: { 'Content-Type': 'application/json' }, timeout: 30000 }
         );
 
         if (response.data.response_status === 1) {
-            console.log('Thyrocare order created successfully:', {
-                orderId: order.orderId,
-                thyrocareOrderNo: response.data.order_no
-            });
             return response.data;
         } else {
-            throw new Error(response.data.response || 'Thyrocare order creation failed');
+            const msg = response.data.response || 'Thyrocare order creation failed';
+            throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
         }
-    } catch (error: any) {
-        console.error('Thyrocare order creation failed:', {
-            orderId: order.orderId,
-            error: error.response?.data || error.message
-        });
-        throw new Error(error.response?.data?.response || error.message || 'Thyrocare API error');
-    }
+    }).catch((error: any) => {
+        const thyrocareMsg = error.response?.data?.response?.message || error.response?.data?.response || error.message;
+        throw new Error(typeof thyrocareMsg === 'string' ? thyrocareMsg : JSON.stringify(thyrocareMsg));
+    });
 };
 
 // GET /api/orders/[orderId] - Get order by ID
@@ -173,20 +161,9 @@ export async function POST(
             );
         }
 
-        // Get active admin session
-        const activeSession = await AdminSession.findOne({ isActive: true })
-            .populate('adminId');
-
-        if (!activeSession) {
-            return NextResponse.json(
-                { success: false, message: 'No active admin session found' },
-                { status: 500 }
-            );
-        }
-
-        // Retry Thyrocare order creation
+        // Retry via ThyrocareService (circuit breaker + auto-refresh)
         try {
-            const thyrocareResponse = await createThyrocareOrder(order, activeSession);
+            const thyrocareResponse = await createThyrocareOrder(order);
 
             order.thyrocare.orderNo = thyrocareResponse.order_no;
             order.thyrocare.response = thyrocareResponse;

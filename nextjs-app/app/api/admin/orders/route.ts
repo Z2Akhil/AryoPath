@@ -33,7 +33,13 @@ export async function GET(req: NextRequest) {
             if (status === 'COMPLETED') {
                 query.$or = [
                     { status: 'COMPLETED' },
-                    { 'thyrocare.status': 'DONE' }
+                    { 'thyrocare.status': 'DONE' },
+                    { 'thyrocare.status': 'REPORTED' }   // ← also completed
+                ];
+            } else if (status === 'CANCELLED') {
+                query.$or = [
+                    { status: 'CANCELLED' },
+                    { 'thyrocare.status': 'CANCELLED' }
                 ];
             } else if (status === 'FAILED') {
                 query.$or = [
@@ -42,8 +48,8 @@ export async function GET(req: NextRequest) {
                 ];
             } else if (status === 'PENDING') {
                 query.$and = [
-                    { status: { $nin: ['COMPLETED', 'FAILED'] } },
-                    { 'thyrocare.status': { $nin: ['DONE', 'FAILED'] } }
+                    { status: { $nin: ['COMPLETED', 'FAILED', 'CANCELLED'] } },
+                    { 'thyrocare.status': { $nin: ['DONE', 'REPORTED', 'FAILED', 'CANCELLED'] } }
                 ];
             } else {
                 query.status = status;

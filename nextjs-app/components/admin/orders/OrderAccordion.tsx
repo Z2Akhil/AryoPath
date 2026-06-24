@@ -71,15 +71,83 @@ const OrderAccordion: React.FC<OrderAccordionProps> = ({
         }
     };
 
+    const getThyrocareFriendlyStatus = (status: string): string => {
+        if (!status) return 'Order Booked';
+        const normalized = status.toUpperCase().trim();
+        switch (normalized) {
+            case 'YET TO ASSIGN':
+            case 'Y':
+                return 'Order Booked';
+            case 'ASSIGNED':
+                return 'Technician Assigned';
+            case 'ACCEPTED':
+                return 'Technician Accepted';
+            case 'STARTED':
+                return 'Technician On the Way';
+            case 'ARRIVED':
+                return 'Technician Arrived';
+            case 'CONFIRMED':
+                return 'Sample Collected';
+            case 'SERVICED':
+            case 'LAB':
+                return 'Sample at Lab';
+            case 'PARTIAL SERVICED':
+                return 'Partially Serviced';
+            case 'FIX APPOINTMENT':
+                return 'Appointment Fixed';
+            case 'RESCHEDULED':
+                return 'Appointment Rescheduled';
+            case 'DONE':
+                return 'Report Ready';
+            case 'REPORTED':
+                return 'Report Released';
+            case 'CANCELLED':
+                return 'Cancelled';
+            case 'CANCELLATIONREQUEST':
+                return 'Cancellation Requested';
+            case 'CANCELTEST':
+                return 'Cancellation Initiated';
+            case 'CHARBI PUSHED':
+                return 'Assigned to Partner Tech';
+            case 'PERSUASION':
+                return 'Follow-up in Progress';
+            case 'CALLBACK':
+                return 'Callback Requested';
+            default:
+                return status;
+        }
+    };
+
     const getThyrocareStatusColor = (status: string) => {
-        switch (status) {
-            case 'DONE': return 'bg-green-100 text-green-800';
-            case 'SERVICED': return 'bg-blue-100 text-blue-800';
-            case 'ACCEPTED': return 'bg-purple-100 text-purple-800';
-            case 'ASSIGNED': return 'bg-yellow-100 text-yellow-800';
-            case 'YET TO ASSIGN': return 'bg-gray-100 text-gray-800';
-            case 'FAILED': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
+        const normalized = (status || '').toUpperCase().trim();
+        switch (normalized) {
+            case 'DONE':
+            case 'REPORTED':
+                return 'bg-green-100 text-green-800 border border-green-200';
+            case 'SERVICED':
+            case 'LAB':
+            case 'PARTIAL SERVICED':
+                return 'bg-blue-100 text-blue-800 border border-blue-200';
+            case 'ACCEPTED':
+            case 'STARTED':
+            case 'ARRIVED':
+            case 'CONFIRMED':
+                return 'bg-purple-100 text-purple-800 border border-purple-200';
+            case 'ASSIGNED':
+                return 'bg-indigo-100 text-indigo-800 border border-indigo-200';
+            case 'YET TO ASSIGN':
+            case 'Y':
+            case 'FIX APPOINTMENT':
+            case 'RESCHEDULED':
+                return 'bg-yellow-100 text-yellow-850 border border-yellow-250';
+            case 'CANCELLED':
+            case 'CANCELLATIONREQUEST':
+            case 'CANCELTEST':
+                return 'bg-gray-100 text-gray-800 border border-gray-200';
+            case 'FAILED':
+                return 'bg-red-100 text-red-800 border border-red-200';
+            default:
+                return 'bg-gray-100 text-gray-800';
         }
     };
 
@@ -159,7 +227,7 @@ const OrderAccordion: React.FC<OrderAccordionProps> = ({
                         </span>
                         {order.thyrocare?.status && (
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getThyrocareStatusColor(order.thyrocare.status)} w-fit`}>
-                                {order.thyrocare.status}
+                                {getThyrocareFriendlyStatus(order.thyrocare.status)}
                             </span>
                         )}
                     </div>
@@ -353,7 +421,7 @@ const OrderAccordion: React.FC<OrderAccordionProps> = ({
                                     <div className="space-y-3 text-sm">
                                         <div>
                                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${getThyrocareStatusColor(order.thyrocare?.status || '')}`}>
-                                                {order.thyrocare?.status || 'YET TO ASSIGN'}
+                                                {getThyrocareFriendlyStatus(order.thyrocare?.status || 'YET TO ASSIGN')}
                                             </span>
                                         </div>
                                         <div className="flex justify-between items-center">
