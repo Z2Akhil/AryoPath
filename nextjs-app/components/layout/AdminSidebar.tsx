@@ -7,10 +7,11 @@ import {
     Home, BarChart3, Package, Users, Bell,
     Settings, UserCircle, ChevronLeft, ChevronRight,
     ChevronDown, ChevronUp, Stethoscope, Layers, UserCog, Star,
-    ClipboardList, Printer,
+    ClipboardList, Printer, FileText,
 } from 'lucide-react';
 import { useAdminAuth } from '@/providers/AdminAuthProvider';
 import { PERMISSIONS } from '@/lib/constants/permissions';
+import adminPrescriptionApi from '@/lib/api/adminPrescriptionApi';
 
 interface SidebarProps {
     collapsed: boolean;
@@ -79,6 +80,22 @@ const AdminSidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, analyticsOp
     const showNotifications = isAdmin || hasPermission(PERMISSIONS.NOTIFICATIONS_VIEW);
     const showServices      = isAdmin || hasPermission(PERMISSIONS.SERVICES_VIEW);
     const showLabReceipt    = isAdmin || hasPermission(PERMISSIONS.LAB_RECEIPT_VIEW);
+    const showPrescriptions = isAdmin || hasPermission(PERMISSIONS.PRESCRIPTION_BOOKING);
+
+    // Live red-count badge for pending prescription uploads
+    const [rxPending, setRxPending] = useState(0);
+    useEffect(() => {
+        if (!showPrescriptions) return;
+        let alive = true;
+        const fetchCount = () => {
+            adminPrescriptionApi.list({ limit: 1, status: 'pending' })
+                .then(r => { if (alive && r.success) setRxPending(r.pendingCount); })
+                .catch(() => {});
+        };
+        fetchCount();
+        const t = setInterval(fetchCount, 60000); // refresh every 60s
+        return () => { alive = false; clearInterval(t); };
+    }, [showPrescriptions]);
 
     return (
         <>
@@ -253,6 +270,30 @@ const AdminSidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, analyticsOp
                         <Link href="/admin/notifications" className={navLinkClass('/admin/notifications')} title="Notifications">
                             <Bell className="h-5 w-5" />
                             {!collapsed && <span className="ml-3">Notifications</span>}
+                        </Link>
+                    )}
+
+                    {/* Prescriptions — admin + staff with PRESCRIPTION_BOOKING (red-count badge) */}
+                    {showPrescriptions && (
+                        <Link href="/admin/prescriptions" className={navLinkClass('/admin/prescriptions')} title="Prescriptions">
+                            <div className="relative">
+                                <FileText className="h-5 w-5" />
+                                {rxPending > 0 && (
+                                    <span className={`absolute -top-1.5 ${collapsed ? '-right-1.5' : '-right-2'} min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-black`}>
+                                        {rxPending > 99 ? '99+' : rxPending}
+                                    </span>
+                                )}
+                            </div>
+                            {!collapsed && (
+                                <span className="ml-3 flex items-center gap-2">
+                                    Prescriptions
+                                    {rxPending > 0 && (
+                                        <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-black">
+                                            {rxPending > 99 ? '99+' : rxPending}
+                                        </span>
+                                    )}
+                                </span>
+                            )}
                         </Link>
                     )}
 

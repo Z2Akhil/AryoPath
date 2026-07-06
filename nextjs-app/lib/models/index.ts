@@ -7,6 +7,7 @@ import Notification from './Notification';
 import OTP from './OTP';
 import Offer from './Offer';
 import Order from './Order';
+import Prescription from './Prescription';
 import Profile from './Profile';
 import SMSHistory from './SMSHistory';
 import SiteSettings from './SiteSettings';
@@ -23,6 +24,7 @@ const models = {
     OTP,
     Offer,
     Order,
+    Prescription,
     Profile,
     SMSHistory,
     SiteSettings,

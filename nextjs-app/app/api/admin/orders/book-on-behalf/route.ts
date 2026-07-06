@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { adminOrStaffAuth } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 import connectDB from '@/lib/db/mongoose';
 import Order from '@/lib/models/Order';
 import AdminActivity from '@/lib/models/AdminActivity';
@@ -10,7 +11,8 @@ import AdminSession from '@/lib/models/AdminSession';
 
 export async function POST(req: NextRequest) {
     const startTime = Date.now();
-    const auth = await adminOrStaffAuth(req, 'users.view');
+    // Users-with-users.view OR prescription-booking staff may book on behalf.
+    const auth = await adminOrStaffAuth(req, [PERMISSIONS.USERS_VIEW, PERMISSIONS.PRESCRIPTION_BOOKING]);
 
     if (!auth.authenticated) {
         return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
@@ -111,7 +113,7 @@ export async function POST(req: NextRequest) {
                     address: `${order.contactInfo.address.street}, ${order.contactInfo.address.city}, ${order.contactInfo.address.state}`,
                     appt_date: `${order.appointment.date} ${order.appointment.slot.split(' - ')[0]}`,
                     order_by: (order.beneficiaries[0]?.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '') || 'Customer',
-                    passon: (order.package.discountAmount || 0),
+                    passon: Math.max(0, Math.floor(order.package.discountAmount || 0)),
                     pay_type: 'POSTPAID',
                     pincode: order.contactInfo.address.pincode,
                     products: Array.isArray(order.package.code) ? order.package.code.join(',') : order.package.code,

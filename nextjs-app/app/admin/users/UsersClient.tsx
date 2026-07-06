@@ -16,7 +16,11 @@ import {
     CheckCircle,
     XCircle,
     MoreVertical,
-    Filter
+    Filter,
+    FlaskConical,
+    Pill,
+    Stethoscope,
+    X,
 } from 'lucide-react';
 import adminUserApi from '@/lib/api/adminUserApi';
 import { CustomerUser } from '@/types/admin';
@@ -24,6 +28,8 @@ import Pagination from '@/components/common/Pagination';
 import UserViewModal from '@/components/admin/users/UserViewModal';
 import UserEditModal from '@/components/admin/users/UserEditModal';
 import BookOrderModal from '@/components/admin/orders/BookOrderModal';
+import BookMedicineModal from '@/components/admin/orders/BookMedicineModal';
+import BookAppointmentModal from '@/components/admin/orders/BookAppointmentModal';
 import UserCartModal from '@/components/admin/users/UserCartModal';
 import { useAdminAuth } from '@/providers/AdminAuthProvider';
 import { useToast } from '@/providers/ToastProvider';
@@ -50,8 +56,13 @@ export default function UsersClient() {
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isBookModalOpen, setIsBookModalOpen] = useState(false);
+    const [isMedBookOpen, setIsMedBookOpen] = useState(false);
+    const [isApptBookOpen, setIsApptBookOpen] = useState(false);
+    const [isBookChooserOpen, setIsBookChooserOpen] = useState(false);
     const [isCartModalOpen, setIsCartModalOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
+
+    const canPrescriptionBook = isAdmin || hasPermission(PERMISSIONS.PRESCRIPTION_BOOKING);
 
     const fetchUsers = useCallback(async () => {
         try {
@@ -364,9 +375,9 @@ export default function UsersClient() {
                                                     <Edit className="h-4 w-4" />
                                                 </button>
                                                 <button
-                                                    onClick={() => { setSelectedUser(u); setIsBookModalOpen(true); }}
+                                                    onClick={() => { setSelectedUser(u); setIsBookChooserOpen(true); }}
                                                     className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
-                                                    title="Book Test"
+                                                    title="Book on behalf"
                                                 >
                                                     <ShoppingBag className="h-4 w-4" />
                                                 </button>
@@ -410,12 +421,87 @@ export default function UsersClient() {
                 />
             )}
 
+            {/* Booking type chooser */}
+            {isBookChooserOpen && selectedUser && (
+                <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                            <div>
+                                <h2 className="text-base font-extrabold text-gray-900">Book on behalf</h2>
+                                <p className="text-xs text-gray-400">{selectedUser.firstName} {selectedUser.lastName} · {selectedUser.mobileNumber}</p>
+                            </div>
+                            <button onClick={() => { setIsBookChooserOpen(false); setSelectedUser(null); }} className="p-2 rounded-xl hover:bg-gray-100">
+                                <X className="h-5 w-5 text-gray-500" />
+                            </button>
+                        </div>
+                        <div className="p-6 grid grid-cols-1 gap-3">
+                            {/* Lab */}
+                            <button
+                                onClick={() => { setIsBookChooserOpen(false); setIsBookModalOpen(true); }}
+                                className="flex items-center gap-3 p-4 rounded-2xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all text-left"
+                            >
+                                <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center"><FlaskConical className="h-5 w-5 text-blue-600" /></div>
+                                <div><p className="font-bold text-gray-900">Lab Test</p><p className="text-xs text-gray-400">Book Thyrocare test / package</p></div>
+                            </button>
+
+                            {/* Medicine */}
+                            <button
+                                onClick={() => {
+                                    if (!canPrescriptionBook) { toast.error('You need Prescription Booking permission'); return; }
+                                    setIsBookChooserOpen(false); setIsMedBookOpen(true);
+                                }}
+                                className="flex items-center gap-3 p-4 rounded-2xl border border-gray-200 hover:border-teal-300 hover:bg-teal-50 transition-all text-left"
+                            >
+                                <div className="w-11 h-11 rounded-xl bg-teal-50 flex items-center justify-center"><Pill className="h-5 w-5 text-teal-600" /></div>
+                                <div><p className="font-bold text-gray-900">Medicines</p><p className="text-xs text-gray-400">Book medicine order (COD)</p></div>
+                            </button>
+
+                            {/* Appointment */}
+                            <button
+                                onClick={() => {
+                                    if (!canPrescriptionBook) { toast.error('You need Prescription Booking permission'); return; }
+                                    setIsBookChooserOpen(false); setIsApptBookOpen(true);
+                                }}
+                                className="flex items-center gap-3 p-4 rounded-2xl border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all text-left"
+                            >
+                                <div className="w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center"><Stethoscope className="h-5 w-5 text-purple-600" /></div>
+                                <div><p className="font-bold text-gray-900">Appointment</p><p className="text-xs text-gray-400">Book consultation (payment link)</p></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {isBookModalOpen && selectedUser && (
                 <BookOrderModal
                     user={selectedUser}
                     onClose={() => { setIsBookModalOpen(false); setSelectedUser(null); }}
                     onSuccess={(msg) => {
                         setIsBookModalOpen(false);
+                        setSelectedUser(null);
+                        toast.success(msg);
+                    }}
+                />
+            )}
+
+            {isMedBookOpen && selectedUser && (
+                <BookMedicineModal
+                    user={selectedUser}
+                    onClose={() => { setIsMedBookOpen(false); setSelectedUser(null); }}
+                    onSuccess={(msg) => {
+                        setIsMedBookOpen(false);
+                        setSelectedUser(null);
+                        toast.success(msg);
+                    }}
+                />
+            )}
+
+            {isApptBookOpen && selectedUser && (
+                <BookAppointmentModal
+                    user={selectedUser}
+                    onClose={() => { setIsApptBookOpen(false); setSelectedUser(null); }}
+                    onSuccess={(msg) => {
+                        setIsApptBookOpen(false);
                         setSelectedUser(null);
                         toast.success(msg);
                     }}

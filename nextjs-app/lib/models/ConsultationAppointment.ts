@@ -51,6 +51,8 @@ export interface ConsultationAppointmentDocument extends Document {
   userId?: mongoose.Types.ObjectId;
   cancelledAt?: Date;
   cancellationReason?: string;
+  bookedByAdmin?: boolean;
+  paymentLink?: { linkId?: string; url?: string; expiresAt?: Date };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -142,6 +144,14 @@ const ConsultationAppointmentSchema = new Schema<ConsultationAppointmentDocument
     reminderSent:      { type: Boolean, default: false },
     cancelledAt:       { type: Date },
     cancellationReason:{ type: String, default: '' },
+
+    // On-behalf booking (admin/staff placed this for the user; awaiting payment link)
+    bookedByAdmin: { type: Boolean, default: false },
+    paymentLink:   {
+      linkId:    { type: String, default: '' },
+      url:       { type: String, default: '' },
+      expiresAt: { type: Date },
+    },
 
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: false },
   },

@@ -144,6 +144,9 @@ export interface MedicineOrder {
   courierStatusHistory?: CourierEvent[];
   returnRequest?: ReturnRequest;
   returnAwb?: string;
+  bookedByAdmin?: boolean;
+  prescriptionRef?: string;
+  paymentLink?: { linkId?: string; url?: string; expiresAt?: string };
   expiresAt?: string | null;
   createdAt: string;
   updatedAt: string;

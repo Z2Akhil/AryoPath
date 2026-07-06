@@ -164,6 +164,14 @@ const MedicineOrderSchema = new Schema<MedicineOrderDocument>(
     courierStatus:          { type: String, default: '' },
     courierStatusUpdatedAt: { type: Date },
     courierStatusHistory:   { type: [CourierEventSchema], default: [] },
+    // On-behalf booking (admin/staff placed this order for the user)
+    bookedByAdmin:   { type: Boolean, default: false },
+    prescriptionRef: { type: Schema.Types.ObjectId, ref: 'Prescription' },
+    paymentLink:     {
+      linkId:    { type: String, default: '' },
+      url:       { type: String, default: '' },
+      expiresAt: { type: Date },
+    },
     // TTL: pending_payment / payment_failed orders auto-delete after 30 min
     expiresAt: { type: Date, default: null },
   },

@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic';
 // ─── GET /api/admin/medicines ─────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const authResult = await adminOrStaffAuth(request, PERMISSIONS.MEDICINES_VIEW);
+  // Prescription-booking staff also need to browse the catalog to build on-behalf orders.
+  const authResult = await adminOrStaffAuth(request, [PERMISSIONS.MEDICINES_VIEW, PERMISSIONS.PRESCRIPTION_BOOKING]);
   if (!authResult.authenticated) {
     return NextResponse.json({ success: false, message: authResult.error }, { status: authResult.status });
   }
