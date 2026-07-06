@@ -5,6 +5,7 @@ import MedicineOrder from '@/lib/models/MedicineOrder';
 import Medicine from '@/lib/models/Medicine';
 import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
 import { getMedicineOrderEmail, sendMedicineConfirmedEmail } from '@/lib/services/transactionalEmailService';
+import { finalizeAppointmentConfirmation } from '@/lib/services/appointmentConfirmation';
 
 function verifySignature(rawBody: string, timestamp: string, sig: string): boolean {
   const secret = process.env.CASHFREE_SECRET_KEY || '';
@@ -112,12 +113,20 @@ export async function POST(req: NextRequest) {
       if (appt) {
         const apPay = (appt as any).payment?.status;
         if (linkStatus === 'PAID' && apPay !== 'paid') {
-          await ConsultationAppointment.findByIdAndUpdate((appt as any)._id, {
-            'payment.status':    'paid',
-            'payment.cfOrderId': cfOrderId ? String(cfOrderId) : '',
-            'payment.paidAt':    new Date(),
-            status: 'confirmed',
-          });
+          // Flip to paid/confirmed and return the fresh doc for the confirmation suite
+          const confirmed = await ConsultationAppointment.findByIdAndUpdate(
+            (appt as any)._id,
+            {
+              'payment.status':    'paid',
+              'payment.cfOrderId': cfOrderId ? String(cfOrderId) : '',
+              'payment.paidAt':    new Date(),
+              status: 'confirmed',
+            },
+            { new: true },
+          );
+          // Fire the full confirmation flow (meet link, emails, WhatsApp, reminder, no-show) —
+          // identical to a self-serve booking. Fire-and-forget (webhook must stay fast).
+          if (confirmed) finalizeAppointmentConfirmation(confirmed).catch(console.error);
         } else if ((linkStatus === 'EXPIRED' || linkStatus === 'CANCELLED') && apPay !== 'paid') {
           // Unpaid → cancel to release the held slot
           await ConsultationAppointment.findByIdAndUpdate((appt as any)._id, {
