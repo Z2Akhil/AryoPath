@@ -105,6 +105,38 @@ export async function GET(req: NextRequest) {
       await cart.save();
     }
 
+    // Re-price the cart against the current catalog. Cart items store a price snapshot
+    // from when they were added; the nightly Thyrocare sync can change prices (or deactivate
+    // products) afterwards. Refresh each item to the live price so the cart never shows stale
+    // amounts, and drop items whose product is no longer available/bookable.
+    let repriced = false;
+    const keptItems: any[] = [];
+    for (const item of cart.items) {
+      try {
+        const fresh = await getProductDetails(item.productCode, item.productType);
+        if (
+          item.sellingPrice !== fresh.sellingPrice ||
+          item.originalPrice !== fresh.originalPrice ||
+          item.thyrocareRate !== fresh.thyrocareRate
+        ) {
+          item.originalPrice = fresh.originalPrice;
+          item.sellingPrice  = fresh.sellingPrice;
+          item.discount      = fresh.discount;
+          item.thyrocareRate = fresh.thyrocareRate;
+          item.name          = fresh.name;
+          repriced = true;
+        }
+        keptItems.push(item);
+      } catch {
+        // Product was deactivated / removed by a sync since it was added → drop it (unbookable)
+        repriced = true;
+      }
+    }
+    if (repriced) {
+      cart.items = keptItems as any;
+      await cart.save();
+    }
+
     const summary = cart.getSummary();
 
     return NextResponse.json({
