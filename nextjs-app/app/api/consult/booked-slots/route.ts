@@ -3,10 +3,12 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
 import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
+import PendingConsultBooking from '@/lib/models/PendingConsultBooking';
 
 /**
  * GET /api/consult/booked-slots?doctorSlug=xxx&date=2026-06-05
- * Returns time slots already booked (non-cancelled) for a doctor on a given date.
+ * Returns time slots that are unavailable for a doctor on a given date — either a
+ * confirmed/pending appointment OR an active (unexpired) on-behalf payment hold.
  */
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -20,15 +22,25 @@ export async function GET(req: NextRequest) {
     try {
         await connectDB();
 
-        const appointments = await ConsultationAppointment.find({
-            doctorSlug,
-            appointmentDate: date,
-            status: { $nin: ['cancelled'] },
-        }).select('appointmentTime').lean();
+        const [appointments, holds] = await Promise.all([
+            ConsultationAppointment.find({
+                doctorSlug,
+                appointmentDate: date,
+                status: { $nin: ['cancelled'] },
+            }).select('appointmentTime').lean(),
+            PendingConsultBooking.find({
+                doctorSlug,
+                appointmentDate: date,
+                expiresAt: { $gt: new Date() },
+            }).select('appointmentTime').lean(),
+        ]);
 
-        const bookedSlots = appointments.map((a: any) => a.appointmentTime);
+        const bookedSlots = [
+            ...appointments.map((a: any) => a.appointmentTime),
+            ...holds.map((h: any) => h.appointmentTime),
+        ];
 
-        return NextResponse.json({ success: true, bookedSlots });
+        return NextResponse.json({ success: true, bookedSlots: Array.from(new Set(bookedSlots)) });
     } catch (err) {
         console.error('[booked-slots]', err);
         return NextResponse.json({ success: false, error: 'Failed to fetch booked slots' }, { status: 500 });

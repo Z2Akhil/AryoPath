@@ -53,6 +53,7 @@ export interface ConsultationAppointmentDocument extends Document {
   cancellationReason?: string;
   bookedByAdmin?: boolean;
   paymentLink?: { linkId?: string; url?: string; expiresAt?: Date };
+  sourceHoldId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -152,6 +153,10 @@ const ConsultationAppointmentSchema = new Schema<ConsultationAppointmentDocument
       url:       { type: String, default: '' },
       expiresAt: { type: Date },
     },
+    // Idempotency key — the PendingConsultBooking hold this appointment was created from.
+    // Sparse-unique so exactly ONE appointment can ever be created per hold (safe against
+    // concurrent/duplicate payment webhooks).
+    sourceHoldId: { type: String },
 
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: false },
   },
@@ -160,6 +165,8 @@ const ConsultationAppointmentSchema = new Schema<ConsultationAppointmentDocument
 
 ConsultationAppointmentSchema.index({ doctorSlug: 1 });
 ConsultationAppointmentSchema.index({ userId: 1 });
+// Exactly one appointment per source hold (sparse: only enforced when the field is set)
+ConsultationAppointmentSchema.index({ sourceHoldId: 1 }, { unique: true, sparse: true });
 ConsultationAppointmentSchema.index({ appointmentDate: 1, status: 1 });
 ConsultationAppointmentSchema.index({ appointmentDateTime: 1, reminderSent: 1, status: 1 });
 

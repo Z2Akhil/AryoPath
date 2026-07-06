@@ -105,7 +105,7 @@ export default function BookAppointmentModal({ user, onClose, onSuccess }: Props
         consultationMode: mode, appointmentDate: date, appointmentTime: slot, symptoms: symptoms.trim(),
       });
       if (res.data?.success) {
-        if (res.data.paymentLink) setLinkResult({ url: res.data.paymentLink, id: res.data.appointment._id });
+        if (res.data.paymentLink) setLinkResult({ url: res.data.paymentLink, id: res.data.appointment.holdId ?? res.data.appointment._id ?? '' });
         else onSuccess(`Appointment booked for ${pName}`); // free consult (no fee)
       } else setError(res.data?.error || 'Failed to book appointment');
     } catch (e: any) {

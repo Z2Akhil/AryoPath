@@ -7,6 +7,7 @@ import Notification from './Notification';
 import OTP from './OTP';
 import Offer from './Offer';
 import Order from './Order';
+import PendingConsultBooking from './PendingConsultBooking';
 import Prescription from './Prescription';
 import Profile from './Profile';
 import SMSHistory from './SMSHistory';
@@ -24,6 +25,7 @@ const models = {
     OTP,
     Offer,
     Order,
+    PendingConsultBooking,
     Prescription,
     Profile,
     SMSHistory,

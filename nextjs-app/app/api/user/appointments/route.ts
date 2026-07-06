@@ -28,7 +28,16 @@ export async function GET(req: NextRequest) {
 
     await connectToDatabase();
 
-    const appointments = await ConsultationAppointment.find({ userId })
+    // Hide on-behalf appointments that are still awaiting payment — the user should
+    // only see them once the payment link is paid (webhook flips payment.status → 'paid').
+    // Self-serve appointments are always paid before creation, so they're unaffected.
+    const appointments = await ConsultationAppointment.find({
+      userId,
+      $or: [
+        { bookedByAdmin: { $ne: true } },            // all self-serve bookings
+        { 'payment.status': { $ne: 'pending' } },    // on-behalf that's paid / not_required
+      ],
+    })
       .sort({ appointmentDateTime: -1 })
       .select('-__v')
       .lean();

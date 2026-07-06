@@ -7,7 +7,9 @@ import connectDB from '@/lib/db/mongoose';
 import User from '@/lib/models/User';
 import Doctor from '@/lib/models/Doctor';
 import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
+import PendingConsultBooking from '@/lib/models/PendingConsultBooking';
 import { createPaymentLink } from '@/lib/services/cashfreePaymentLinkService';
+import { finalizeAppointmentConfirmation } from '@/lib/services/appointmentConfirmation';
 
 const LINK_EXPIRY_HOURS = 48;
 
@@ -74,20 +76,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Appointment must be a valid future date/time' }, { status: 400 });
     }
 
-    // Slot must be free (any non-cancelled appointment blocks it — matches booked-slots logic)
-    const clash = await ConsultationAppointment.findOne({
-      doctorSlug, appointmentDate, appointmentTime, status: { $nin: ['cancelled'] },
-    }).select('_id').lean();
-    if (clash) {
+    // Slot must be free — blocked by a non-cancelled appointment OR an active (unexpired) hold.
+    const now = new Date();
+    const [apptClash, holdClash] = await Promise.all([
+      ConsultationAppointment.findOne({ doctorSlug, appointmentDate, appointmentTime, status: { $nin: ['cancelled'] } }).select('_id').lean(),
+      PendingConsultBooking.findOne({ doctorSlug, appointmentDate, appointmentTime, expiresAt: { $gt: now } }).select('_id').lean(),
+    ]);
+    if (apptClash || holdClash) {
       return NextResponse.json({ success: false, error: 'That slot is already booked. Pick another.' }, { status: 409 });
     }
 
     const consultationFee = (doctor as any).consultationFee || 0;
     const finalAmount = Math.max(0, consultationFee);
-    const isPaid = finalAmount > 0;
 
-    // Create the appointment as pending — this immediately HOLDS the slot.
-    const appt: any = await ConsultationAppointment.create({
+    const commonData = {
       doctorId: (doctor as any)._id,
       doctorSlug: (doctor as any).slug,
       doctorName: (doctor as any).name,
@@ -103,51 +105,61 @@ export async function POST(req: NextRequest) {
       appointmentTime,
       appointmentDateTime,
       consultationFee,
-      platformDiscount: 0,
       finalAmount,
-      status: isPaid ? 'pending' : 'confirmed',
-      payment: isPaid
-        ? { status: 'pending', amount: finalAmount }
-        : { status: 'not_required', amount: 0 },
-      bookedByAdmin: true,
+    };
+
+    // ── Free consult (no fee): create the appointment directly, no payment/hold ──
+    if (finalAmount === 0) {
+      const appt: any = await ConsultationAppointment.create({
+        ...commonData,
+        platformDiscount: 0,
+        status: 'confirmed',
+        payment: { status: 'not_required', amount: 0 },
+        bookedByAdmin: true,
+        userId,
+      } as any);
+      finalizeAppointmentConfirmation(appt).catch(console.error);
+      return NextResponse.json({
+        success: true,
+        appointment: { _id: appt._id, doctorName: (doctor as any).name, appointmentDate, appointmentTime, finalAmount, status: 'confirmed' },
+        paymentLink: undefined,
+      }, { status: 201 });
+    }
+
+    // ── Paid consult: create a HOLD (reserves the slot), NOT an appointment. ──
+    // The real appointment is created only after payment (webhook).
+    const expiresAt = new Date(Date.now() + LINK_EXPIRY_HOURS * 60 * 60 * 1000);
+    const hold: any = await PendingConsultBooking.create({
+      ...commonData,
       userId,
+      expiresAt,
     } as any);
 
-    // Payment link (mandatory when a fee applies)
-    let paymentLinkUrl: string | undefined;
-    if (isPaid) {
-      const link = await createPaymentLink({
-        linkId: appt._id.toString(),
-        amount: finalAmount,
-        purpose: `Ayropath consultation with ${(doctor as any).name}`,
-        customerName: String(patientName).trim(),
-        customerPhone: String(patientMobile).trim(),
-        customerEmail: patientEmail ? String(patientEmail).trim() : undefined,
-        expiryHours: LINK_EXPIRY_HOURS,
-      });
+    const link = await createPaymentLink({
+      linkId: hold._id.toString(),
+      amount: finalAmount,
+      purpose: `Ayropath consultation with ${(doctor as any).name}`,
+      customerName: String(patientName).trim(),
+      customerPhone: String(patientMobile).trim(),
+      customerEmail: patientEmail ? String(patientEmail).trim() : undefined,
+      expiryHours: LINK_EXPIRY_HOURS,
+    });
 
-      if (!link.success) {
-        // Roll back → frees the held slot
-        await ConsultationAppointment.deleteOne({ _id: appt._id });
-        return NextResponse.json({ success: false, error: link.error || 'Failed to create payment link' }, { status: 502 });
-      }
-
-      paymentLinkUrl = link.url;
-      await ConsultationAppointment.collection.updateOne(
-        { _id: appt._id },
-        { $set: { paymentLink: { linkId: link.linkId, url: link.url, expiresAt: link.expiresAt } } }
-      );
+    if (!link.success) {
+      // Roll back the hold → frees the slot
+      await PendingConsultBooking.deleteOne({ _id: hold._id });
+      return NextResponse.json({ success: false, error: link.error || 'Failed to create payment link' }, { status: 502 });
     }
+
+    await PendingConsultBooking.collection.updateOne(
+      { _id: hold._id },
+      { $set: { paymentLink: { linkId: link.linkId, url: link.url, expiresAt: link.expiresAt } } }
+    );
 
     return NextResponse.json({
       success: true,
-      appointment: {
-        _id: appt._id,
-        doctorName: (doctor as any).name,
-        appointmentDate, appointmentTime,
-        finalAmount, status: appt.status,
-      },
-      paymentLink: paymentLinkUrl,
+      appointment: { holdId: hold._id, doctorName: (doctor as any).name, appointmentDate, appointmentTime, finalAmount, status: 'awaiting_payment' },
+      paymentLink: link.url,
     }, { status: 201 });
   } catch (err) {
     console.error('[appointment book-on-behalf] error:', err);

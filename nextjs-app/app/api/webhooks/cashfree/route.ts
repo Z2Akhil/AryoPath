@@ -4,6 +4,7 @@ import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import Medicine from '@/lib/models/Medicine';
 import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
+import PendingConsultBooking from '@/lib/models/PendingConsultBooking';
 import { getMedicineOrderEmail, sendMedicineConfirmedEmail } from '@/lib/services/transactionalEmailService';
 import { finalizeAppointmentConfirmation } from '@/lib/services/appointmentConfirmation';
 
@@ -108,34 +109,85 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ received: true });
       }
 
-      // Consultation appointment? (link_id == appointment _id)
+      // On-behalf consultation hold? (link_id == PendingConsultBooking _id)
+      // The real appointment is created ONLY after payment.
+      if (linkStatus === 'PAID') {
+        const hold: any = await PendingConsultBooking.findOne({ 'paymentLink.linkId': linkId }).lean();
+        if (hold) {
+          // ── Create-THEN-delete, deduped on the sparse-unique sourceHoldId. ──
+          // Guarantees: exactly one appointment per hold (concurrent webhooks safe),
+          // and payment is never left without an appointment (create runs before delete).
+          let appt: any = null;
+          try {
+            appt = await ConsultationAppointment.create({
+              doctorId: hold.doctorId,
+              doctorSlug: hold.doctorSlug,
+              doctorName: hold.doctorName,
+              doctorMobile: hold.doctorMobile || '',
+              patientName: hold.patientName,
+              patientMobile: hold.patientMobile,
+              patientEmail: hold.patientEmail || '',
+              patientAge: hold.patientAge,
+              patientGender: hold.patientGender,
+              symptoms: hold.symptoms || '',
+              consultationMode: hold.consultationMode,
+              appointmentDate: hold.appointmentDate,
+              appointmentTime: hold.appointmentTime,
+              appointmentDateTime: hold.appointmentDateTime,
+              consultationFee: hold.consultationFee,
+              platformDiscount: 0,
+              finalAmount: hold.finalAmount,
+              status: 'confirmed',
+              payment: {
+                status: 'paid',
+                amount: hold.finalAmount,
+                cfOrderId: cfOrderId ? String(cfOrderId) : '',
+                paidAt: new Date(),
+              },
+              bookedByAdmin: true,
+              userId: hold.userId,
+              sourceHoldId: String(hold._id),   // unique dedup key
+            });
+          } catch (e: any) {
+            if (e?.code === 11000) {
+              // A concurrent webhook already created this appointment — safe to ignore.
+              await PendingConsultBooking.deleteOne({ _id: hold._id }).catch(() => {});
+              return NextResponse.json({ received: true });
+            }
+            // Real failure: payment succeeded but appointment couldn't be created.
+            // Leave the hold intact for recovery and alert loudly.
+            console.error(`[cashfree webhook] CRITICAL: paid hold ${hold._id} failed to convert (cfOrderId=${cfOrderId}):`, e);
+            return NextResponse.json({ received: true });
+          }
+
+          // Appointment created — now safe to drop the hold. If this fails, the TTL cleans it.
+          await PendingConsultBooking.deleteOne({ _id: hold._id }).catch(() => {});
+          // Full confirmation suite (meet link, emails, WhatsApp, reminder, no-show)
+          finalizeAppointmentConfirmation(appt).catch(console.error);
+          return NextResponse.json({ received: true });
+        }
+      } else if (linkStatus === 'EXPIRED' || linkStatus === 'CANCELLED') {
+        // Drop the hold → releases the slot
+        const del = await PendingConsultBooking.deleteOne({ 'paymentLink.linkId': linkId });
+        if (del.deletedCount > 0) return NextResponse.json({ received: true });
+      }
+
+      // Legacy: appointment created as pending (pre-refactor) — confirm/cancel in place
       const appt = await ConsultationAppointment.findOne({ 'paymentLink.linkId': linkId }).lean();
       if (appt) {
         const apPay = (appt as any).payment?.status;
         if (linkStatus === 'PAID' && apPay !== 'paid') {
-          // Flip to paid/confirmed and return the fresh doc for the confirmation suite
           const confirmed = await ConsultationAppointment.findByIdAndUpdate(
             (appt as any)._id,
-            {
-              'payment.status':    'paid',
-              'payment.cfOrderId': cfOrderId ? String(cfOrderId) : '',
-              'payment.paidAt':    new Date(),
-              status: 'confirmed',
-            },
+            { 'payment.status': 'paid', 'payment.cfOrderId': cfOrderId ? String(cfOrderId) : '', 'payment.paidAt': new Date(), status: 'confirmed' },
             { new: true },
           );
-          // Fire the full confirmation flow (meet link, emails, WhatsApp, reminder, no-show) —
-          // identical to a self-serve booking. Fire-and-forget (webhook must stay fast).
           if (confirmed) finalizeAppointmentConfirmation(confirmed).catch(console.error);
         } else if ((linkStatus === 'EXPIRED' || linkStatus === 'CANCELLED') && apPay !== 'paid') {
-          // Unpaid → cancel to release the held slot
           await ConsultationAppointment.findByIdAndUpdate((appt as any)._id, {
-            status: 'cancelled',
-            cancelledAt: new Date(),
-            cancellationReason: 'Payment link expired (unpaid)',
+            status: 'cancelled', cancelledAt: new Date(), cancellationReason: 'Payment link expired (unpaid)',
           });
         }
-        return NextResponse.json({ received: true });
       }
 
       return NextResponse.json({ received: true });

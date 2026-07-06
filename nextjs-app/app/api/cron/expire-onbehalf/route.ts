@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import ConsultationAppointment from '@/lib/models/ConsultationAppointment';
+import PendingConsultBooking from '@/lib/models/PendingConsultBooking';
 
 // Cron: clean up expired on-behalf payment-link bookings that were never paid.
 // - Appointments have NO TTL, so this is the safety net that RELEASES held slots
@@ -26,7 +27,11 @@ export async function POST(req: NextRequest) {
     await connectDB();
     const now = new Date();
 
-    // ── Appointments: pending + unpaid + link expired → cancel (releases the held slot) ──
+    // ── Consultation holds: expired unpaid holds → delete (releases the slot). ──
+    // The TTL index also does this; the cron is a backstop.
+    const holdRes = await PendingConsultBooking.deleteMany({ expiresAt: { $lt: now } });
+
+    // ── Legacy on-behalf appointments created as pending (pre-refactor) → cancel. ──
     const apptRes = await ConsultationAppointment.updateMany(
       {
         bookedByAdmin: true,
@@ -55,6 +60,7 @@ export async function POST(req: NextRequest) {
     );
 
     const summary = {
+      consultHoldsReleased:  holdRes.deletedCount ?? 0,
       appointmentsCancelled: apptRes.modifiedCount ?? 0,
       medicineOrdersFailed:  medRes.modifiedCount ?? 0,
     };
