@@ -47,12 +47,20 @@ export async function GET(req: NextRequest) {
     }
 
     const skip = (page - 1) * limit;
+
+    // Browsing (no search): push out-of-stock items to the end so they don't fill the
+    // first page — in-stock first (inStock:true sorts before false), then newest.
+    // Searching: keep normal order so a searched item still surfaces even if out of stock.
+    const sort: Record<string, 1 | -1> = search
+      ? { createdAt: -1 }
+      : { inStock: -1, createdAt: -1 };
+
     const [medicines, total] = await Promise.all([
       Medicine.find(filter)
         .select('name slug type category mrp offerPrice discountPercentage thumbnail stockQuantity inStock prescriptionRequired madeBy packSize shortDescription isPublished')
         .skip(skip)
         .limit(limit)
-        .sort({ createdAt: -1 })
+        .sort(sort)
         .lean(),
       Medicine.countDocuments(filter),
     ]);

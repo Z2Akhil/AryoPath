@@ -41,16 +41,16 @@ const CartPage = () => {
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
                     <p className="text-gray-500 mb-8 max-w-xs mx-auto">Browse medicines or book a health test to get started.</p>
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center px-6 sm:px-0">
                         <Link
                             href="/medicines"
-                            className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-lg shadow-teal-100 text-sm"
+                            className="flex w-full sm:w-auto items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-lg shadow-teal-100 text-sm"
                         >
                             <Pill size={16} /> Browse Medicines
                         </Link>
                         <Link
                             href="/profiles"
-                            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-lg shadow-blue-100 text-sm"
+                            className="flex w-full sm:w-auto items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-lg shadow-blue-100 text-sm"
                         >
                             <FlaskConical size={16} /> Browse Tests
                         </Link>
