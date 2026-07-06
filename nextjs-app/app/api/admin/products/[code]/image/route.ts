@@ -8,8 +8,18 @@ import { uploadBuffer, deleteFromCloudinary, FOLDERS } from '@/lib/cloudinary';
 import mongoose from 'mongoose';
 
 type Params = { params: Promise<{ code: string }> };
+type ProductColl = 'tests' | 'profiles' | 'offers';
 
-async function resolveCollection(code: string): Promise<'profiles' | 'offers' | null> {
+// Cloudinary folder per product type (profiles are shown as "Packages" in the UI)
+const FOLDER_BY_COLLECTION: Record<ProductColl, string> = {
+    tests:    FOLDERS.THYROCARE_TESTS,
+    profiles: FOLDERS.THYROCARE_PACKAGES,
+    offers:   FOLDERS.THYROCARE_OFFERS,
+};
+
+async function resolveCollection(code: string): Promise<ProductColl | null> {
+    const test = await mongoose.connection.collection('tests').findOne({ code }, { projection: { _id: 1 } });
+    if (test) return 'tests';
     const profile = await mongoose.connection.collection('profiles').findOne({ code }, { projection: { _id: 1 } });
     if (profile) return 'profiles';
     const offer = await mongoose.connection.collection('offers').findOne({ code }, { projection: { _id: 1 } });
@@ -47,14 +57,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
         const collection = await resolveCollection(code);
         if (!collection) {
-            return NextResponse.json({ success: false, error: 'Package not found' }, { status: 404 });
+            return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
         }
 
         const buffer = Buffer.from(await file.arrayBuffer());
 
+        // Route to the type-specific folder: tests → tests/, profiles → packages/, offers → offers/
         const result = await uploadBuffer(buffer, {
-            folder: FOLDERS.THYROCARE_PACKAGES,
-            publicId: `pkg_${code.toLowerCase()}`,
+            folder: FOLDER_BY_COLLECTION[collection],
+            publicId: `${collection}_${code.toLowerCase()}`,
             resourceType: 'image',
         });
 
