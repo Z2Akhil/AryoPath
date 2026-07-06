@@ -9,8 +9,8 @@ const CATEGORIES = [
   { emoji: "🧪", label: "Lab Tests", sub: "Save up to 50%", href: "/tests", bg: "bg-blue-50", ring: "ring-blue-200" },
   { emoji: "📦", label: "Health Packages", sub: "From ₹499", href: "/profiles", bg: "bg-green-50", ring: "ring-green-200" },
   { emoji: "📋", label: "Upload", sub: "prescription", href: "/prescription", bg: "bg-rose-50", ring: "ring-rose-200", authGate: true },
-  { emoji: "🩺", label: "Doctor Consult", sub: "Coming soon", href: "#", bg: "bg-purple-50", ring: "ring-purple-200", comingSoon: true },
   { emoji: "💊", label: "Medicines", sub: "Coming soon", href: "#", bg: "bg-orange-50", ring: "ring-orange-200", comingSoon: true },
+  { emoji: "🩺", label: "Doctor Consult", sub: "Coming soon", href: "#", bg: "bg-purple-50", ring: "ring-purple-200", comingSoon: true },
   { emoji: "🎁", label: "Offers", sub: "Upto 60% off", href: "/offers", bg: "bg-yellow-50", ring: "ring-yellow-200" },
   { emoji: "📝", label: "Health Blogs", sub: "health stories", href: "/blog", bg: "bg-teal-50", ring: "ring-teal-200"},
 ];
