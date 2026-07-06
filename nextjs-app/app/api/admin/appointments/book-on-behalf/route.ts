@@ -113,7 +113,8 @@ export async function POST(req: NextRequest) {
       const appt: any = await ConsultationAppointment.create({
         ...commonData,
         platformDiscount: 0,
-        status: 'confirmed',
+        // 'pending' = booked, awaiting doctor confirmation — identical to a self-serve free booking.
+        status: 'pending',
         payment: { status: 'not_required', amount: 0 },
         bookedByAdmin: true,
         userId,
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest) {
       finalizeAppointmentConfirmation(appt).catch(console.error);
       return NextResponse.json({
         success: true,
-        appointment: { _id: appt._id, doctorName: (doctor as any).name, appointmentDate, appointmentTime, finalAmount, status: 'confirmed' },
+        appointment: { _id: appt._id, doctorName: (doctor as any).name, appointmentDate, appointmentTime, finalAmount, status: 'pending' },
         paymentLink: undefined,
       }, { status: 201 });
     }

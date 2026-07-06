@@ -137,7 +137,8 @@ export async function POST(req: NextRequest) {
               consultationFee: hold.consultationFee,
               platformDiscount: 0,
               finalAmount: hold.finalAmount,
-              status: 'confirmed',
+              // 'pending' = booked + paid, awaiting doctor confirmation — identical to a self-serve booking.
+              status: 'pending',
               payment: {
                 status: 'paid',
                 amount: hold.finalAmount,
@@ -179,7 +180,7 @@ export async function POST(req: NextRequest) {
         if (linkStatus === 'PAID' && apPay !== 'paid') {
           const confirmed = await ConsultationAppointment.findByIdAndUpdate(
             (appt as any)._id,
-            { 'payment.status': 'paid', 'payment.cfOrderId': cfOrderId ? String(cfOrderId) : '', 'payment.paidAt': new Date(), status: 'confirmed' },
+            { 'payment.status': 'paid', 'payment.cfOrderId': cfOrderId ? String(cfOrderId) : '', 'payment.paidAt': new Date(), status: 'pending' },
             { new: true },
           );
           if (confirmed) finalizeAppointmentConfirmation(confirmed).catch(console.error);
