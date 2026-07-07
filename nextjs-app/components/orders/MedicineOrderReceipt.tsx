@@ -13,6 +13,7 @@ export default function MedicineOrderReceipt({ order, supportEmail, supportPhone
                 <div>
                     <p style={{ fontSize: '22px', fontWeight: 900, color: '#0d9488', margin: 0 }}>AyroPath</p>
                     <p style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0' }}>Health Diagnostics Platform</p>
+                    <p style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0' }}>GSTIN: <strong style={{ color: '#111', fontFamily: 'monospace' }}>20EFBPR1920E1Z2</strong></p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                     <p style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>Order Receipt</p>

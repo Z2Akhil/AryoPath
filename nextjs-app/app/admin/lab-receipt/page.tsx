@@ -163,6 +163,9 @@ function PrintableReceipt({
                 >
                   www.ayropath.com
                 </a>
+                <p style={{ fontSize: '11px', color: '#6b7280', margin: '3px 0 0' }}>
+                  GSTIN: <strong style={{ color: '#111', fontFamily: 'monospace', letterSpacing: '0.3px' }}>20EFBPR1920E1Z2</strong>
+                </p>
               </div>
               <div className="mt-3 flex items-center justify-center gap-6 text-xs text-gray-500">
                 <span><strong>Receipt No:</strong> {receiptNo}</span>
