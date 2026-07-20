@@ -17,7 +17,7 @@ const NAV_LINKS = [
   { label: 'Packages', href: '/profiles' },
   { label: 'Offers', href: '/offers' },
   { label: 'Lab Tests', href: '/tests' },
-  { label: 'Medicines', href: '/medicines', comingSoon: true },
+  { label: 'Medicines', href: '/medicines' },
   { label: 'Doctor Consult', href: '/consult', comingSoon: true },
   { label: 'About Us', href: '/about' },
 ];
