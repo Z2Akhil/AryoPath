@@ -3,7 +3,7 @@ import { z } from 'zod';
 // ─── Static option lists ─────────────────────────────────────────────────────
 
 export const MEDICINE_TYPES = [
-  'tablet', 'capsule', 'syrup', 'injection',
+  'tablet', 'capsule', 'syrup', 'injection', 'inhaler',
   'cream', 'ointment', 'drops', 'powder',
 ] as const;
 
@@ -11,11 +11,12 @@ export type MedicineType = (typeof MEDICINE_TYPES)[number];
 
 export const MEDICINE_CATEGORIES = [
   'Pain Relief', 'Antibiotics', 'Vitamins & Supplements',
-  'Diabetes Care', 'Heart Care', 'Stomach & Digestive', 'Skin Care',
+  'Diabetes Care', 'Heart Care', 'Blood Pressure', 'Hypertension',
+  'Kidney Care', 'Asthma', 'Infection', 'Stomach & Digestive', 'Skin Care',
   "Cold, Cough & Flu", 'Allergy', 'Ayurvedic', 'Homeopathic',
   "Women's Health", "Men's Health", 'Baby & Mother Care',
   'Mental Health', 'Thyroid Care', 'Eye Care', 'Dental Care',
-  'Fitness & Nutrition', 'Other',
+  'Food Products & Milk', 'Fitness & Nutrition', 'Other',
 ] as const;
 
 // ─── Sub-types ────────────────────────────────────────────────────────────────
