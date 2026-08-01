@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse, after } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
 import MedicineOrder from '@/lib/models/MedicineOrder';
 import type { MedicineOrderStatus } from '@/types/medicineOrder';
@@ -132,7 +132,7 @@ async function processScans(rawPackages: any[]): Promise<void> {
 }
 
 // Register this URL in the Delhivery seller dashboard as the webhook endpoint.
-// Responds 200 immediately, then processes scans asynchronously via after().
+// Responds 200 immediately, then processes scans asynchronously.
 export async function POST(req: NextRequest) {
   try {
     // Verify shared secret from Delhivery (fast, before responding)
@@ -149,8 +149,10 @@ export async function POST(req: NextRequest) {
     // May arrive as a single object (default { Shipment: {...} }) or wrapped in a packages/shipments array.
     const rawPackages: any[] = body?.packages ?? body?.shipments ?? (Array.isArray(body) ? body : [body]);
 
-    // Heavy DB work runs AFTER the response is flushed — Delhivery gets 200 instantly.
-    after(() => processScans(rawPackages));
+    // Fire-and-forget via a plain Promise (NOT after()) — after() can be skipped on
+    // self-hosted Node.js (Hostinger VM + pm2), which would silently drop scan processing.
+    // Delhivery still gets the 200 immediately.
+    processScans(rawPackages).catch((e) => console.error('[Delhivery webhook] processScans error:', e));
 
     return NextResponse.json({ received: true });
   } catch (err) {

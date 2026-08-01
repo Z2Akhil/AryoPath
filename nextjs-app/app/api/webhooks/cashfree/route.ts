@@ -10,9 +10,10 @@ import { finalizeAppointmentConfirmation } from '@/lib/services/appointmentConfi
 
 function verifySignature(rawBody: string, timestamp: string, sig: string): boolean {
   const secret = process.env.CASHFREE_SECRET_KEY || '';
+  // Cashfree signs the timestamp DIRECTLY concatenated with the raw body (no separator).
   const computed = crypto
     .createHmac('sha256', secret)
-    .update(`${timestamp}.${rawBody}`)
+    .update(timestamp + rawBody)
     .digest('base64');
   return computed === sig;
 }

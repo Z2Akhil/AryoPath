@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { Medicine as MedicineType } from '@/types/medicine';
+import { Medicine as MedicineType, MEDICINE_TYPES } from '@/types/medicine';
 
 export interface MedicineDocument extends Omit<MedicineType, '_id'>, Document {}
 
@@ -24,7 +24,7 @@ const MedicineSchema = new Schema<MedicineDocument>(
     thumbnail: { type: ImageSchema, default: null },
     type: {
       type: String,
-      enum: ['tablet', 'capsule', 'syrup', 'injection', 'cream', 'ointment', 'drops', 'powder'],
+      enum: [...MEDICINE_TYPES],   // single source of truth — never diverges from the UI list
       required: true,
     },
     category: { type: String, default: '' },

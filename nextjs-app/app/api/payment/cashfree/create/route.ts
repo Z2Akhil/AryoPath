@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import connectToDatabase from '@/lib/db/mongoose';
 import User from '@/lib/models/User';
+import MedicineOrder from '@/lib/models/MedicineOrder';
 
 const CF_BASE = process.env.CASHFREE_ENV === 'production'
     ? 'https://api.cashfree.com'
@@ -67,6 +68,16 @@ export async function POST(req: NextRequest) {
         });
 
         const cfData = await cfRes.json();
+
+        // Link the cfOrderId to the medicine order NOW (before payment) so the webhook can
+        // confirm it server-side even if the browser never calls /verify (e.g. debit-card 3DS
+        // redirect drops the return). Harmless no-op for non-medicine payments (e.g. consult).
+        if (cfRes.ok && cfData.payment_session_id && orderRef) {
+            await MedicineOrder.updateOne(
+                { orderId: orderRef },
+                { $set: { 'payment.cfOrderId': cfOrderId } }
+            ).catch((e) => console.error('[cashfree/create] failed to link cfOrderId to order:', e));
+        }
 
         if (!cfRes.ok || !cfData.payment_session_id) {
             console.error('[cashfree/create] Cashfree error:', {

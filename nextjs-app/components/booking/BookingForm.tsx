@@ -76,9 +76,11 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                 email: user.email || initialData.contactInfo.email,
                 mobile: user.mobileNumber || initialData.contactInfo.mobile,
                 address: {
-                    street: user.address || initialData.contactInfo.address.street,
-                    city: user.city || initialData.contactInfo.address.city,
-                    state: user.state || initialData.contactInfo.address.state,
+                    // Only prefill from the user's own saved "contact for future" data, not the
+                    // profile address (which may hold stale/placeholder values).
+                    street: initialData.contactInfo.address.street,
+                    city: initialData.contactInfo.address.city,
+                    state: initialData.contactInfo.address.state,
                     pincode: initialData.contactInfo.address.pincode,
                     landmark: initialData.contactInfo.address.landmark
                 }
@@ -524,7 +526,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ pkgName, priceInfo, pkgId, it
                             <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Collection Address</label>
                             <textarea
                                 rows={2}
-                                placeholder="House/Flat No, Apartment, Landmark"
+                                placeholder="Address Line"
                                 className="w-full border-2 border-gray-100 rounded-xl px-3 py-2 bg-gray-50 focus:border-blue-500 outline-none transition-all text-sm"
                                 value={contactInfo.address.street}
                                 onChange={(e) => handleContactInfoChange('address.street', e.target.value)}
