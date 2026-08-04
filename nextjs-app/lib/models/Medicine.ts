@@ -95,7 +95,7 @@ const MedicineSchema = new Schema<MedicineDocument>(
   { timestamps: true }
 );
 
-MedicineSchema.index({ slug: 1 }, { unique: true });
+// slug index comes from `unique: true` on the field itself — don't redeclare it here.
 MedicineSchema.index({ name: 'text', saltComposition: 'text', tags: 'text' });
 MedicineSchema.index({ type: 1, category: 1, isPublished: 1 });
 

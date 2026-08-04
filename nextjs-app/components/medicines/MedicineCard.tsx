@@ -104,6 +104,11 @@ export default function MedicineCard({ medicine }: MedicineCardProps) {
           <p className="text-xs font-bold text-gray-800 leading-snug line-clamp-2 group-hover:text-teal-700 transition-colors">
             {medicine.name}
           </p>
+          {medicine.shortDescription && (
+            <p className="mt-0.5 text-[10px] text-gray-500 leading-snug line-clamp-2">
+              {medicine.shortDescription}
+            </p>
+          )}
         </Link>
 
         <div className="mt-auto flex items-center justify-between gap-1">

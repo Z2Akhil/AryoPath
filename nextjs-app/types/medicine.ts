@@ -4,7 +4,8 @@ import { z } from 'zod';
 
 export const MEDICINE_TYPES = [
   'tablet', 'capsule', 'syrup', 'injection', 'inhaler', 'spray',
-  'cream', 'ointment', 'drops', 'powder',
+  'cream', 'ointment', 'gel', 'lotion', 'semi-liquid',
+  'drops', 'powder',
 ] as const;
 
 export type MedicineType = (typeof MEDICINE_TYPES)[number];
@@ -16,7 +17,8 @@ export const MEDICINE_CATEGORIES = [
   "Cold, Cough & Flu", 'Allergy', 'Ayurvedic', 'Homeopathic',
   "Women's Health", "Men's Health", 'Baby & Mother Care',
   'Mental Health', 'Neurology', 'Thyroid Care', 'Eye Care', 'Dental Care',
-  'Food Products & Milk', 'Fitness & Nutrition', 'Other',
+  'Food Products & Milk', 'Fitness & Nutrition',
+  'Shampoo', 'Soap', 'Handwash', 'Accessories', 'Other',
 ] as const;
 
 // ─── Sub-types ────────────────────────────────────────────────────────────────

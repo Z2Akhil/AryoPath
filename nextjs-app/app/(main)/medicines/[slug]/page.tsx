@@ -263,6 +263,13 @@ export default function MedicineDetailPage() {
                   {medicine.name}
                 </h1>
 
+                {/* Short description — admin "Short Description" field */}
+                {medicine.shortDescription && (
+                  <p className="text-sm text-gray-600 leading-relaxed mb-2">
+                    {medicine.shortDescription}
+                  </p>
+                )}
+
                 {/* Brand + pack */}
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   {medicine.madeBy && (
@@ -330,10 +337,17 @@ export default function MedicineDetailPage() {
           </div>
 
           {/* ── Detail sections ────────────────────────────────────────────── */}
-          {(medicine.uses?.length > 0 || medicine.benefits?.length > 0 || medicine.howItWorks ||
+          {(medicine.fullDescription || medicine.uses?.length > 0 || medicine.benefits?.length > 0 || medicine.howItWorks ||
             medicine.dosage || medicine.sideEffects?.length > 0 || medicine.precautions?.length > 0 ||
             medicine.storageInstructions || medicine.type) && (
             <div className="bg-white lg:rounded-2xl lg:border lg:border-gray-100 lg:shadow-sm px-4 lg:px-6 mb-4 lg:mb-4">
+              {medicine.fullDescription && (
+                <Section title="Description" defaultOpen>
+                  {/* whitespace-pre-line keeps the paragraph breaks the admin typed */}
+                  <p className="whitespace-pre-line">{medicine.fullDescription}</p>
+                </Section>
+              )}
+
               {medicine.uses?.length > 0 && (
                 <Section title="Uses" defaultOpen>
                   <div className="flex flex-wrap gap-1.5">
