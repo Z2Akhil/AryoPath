@@ -20,8 +20,13 @@ const TYPE_COLORS: Record<string, string> = {
   capsule: 'bg-purple-50 text-purple-700',
   syrup: 'bg-pink-50 text-pink-700',
   injection: 'bg-red-50 text-red-700',
+  inhaler: 'bg-cyan-50 text-cyan-700',
+  spray: 'bg-sky-50 text-sky-700',
   cream: 'bg-yellow-50 text-yellow-700',
   ointment: 'bg-orange-50 text-orange-700',
+  gel: 'bg-lime-50 text-lime-700',
+  lotion: 'bg-amber-50 text-amber-700',
+  'semi-liquid': 'bg-indigo-50 text-indigo-700',
   drops: 'bg-teal-50 text-teal-700',
   powder: 'bg-gray-50 text-gray-700',
 };
@@ -37,9 +42,15 @@ export default function MedicinesPage() {
 
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [companyFilter, setCompanyFilter] = useState('');
+  // '' = any | 'in' = in stock | 'out' = out of stock | 'low' = in stock but at/below threshold
+  const [stockFilter, setStockFilter] = useState<'' | 'in' | 'out' | 'low'>('');
   const [statusFilter, setStatusFilter] = useState<'' | 'true' | 'false'>('');
+  const [companies, setCompanies] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const limit = 10;
+
+  const filtersActive = !!(search || typeFilter || companyFilter || stockFilter || statusFilter);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -52,7 +63,11 @@ export default function MedicinesPage() {
         limit,
         search: search.trim() || undefined,
         type: typeFilter || undefined,
+        madeBy: companyFilter || undefined,
         isPublished: statusFilter === '' ? '' : statusFilter === 'true',
+        // 'low' is its own server-side flag (compares stock against each item's threshold).
+        inStock: stockFilter === 'in' ? true : stockFilter === 'out' ? false : '',
+        lowStock: stockFilter === 'low' ? true : '',
       });
       setMedicines(res.data);
       setTotal(res.pagination.total);
@@ -62,11 +77,20 @@ export default function MedicinesPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, typeFilter, statusFilter]);
+  }, [page, search, typeFilter, companyFilter, stockFilter, statusFilter]);
 
   useEffect(() => {
     fetchMedicines();
   }, [fetchMedicines]);
+
+  // Company list is independent of the current filters, so it isn't part of fetchMedicines.
+  const fetchCompanies = useCallback(() => {
+    adminMedicineApi.brands().then(setCompanies).catch(() => setCompanies([]));
+  }, []);
+
+  useEffect(() => {
+    fetchCompanies();
+  }, [fetchCompanies]);
 
   // Debounced search
   useEffect(() => {
@@ -116,7 +140,8 @@ export default function MedicinesPage() {
         <div>
           <h1 className="text-2xl font-extrabold text-gray-900">Medicines</h1>
           <p className="text-sm text-gray-500 mt-1">
-            {total} medicine{total !== 1 ? 's' : ''} in catalogue
+            {total} medicine{total !== 1 ? 's' : ''} {filtersActive ? 'matching filters' : 'in catalogue'}
+            {companyFilter && <span className="font-semibold text-gray-700"> · {companyFilter}</span>}
           </p>
         </div>
         <Link
@@ -139,8 +164,28 @@ export default function MedicinesPage() {
             className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
           />
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
           <Filter className="h-4 w-4 text-gray-400" />
+          <select
+            value={companyFilter}
+            onChange={(e) => { setCompanyFilter(e.target.value); setPage(1); }}
+            className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 max-w-[200px]"
+          >
+            <option value="">All Companies</option>
+            {companies.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <select
+            value={stockFilter}
+            onChange={(e) => { setStockFilter(e.target.value as any); setPage(1); }}
+            className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
+          >
+            <option value="">All Stock</option>
+            <option value="in">In Stock</option>
+            <option value="out">Out of Stock</option>
+            <option value="low">Low Stock</option>
+          </select>
           <select
             value={typeFilter}
             onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
@@ -162,12 +207,24 @@ export default function MedicinesPage() {
           </select>
           <button
             type="button"
-            onClick={() => fetchMedicines()}
+            onClick={() => { fetchMedicines(); fetchCompanies(); }}
             className="p-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
             title="Refresh"
           >
             <RefreshCw className="h-4 w-4 text-gray-500" />
           </button>
+          {filtersActive && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearch(''); setTypeFilter(''); setCompanyFilter('');
+                setStockFilter(''); setStatusFilter(''); setPage(1);
+              }}
+              className="px-3 py-2.5 text-sm font-semibold text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+            >
+              Clear
+            </button>
+          )}
         </div>
       </div>
 
@@ -182,9 +239,9 @@ export default function MedicinesPage() {
             <Package className="h-12 w-12 text-gray-200 mb-3" />
             <p className="text-gray-500 font-semibold">No medicines found</p>
             <p className="text-sm text-gray-400 mt-1">
-              {search || typeFilter || statusFilter ? 'Try adjusting your filters' : 'Start by adding your first medicine'}
+              {filtersActive ? 'Try adjusting your filters' : 'Start by adding your first medicine'}
             </p>
-            {!search && !typeFilter && !statusFilter && (
+            {!filtersActive && (
               <Link href="/admin/medicines/add" className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
                 Add Medicine
               </Link>
@@ -196,6 +253,7 @@ export default function MedicinesPage() {
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50">
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Medicine</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Company</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Type</th>
                   <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">MRP</th>
                   <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">Price</th>
@@ -223,6 +281,20 @@ export default function MedicinesPage() {
                           {med.sku && <p className="text-xs text-gray-400 font-mono">{med.sku}</p>}
                         </div>
                       </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      {med.madeBy ? (
+                        <button
+                          type="button"
+                          onClick={() => { setCompanyFilter(med.madeBy!); setPage(1); }}
+                          className="text-sm text-gray-600 hover:text-blue-600 hover:underline text-left truncate max-w-[140px]"
+                          title={`Show all ${med.madeBy} medicines`}
+                        >
+                          {med.madeBy}
+                        </button>
+                      ) : (
+                        <span className="text-sm text-gray-300">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-4">
                       <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-bold capitalize ${TYPE_COLORS[med.type] ?? 'bg-gray-50 text-gray-600'}`}>

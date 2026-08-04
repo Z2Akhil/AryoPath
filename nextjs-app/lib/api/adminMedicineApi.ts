@@ -12,8 +12,10 @@ export interface MedicineListParams {
   limit?: number;
   search?: string;
   type?: string;
+  madeBy?: string;
   isPublished?: boolean | '';
   inStock?: boolean | '';
+  lowStock?: boolean | '';
 }
 
 export interface MedicineListResponse {
@@ -25,6 +27,12 @@ const adminMedicineApi = {
   list: async (params: MedicineListParams = {}): Promise<MedicineListResponse> => {
     const res = await adminAxios.get('/admin/medicines', { params });
     return res.data;
+  },
+
+  // Distinct company names, for the Company filter dropdown.
+  brands: async (): Promise<string[]> => {
+    const res = await adminAxios.get('/admin/medicines/brands');
+    return res.data?.data ?? [];
   },
 
   getById: async (id: string): Promise<{ data: Medicine }> => {

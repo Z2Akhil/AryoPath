@@ -22,18 +22,28 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(50, parseInt(searchParams.get('limit') ?? '10'));
   const search = searchParams.get('search') ?? '';
   const type = searchParams.get('type') ?? '';
+  const madeBy = searchParams.get('madeBy') ?? '';
   const isPublished = searchParams.get('isPublished');
   const inStock = searchParams.get('inStock');
+  const lowStock = searchParams.get('lowStock');
 
   const query: any = {};
   if (search) query.$or = [{ name: new RegExp(search, 'i') }, { sku: new RegExp(search, 'i') }];
   if (type) query.type = type;
+  // Exact match — the value comes from the distinct-brands list, not free text.
+  if (madeBy) query.madeBy = madeBy;
   if (isPublished !== null && isPublished !== '') query.isPublished = isPublished === 'true';
   if (inStock !== null && inStock !== '') query.inStock = inStock === 'true';
 
+  // Restock list: still in stock, but at or below this item's own low-stock threshold.
+  if (lowStock === 'true') {
+    query.inStock = true;
+    query.$expr = { $lte: ['$stockQuantity', { $ifNull: ['$lowStockThreshold', 10] }] };
+  }
+
   const [medicines, total] = await Promise.all([
     Medicine.find(query)
-      .select('name slug type category mrp offerPrice discountPercentage thumbnail stockQuantity inStock isPublished isDraft createdAt')
+      .select('name slug type category madeBy mrp offerPrice discountPercentage thumbnail stockQuantity lowStockThreshold inStock isPublished isDraft createdAt')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)

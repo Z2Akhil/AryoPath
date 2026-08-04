@@ -98,6 +98,7 @@ const MedicineSchema = new Schema<MedicineDocument>(
 // slug index comes from `unique: true` on the field itself — don't redeclare it here.
 MedicineSchema.index({ name: 'text', saltComposition: 'text', tags: 'text' });
 MedicineSchema.index({ type: 1, category: 1, isPublished: 1 });
+MedicineSchema.index({ madeBy: 1 });   // company filter (admin restock list + brand browsing)
 
 const Medicine =
   (mongoose.models.Medicine as Model<MedicineDocument>) ||
