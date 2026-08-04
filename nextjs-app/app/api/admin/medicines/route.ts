@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(50, parseInt(searchParams.get('limit') ?? '10'));
   const search = searchParams.get('search') ?? '';
   const type = searchParams.get('type') ?? '';
+  const category = searchParams.get('category') ?? '';
   const madeBy = searchParams.get('madeBy') ?? '';
   const isPublished = searchParams.get('isPublished');
   const inStock = searchParams.get('inStock');
@@ -30,6 +31,7 @@ export async function GET(request: NextRequest) {
   const query: any = {};
   if (search) query.$or = [{ name: new RegExp(search, 'i') }, { sku: new RegExp(search, 'i') }];
   if (type) query.type = type;
+  if (category) query.category = category;
   // Exact match — the value comes from the distinct-brands list, not free text.
   if (madeBy) query.madeBy = madeBy;
   if (isPublished !== null && isPublished !== '') query.isPublished = isPublished === 'true';

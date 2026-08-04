@@ -12,6 +12,7 @@ export interface MedicineListParams {
   limit?: number;
   search?: string;
   type?: string;
+  category?: string;
   madeBy?: string;
   isPublished?: boolean | '';
   inStock?: boolean | '';

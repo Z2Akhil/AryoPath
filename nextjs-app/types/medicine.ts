@@ -4,8 +4,12 @@ import { z } from 'zod';
 
 export const MEDICINE_TYPES = [
   'tablet', 'capsule', 'syrup', 'injection', 'inhaler', 'spray',
-  'cream', 'ointment', 'gel', 'lotion', 'semi-liquid',
+  'cream', 'ointment', 'gel', 'lotion', 'oil', 'semi-liquid',
   'drops', 'powder',
+  'shampoo', 'soap', 'handwash',
+  // Non-pharma — for Accessories/Healthcare items that have no dosage form
+  // (wheelchairs, BP monitors, test kits). 'other' is the never-stuck fallback.
+  'device', 'kit', 'other',
 ] as const;
 
 export type MedicineType = (typeof MEDICINE_TYPES)[number];
@@ -18,7 +22,7 @@ export const MEDICINE_CATEGORIES = [
   "Women's Health", "Men's Health", 'Baby & Mother Care',
   'Mental Health', 'Neurology', 'Thyroid Care', 'Eye Care', 'Dental Care',
   'Food Products & Milk', 'Fitness & Nutrition',
-  'Shampoo', 'Soap', 'Handwash', 'Accessories', 'Other',
+  'Sexual Wellness', 'Healthcare', 'Accessories', 'Other',
 ] as const;
 
 // ─── Sub-types ────────────────────────────────────────────────────────────────

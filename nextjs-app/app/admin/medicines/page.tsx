@@ -9,7 +9,7 @@ import {
   Package, AlertTriangle, RefreshCw, Loader2, ImageIcon,
 } from 'lucide-react';
 import adminMedicineApi from '@/lib/api/adminMedicineApi';
-import { Medicine, MEDICINE_TYPES } from '@/types/medicine';
+import { Medicine, MEDICINE_TYPES, MEDICINE_CATEGORIES } from '@/types/medicine';
 import { useToast } from '@/providers/ToastProvider';
 import { useAdminAuth } from '@/providers/AdminAuthProvider';
 import { PERMISSIONS } from '@/lib/constants/permissions';
@@ -26,9 +26,16 @@ const TYPE_COLORS: Record<string, string> = {
   ointment: 'bg-orange-50 text-orange-700',
   gel: 'bg-lime-50 text-lime-700',
   lotion: 'bg-amber-50 text-amber-700',
+  oil: 'bg-yellow-50 text-yellow-800',
   'semi-liquid': 'bg-indigo-50 text-indigo-700',
   drops: 'bg-teal-50 text-teal-700',
   powder: 'bg-gray-50 text-gray-700',
+  shampoo: 'bg-violet-50 text-violet-700',
+  soap: 'bg-rose-50 text-rose-700',
+  handwash: 'bg-emerald-50 text-emerald-700',
+  device: 'bg-slate-100 text-slate-700',
+  kit: 'bg-fuchsia-50 text-fuchsia-700',
+  other: 'bg-gray-100 text-gray-600',
 };
 
 export default function MedicinesPage() {
@@ -42,6 +49,7 @@ export default function MedicinesPage() {
 
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [companyFilter, setCompanyFilter] = useState('');
   // '' = any | 'in' = in stock | 'out' = out of stock | 'low' = in stock but at/below threshold
   const [stockFilter, setStockFilter] = useState<'' | 'in' | 'out' | 'low'>('');
@@ -50,7 +58,7 @@ export default function MedicinesPage() {
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  const filtersActive = !!(search || typeFilter || companyFilter || stockFilter || statusFilter);
+  const filtersActive = !!(search || typeFilter || categoryFilter || companyFilter || stockFilter || statusFilter);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -63,6 +71,7 @@ export default function MedicinesPage() {
         limit,
         search: search.trim() || undefined,
         type: typeFilter || undefined,
+        category: categoryFilter || undefined,
         madeBy: companyFilter || undefined,
         isPublished: statusFilter === '' ? '' : statusFilter === 'true',
         // 'low' is its own server-side flag (compares stock against each item's threshold).
@@ -77,7 +86,7 @@ export default function MedicinesPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, typeFilter, companyFilter, stockFilter, statusFilter]);
+  }, [page, search, typeFilter, categoryFilter, companyFilter, stockFilter, statusFilter]);
 
   useEffect(() => {
     fetchMedicines();
@@ -187,6 +196,16 @@ export default function MedicinesPage() {
             <option value="low">Low Stock</option>
           </select>
           <select
+            value={categoryFilter}
+            onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
+            className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 max-w-[190px]"
+          >
+            <option value="">All Categories</option>
+            {MEDICINE_CATEGORIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <select
             value={typeFilter}
             onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
             className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 capitalize"
@@ -217,7 +236,7 @@ export default function MedicinesPage() {
             <button
               type="button"
               onClick={() => {
-                setSearch(''); setTypeFilter(''); setCompanyFilter('');
+                setSearch(''); setTypeFilter(''); setCategoryFilter(''); setCompanyFilter('');
                 setStockFilter(''); setStatusFilter(''); setPage(1);
               }}
               className="px-3 py-2.5 text-sm font-semibold text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
