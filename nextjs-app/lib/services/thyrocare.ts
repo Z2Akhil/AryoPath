@@ -7,13 +7,41 @@ import { thyrocareRequestQueue } from '../utils/requestQueue';
 export class ThyrocareService {
     private static apiUrl = process.env.THYROCARE_API_URL || 'https://velso.thyrocare.cloud';
 
+    /** Last credential failure, exposed so a health endpoint or dashboard can surface it. */
+    static lastAuthFailure: { reason: string; at: Date } | null = null;
+
+    /**
+     * Every automated Thyrocare path — order booking, catalogue sync, status sync — depends
+     * on the .env credentials via refreshApiKeys(). When they stop working, nothing else in
+     * the system reports it, so this is the single place that has to be impossible to miss.
+     */
+    private static alarmCredentialsBroken(reason: string) {
+        this.lastAuthFailure = { reason, at: new Date() };
+        console.error(
+            '\n' +
+            '========================================================\n' +
+            '  THYROCARE CREDENTIALS REJECTED\n' +
+            '  refreshApiKeys() cannot authenticate.\n' +
+            '\n' +
+            '  DOWN: lab order booking, catalogue sync, status sync.\n' +
+            `  REASON: ${reason}\n` +
+            '\n' +
+            '  FIX: the password was most likely rotated on the\n' +
+            '  Thyrocare portal. Update THYROCARE_PASSWORD in .env\n' +
+            '  and restart. The admin panel may still log in fine —\n' +
+            '  that path uses the typed password, not .env.\n' +
+            '========================================================\n'
+        );
+    }
+
     static async refreshApiKeys() {
         const apiCall = async () => {
             const username = process.env.THYROCARE_USERNAME;
             const password = process.env.THYROCARE_PASSWORD;
 
             if (!username || !password) {
-                throw new Error('ThyroCare credentials not configured');
+                this.alarmCredentialsBroken('THYROCARE_USERNAME / THYROCARE_PASSWORD are not set');
+                throw new Error('THYROCARE_AUTH_FAILED: credentials not configured');
             }
 
             const response = await axios.post(`${this.apiUrl}/api/Login/Login`, {
@@ -24,11 +52,18 @@ export class ThyrocareService {
             });
 
             if (response.data.response === 'Success' && response.data.apiKey) {
+                this.lastAuthFailure = null;
                 const admin = await Admin.findOrCreateFromThyroCare(response.data, username);
                 const session = await AdminSession.createSingleActiveSession(admin._id as any, response.data, 'AUTO_REFRESH', 'AUTO_REFRESH_SERVICE');
                 return session;
             } else {
-                throw new Error(response.data.response || 'Refresh failed');
+                // Env credentials were rejected upstream. Unlike the admin's cached password
+                // hash — which self-heals on the next successful panel login — .env never
+                // repairs itself, so this stays broken until a human edits it. Make it loud:
+                // the symptom (lab bookings failing) can surface up to 24h after the cause
+                // (password rotated on the Thyrocare portal, .env not updated).
+                this.alarmCredentialsBroken(response.data.response || 'Login rejected');
+                throw new Error(`THYROCARE_AUTH_FAILED: ${response.data.response || 'Refresh failed'}`);
             }
         };
 

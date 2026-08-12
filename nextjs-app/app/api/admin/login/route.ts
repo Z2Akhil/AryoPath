@@ -29,14 +29,15 @@ export async function POST(req: NextRequest) {
         // Step 1: Check if admin exists in our database
         const existingAdmin = await (Admin as any).findByUsername(username);
 
-        if (existingAdmin && existingAdmin.password) {
-            const isPasswordValid = await existingAdmin.verifyPassword(password);
-
-            if (!isPasswordValid) {
-                return NextResponse.json({ success: false, error: 'Invalid username or password' }, { status: 401 });
-            }
-
-            // Step 2: Check for active sessions
+        // Step 2: Fast path — reuse a live session without a Thyrocare round-trip.
+        //
+        // `admin.password` is only a CACHE of the Thyrocare password, rewritten on every
+        // successful upstream login. Thyrocare is the authoritative identity provider, so a
+        // mismatch here means the cache is stale (password rotated upstream), NOT that the
+        // credentials are wrong. It may therefore skip the fast path but must never reject
+        // the login — doing so locks the admin out permanently after any password rotation,
+        // recoverable only by editing the database by hand.
+        if (existingAdmin && existingAdmin.password && await existingAdmin.verifyPassword(password)) {
             const sameIpSession = await AdminSession.findOne({
                 adminId: existingAdmin._id,
                 ipAddress: ipAddress,
@@ -47,11 +48,11 @@ export async function POST(req: NextRequest) {
             if (sameIpSession) {
                 return await handleExistingSession(existingAdmin, sameIpSession, req, startTime, ipAddress, userAgent, username, password);
             }
-
-            // Password valid but no active session — fall through to Thyrocare for fresh key
         }
 
-        // Step 3: Fallback to ThyroCare API
+        // Step 3: No live session, or the cached hash is stale — ask ThyroCare, which is
+        // authoritative. On success it refreshes the cached hash and mints a new session;
+        // on genuinely bad credentials it returns 401.
         return await handleThyroCareLogin(req, startTime, ipAddress, userAgent, username, password);
 
     } catch (error: any) {
