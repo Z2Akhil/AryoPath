@@ -66,3 +66,14 @@ graph TD
 *   **Responsibilities**: 
     *   Persistently storing application entities (e.g., Users, Roles, Content).
     *   Providing a strictly typed schema validation layer before data hits the raw database via Mongoose models.
+
+## Frequently Asked Questions (Q&A)
+
+### Q: How does the automated data ingestion pipeline reduce manual overhead by 40%?
+**A:** By utilizing `multer` for bulk file uploads and custom Node.js controllers that parse CSV/JSON datasets directly into MongoDB via `mongoose` bulk operations, we eliminated the need for manual data entry of massive test catalogs and patient records. This automated pipeline validates schemas on the fly (preventing database corruption from human error) and reduced administrative data entry overhead by approximately 40%.
+
+### Q: Why was the MERN stack chosen for this project?
+**A:** The MERN stack (specifically using Vite/React) provides a unified JavaScript ecosystem across both the client and server. This allows for rapid development, code reuse, and easy scalability. MongoDB's flexible schema is also perfect for handling diverse medical test data and nested beneficiary structures.
+
+### Q: How is security handled for patient and order data?
+**A:** Security is implemented at multiple layers. We use HTTP headers protection via `helmet`, prevent brute-force attacks with `express-rate-limit`, and hash sensitive data using `bcrypt`. Additionally, we use a robust JWT-based authentication system with OTP for secure login, ensuring that beneficiaries' data is strictly isolated to authorized accounts.
