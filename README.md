@@ -1,9 +1,19 @@
 # AryoPath
 
-## Project Description
-AryoPath is a modern full-stack web application built using a modernized MERN stack (MongoDB, Express.js, React, Node.js). The project is architected into three distinct workspaces to separate concerns, enforce security, and provide a scalable foundation:
+## What is AryoPath?
+**AryoPath** is a comprehensive Healthcare and Pathology Lab E-Commerce Platform. It allows users to browse and book medical tests, health checkup packages, and manage lab orders online. 
 
-- **Client (`/client`)**: A user-facing frontend application optimized for speed and a modern UI/UX.
+Key features of the platform include:
+- **Test & Package Booking**: Users can explore individual medical tests (e.g., blood tests) or comprehensive health packages and add them to their cart.
+- **Beneficiary Management**: Users can manage "Beneficiaries" (family members or dependents) so that tests can be booked for different people under a single account.
+- **Secure Authentication**: OTP-based authentication for seamless user access.
+- **Order Management**: Users can securely place and track their lab test orders.
+- **Admin Dashboard**: A secure back-office for administrators to manage the catalog (tests, packages, offers), track user activity, and configure site settings.
+
+## Technical Description
+AryoPath is built using a modernized MERN stack (MongoDB, Express.js, React, Node.js). The project is architected into three distinct workspaces to separate concerns, enforce security, and provide a scalable foundation:
+
+- **Client (`/client`)**: The user-facing frontend application optimized for speed and a modern UI/UX.
 - **Admin (`/admin`)**: A dedicated, secure dashboard for platform administrators to manage the application's data.
 - **Backend (`/backend`)**: A robust RESTful API server that acts as the central brain, handling business logic, secure authentication, and database operations.
 
