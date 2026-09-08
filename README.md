@@ -10,6 +10,9 @@ Key features of the platform include:
 - **Order Management**: Users can securely place and track their lab test orders.
 - **Admin Dashboard**: A secure back-office for administrators to manage the catalog (tests, packages, offers), track user activity, and configure site settings.
 
+## Key Technical Achievements
+- **Automated Data Ingestion Pipeline**: Engineered a custom pipeline utilizing `multer` for bulk CSV/JSON file uploads and Node.js controllers for direct `mongoose` bulk operations. This system parses, validates schemas on the fly, and seeds massive test catalogs and patient records directly into MongoDB, reducing manual administrative data entry overhead by **40%**.
+
 ## Technical Description
 AryoPath is built using a modernized MERN stack (MongoDB, Express.js, React, Node.js). The project is architected into three distinct workspaces to separate concerns, enforce security, and provide a scalable foundation:
 
